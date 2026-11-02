@@ -17,36 +17,36 @@ export default function EdgeCommandLog() {
   };
 
   return (
-    <div className="bg-slate-900/90 border border-slate-800 rounded-2xl p-5 backdrop-blur-md shadow-xl">
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 mb-4 pb-3 border-b border-slate-800">
+    <div className="bg-[var(--color-card)] border border-[var(--color-card-border)] rounded-2xl p-5 backdrop-blur-md shadow-xl">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 mb-4 pb-3 border-b border-[var(--color-border)]">
         <div className="flex items-center gap-2">
-          <Terminal className="w-5 h-5 text-cyan-400" />
-          <h3 className="text-base font-bold text-slate-100">
+          <Terminal className="w-5 h-5 text-[var(--color-accent)]" />
+          <h3 className="text-base font-bold text-[var(--color-text)]">
             ESP32 Edge Command & MQTT Broker Log
           </h3>
         </div>
-        <div className="flex items-center gap-2 text-xs font-mono text-slate-400">
-          <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+        <div className="flex items-center gap-2 text-xs font-mono text-[var(--color-text-muted)]">
+          <span className="w-2 h-2 rounded-full bg-[var(--color-success)] animate-pulse" />
           <span>Broker: active (100 msgs)</span>
         </div>
       </div>
 
       {/* Terminal Output Box */}
-      <div className="bg-slate-950 font-mono text-xs rounded-xl p-4 h-44 overflow-y-auto border border-slate-800/80 space-y-2 mb-4 shadow-inner">
+      <div className="bg-[var(--color-bg)] font-mono text-xs rounded-xl p-4 h-44 overflow-y-auto border border-[var(--color-border)]/80 space-y-2 mb-4 shadow-inner">
         {logs.map((log) => {
-          let badgeColor = "bg-cyan-500/20 text-cyan-300 border-cyan-500/30";
-          if (log.type === "ALERT") badgeColor = "bg-rose-500/20 text-rose-300 border-rose-500/40";
-          if (log.type === "ROVER") badgeColor = "bg-amber-500/20 text-amber-300 border-amber-500/30";
-          if (log.level === "success") badgeColor = "bg-emerald-500/20 text-emerald-300 border-emerald-500/30";
+          let badgeColor = "bg-[var(--color-accent-muted)] text-[var(--color-accent)] border-[var(--color-accent)]/30";
+          if (log.type === "ALERT") badgeColor = "bg-[var(--color-error-bg)] text-[var(--color-error-text)] border-[var(--color-error-border)]";
+          if (log.type === "ROVER") badgeColor = "bg-[var(--color-warning-bg)] text-[var(--color-warning-text)] border-[var(--color-warning-border)]";
+          if (log.level === "success") badgeColor = "bg-[var(--color-success-bg)] text-[var(--color-success-text)] border-[var(--color-success-border)]";
 
-          let textColor = "text-slate-300";
-          if (log.level === "error") textColor = "text-rose-400 font-bold";
-          if (log.level === "warn") textColor = "text-amber-400";
-          if (log.level === "success") textColor = "text-emerald-400";
+          let textColor = "text-[var(--color-text-muted)]";
+          if (log.level === "error") textColor = "text-[var(--color-error)] font-bold";
+          if (log.level === "warn") textColor = "text-[var(--color-warning)]";
+          if (log.level === "success") textColor = "text-[var(--color-success)]";
 
           return (
             <div key={log.id} className="flex items-start gap-3 leading-relaxed">
-              <span className="text-slate-500 shrink-0">{log.timestamp}</span>
+              <span className="text-[var(--color-text-subtle)] shrink-0">{log.timestamp}</span>
               <span className={`px-1.5 py-0.5 rounded text-[10px] border shrink-0 ${badgeColor}`}>
                 {log.type}
               </span>
@@ -59,7 +59,7 @@ export default function EdgeCommandLog() {
       {/* Command Input Form */}
       <form onSubmit={handleSendCommand} className="flex items-center gap-3">
         <div className="relative flex-1">
-          <span className="absolute left-3.5 top-2.5 text-cyan-400 font-mono text-xs">
+          <span className="absolute left-3.5 top-2.5 text-[var(--color-accent)] font-mono text-xs">
             esp32@grid:~#
           </span>
           <input
@@ -67,12 +67,12 @@ export default function EdgeCommandLog() {
             value={customCommand}
             onChange={(e) => setCustomCommand(e.target.value)}
             placeholder="Type remote command (e.g. /sys/reboot, /node/c/throttle 35)..."
-            className="w-full bg-slate-950 border border-slate-800 rounded-xl pl-32 pr-4 py-2 text-xs font-mono text-slate-100 focus:outline-none focus:border-cyan-500 transition-colors"
+            className="w-full bg-[var(--color-bg)] border border-[var(--color-border)] rounded-xl pl-32 pr-4 py-2 text-xs font-mono text-[var(--color-text)] placeholder-[var(--color-text-subtle)] focus:outline-none focus:border-[var(--color-accent)] transition-colors"
           />
         </div>
         <button
           type="submit"
-          className="px-4 py-2 bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold text-xs font-mono rounded-xl transition-all shadow flex items-center gap-2"
+          className="px-4 py-2 bg-[var(--color-accent)] hover:bg-[var(--color-accent-hover)] text-[var(--color-text-inverse)] font-bold text-xs font-mono rounded-xl transition-all shadow flex items-center gap-2"
         >
           <Send className="w-3.5 h-3.5" />
           <span>Send</span>
