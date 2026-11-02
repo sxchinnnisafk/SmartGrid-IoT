@@ -2,8 +2,9 @@ import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
 import { GridProvider } from "./context/GridContext";
+import { ThemeProvider } from "./context/ThemeContext";
 
-const inter = Inter({ subsets: ["latin"] });
+const inter = Inter({ subsets: ["latin"], variable: "--font-sans" });
 
 export const metadata: Metadata = {
   title: "SmartGrid AIoT • Command & Digital Twin Dashboard",
@@ -16,9 +17,15 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" className="dark">
-      <body className={`${inter.className} bg-slate-955 text-slate-100 min-h-screen antialiased selection:bg-cyan-500 selection:text-slate-950`}>
-        <GridProvider>{children}</GridProvider>
+    <html lang="en" suppressHydrationWarning>
+      <head>
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+      </head>
+      <body className={`${inter.variable} font-sans bg-[var(--color-bg)] text-[var(--color-text)] min-h-screen antialiased selection:bg-[var(--color-accent)] selection:text-[var(--color-text-inverse)]`}>
+        <ThemeProvider>
+          <GridProvider>{children}</GridProvider>
+        </ThemeProvider>
       </body>
     </html>
   );

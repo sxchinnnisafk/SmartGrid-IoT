@@ -2,6 +2,7 @@
 
 import React from "react";
 import { useGrid } from "../context/GridContext";
+import ThemeToggle from "./ThemeToggle";
 import {
   Activity,
   Wifi,
@@ -12,6 +13,7 @@ import {
   ShieldAlert,
   Cpu,
 } from "lucide-react";
+import Link from "next/link";
 
 export default function Header() {
   const {
@@ -26,48 +28,46 @@ export default function Header() {
   const activeAlertsCount = alerts.filter((a) => a.status === "ACTIVE").length;
 
   return (
-    <header className="bg-slate-900/90 border-b border-slate-800 backdrop-blur-md sticky top-0 z-50 px-4 py-3">
-      <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
+    <header className="sticky top-0 z-[var(--z-sticky)] glass border-b border-[var(--color-header-border)] px-4 py-3">
+      <div className="container flex flex-col md:flex-row items-center justify-between gap-4">
         {/* Branding */}
-        <div className="flex items-center gap-3">
-          <div className="p-2 bg-cyan-500/10 border border-cyan-500/30 rounded-lg text-cyan-400 glow-cyan">
+        <Link href="/" className="flex items-center gap-3 flex-shrink-0">
+          <div className="p-2 bg-[var(--color-accent-muted)] border border-[var(--color-accent)]/30 rounded-lg text-[var(--color-accent)] glow-accent">
             <Zap className="w-6 h-6 animate-pulse" />
           </div>
-          <div>
-            <div className="flex items-center gap-2">
-              <h1 className="text-lg font-bold tracking-wider text-slate-100 uppercase">
-                SmartGrid <span className="text-cyan-400">AIoT</span>
-              </h1>
-              <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-cyan-500/20 text-cyan-300 border border-cyan-500/30">
-                v2.4-PRO
-              </span>
-            </div>
-            <p className="text-xs text-slate-400">
-              Command & Digital Twin Control Center • ESP32 Edge Network
+          <div className="hidden sm:block">
+            <h1 className="text-lg font-bold tracking-wider text-[var(--color-text)]">
+              SmartGrid <span className="text-[var(--color-accent)]">AIoT</span>
+            </h1>
+            <p className="text-xs text-[var(--color-text-muted)]">
+              Command & Digital Twin Control Center
             </p>
           </div>
-        </div>
+        </Link>
 
         {/* System Status Pills */}
         <div className="flex flex-wrap items-center gap-3">
+          {/* Theme Toggle */}
+          <ThemeToggle />
+
           {/* Offline Mode Indicator */}
           <button
             onClick={() => setIsOffline(!isOffline)}
             className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-mono transition-all border ${
               isOffline
-                ? "bg-rose-500/20 text-rose-300 border-rose-500/40 glow-rose"
-                : "bg-emerald-500/10 text-emerald-300 border-emerald-500/30 glow-emerald"
+                ? "bg-[var(--color-error-bg)] text-[var(--color-error-text)] border-[var(--color-error-border)] glow-error"
+                : "bg-[var(--color-success-bg)] text-[var(--color-success-text)] border-[var(--color-success-border)] glow-success"
             }`}
             title="Click to toggle Wi-Fi / Edge Link simulation"
           >
             {isOffline ? (
               <>
-                <WifiOff className="w-4 h-4 text-rose-400 animate-bounce" />
-                <span>OFFLINE MODE (Wi-Fi Loss)</span>
+                <WifiOff className="w-4 h-4 text-[var(--color-error)] animate-pulse" />
+                <span>OFFLINE MODE</span>
               </>
             ) : (
               <>
-                <Wifi className="w-4 h-4 text-emerald-400" />
+                <Wifi className="w-4 h-4 text-[var(--color-success)]" />
                 <span>ESP32 LINK: ONLINE</span>
               </>
             )}
@@ -78,21 +78,21 @@ export default function Header() {
             onClick={() => triggerThermalFault()}
             className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-mono transition-all border ${
               isThermalFaultActive
-                ? "bg-red-500/20 text-red-300 border-red-500/50 glow-rose animate-pulse"
-                : "bg-slate-800 text-slate-300 border-slate-700"
+                ? "bg-[var(--color-error-bg)] text-[var(--color-error-text)] border-[var(--color-error-border)] glow-error animate-pulse"
+                : "bg-[var(--color-bg-subtle)] text-[var(--color-text-muted)] border-[var(--color-border)]"
             }`}
             title="Click to toggle simulated Node C thermal fault"
           >
             <ShieldAlert className="w-4 h-4" />
             <span>
-              {isThermalFaultActive ? "THERMAL FAULT ACTIVE (Node C)" : "GRID HEALTH: NOMINAL"}
+              {isThermalFaultActive ? "THERMAL FAULT ACTIVE" : "GRID HEALTH: NOMINAL"}
             </span>
           </button>
 
           {/* Active Alerts Badge */}
           {activeAlertsCount > 0 && (
-            <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-amber-500/20 border border-amber-500/40 text-amber-300 text-xs font-mono">
-              <AlertTriangle className="w-4 h-4 text-amber-400 animate-spin" />
+            <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[var(--color-warning-bg)] border border-[var(--color-warning-border)] text-[var(--color-warning-text)] text-xs font-mono">
+              <AlertTriangle className="w-4 h-4 text-[var(--color-warning)] animate-spin" />
               <span>{activeAlertsCount} Fault Ticket{activeAlertsCount > 1 ? "s" : ""}</span>
             </div>
           )}
@@ -100,7 +100,7 @@ export default function Header() {
           {/* Reset System Button */}
           <button
             onClick={resetSystem}
-            className="p-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg border border-slate-700 transition-colors"
+            className="p-1.5 bg-[var(--color-bg-subtle)] hover:bg-[var(--color-bg-hover)] text-[var(--color-text-muted)] rounded-lg border border-[var(--color-border)] transition-colors"
             title="Reset system simulation state"
           >
             <RotateCcw className="w-4 h-4" />
