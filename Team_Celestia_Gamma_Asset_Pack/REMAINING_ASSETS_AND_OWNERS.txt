@@ -1,0 +1,37 @@
+REMAINING ASSETS TO COLLECT — SUGGESTED OWNERS
+(Assignments are suggested from the workstream split in Team Celestia's playbook.)
+
+AKASH — EMBEDDED / FIRMWARE
+1. Photograph the exact ESP32-S3 board model and label the part number.
+2. Confirm the red motor-driver board model.
+3. Photograph each sensor actually installed (not planned sensors).
+4. Capture real serial/TFT readings for normal and abnormal safe test conditions.
+5. Provide a short clip or frames showing rover motion and TFT state changes.
+
+SACHIN — DASHBOARD / FRONTEND
+1. Capture the actual running control-room website, not the mockup.
+2. Capture a real telemetry value arriving in the UI.
+3. Capture a before/after node state for a safe simulated fault.
+4. If the dashboard is still static, label it as frontend concept / prototype UI.
+
+RAYYAN — BACKEND / AI / INTEGRATION
+1. Capture a Supabase telemetry row with timestamp and node ID (hide secrets/tokens).
+2. Capture proof of Realtime update if implemented.
+3. Capture an actual AI-generated report from project data if implemented.
+4. Capture actual voice alert or command round-trip only if working.
+5. Never expose API keys, passwords, Supabase service-role keys or private credentials.
+
+OBED — DOMAIN RESEARCH / DEMO / PRESENTATION
+1. Prepare a simple three-node tabletop track photograph or labelled schematic.
+2. Record the end-to-end demo sequence, ideally one continuous clip.
+3. Collect actual component purchase prices/receipts for the BOM.
+4. Prepare a test log: test condition, expected result, observed result, pass/fail.
+5. Verify the BESCOM/KERC and CEA source citations used in the deck.
+
+SHARED MUST-HAVES BEFORE FINAL SUBMISSION
+- Actual confirmed BOM with price and quantity.
+- Actual sensor suite confirmation.
+- At least one reproducible fault-detection test.
+- Actual dashboard screenshot if live telemetry is connected.
+- Measured sensor-to-dashboard latency, or explicitly mark it as not measured.
+- Clear separation of demonstrated, planned and simulated features.

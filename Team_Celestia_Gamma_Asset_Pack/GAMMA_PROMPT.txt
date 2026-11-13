@@ -1,0 +1,128 @@
+GAMMA PROMPT — TEAM CELESTIA | SMARTGRID AIoT | POWER HACK 2026
+
+Create a polished, jury-ready PowerPoint presentation for the POWER HACK 2026 preliminary round. Generate EXACTLY 10 slides, 16:9 widescreen, designed for a 5–7 minute spoken pitch. Do not add an extra title, agenda, thank-you or appendix slide. The deck must be visual, concise, technically credible and suitable for judges from BESCOM, engineering and academia.
+
+PROJECT IDENTITY
+Project title: SMARTGRID AIoT
+Subtitle: Intelligent Power Monitoring & Management System
+Team: Team Celestia
+Team members: Akash | Sachin | Obed | Rayyan
+Department: BCA | Year: 2nd Year | Section: D
+Institution: KLE Technological University
+Mentor: None currently
+Competition: POWER HACK 2026
+Theme: AIoT for Intelligent Energy Systems
+Event context from the team playbook: 18 November 2026, Presidency University + BESCOM, Bengaluru.
+
+CORE STORY
+Present SmartGrid AIoT as a prototype that explores a connected physical-to-digital workflow for distribution-grid condition monitoring. A modular four-wheel ESP32-S3 rover represents the mobile edge device. The tabletop scenario contains three illustrative nodes:
+A — Residential Feeder
+B — EV Charging Hub
+C — Industrial Transformer
+The intended workflow is: physical/edge sensing → Wi-Fi telemetry → backend and realtime data → three-node digital twin → AI-assisted incident summary / operator recommendation → human-reviewed response workflow → approved command/threshold return path to the rover.
+The tabletop nodes are a simulation/illustrative grid corridor, not actual BESCOM assets. The prototype is not connected to live utility wiring or a real distribution network.
+
+CRITICAL TRUTH / EVIDENCE RULES
+1. Use the uploaded photographs as genuine prototype evidence. The front photograph shows the rover and its TFT animated-eye screen. The top-view photograph shows a four-wheel chassis, controller development board, display PCB, motor-driver-style board and wiring. The exact motor driver model must be confirmed by the team; do not label it L298N unless verified.
+2. Do not claim that temperature, current, voltage or ultrasonic sensors are installed unless a clear photograph or team confirmation is supplied. The top-view wiring photo does not visibly establish those sensor modules.
+3. The four website/interface screenshots are DESIGN CONCEPTS / PROPOSED UI, not verified working software. Label them “UI design concept” or “proposed interface”. Do not state that the dashboard, AI assistant, voice integration, workflow editor, self-healing rerouting or cloud telemetry is operational unless actual evidence is supplied.
+4. Treat the playbook as the intended architecture and execution plan. Where implementation is not confirmed, use “proposed”, “designed to”, “planned” or “target architecture”, not “implemented” or “validated”.
+5. Do not invent component prices, prototype cost, sensor accuracy, latency, detection accuracy, savings, outage reduction, energy savings, predictive accuracy, deployment numbers, customer counts or measured results. If a value is missing, show “To be measured”, “Pending test” or a clearly marked placeholder for the team to fill.
+6. Do not imply this is the first IoT transformer monitoring system. Existing Distribution Transformer Monitoring Units (DTMUs) are documented by the Central Electricity Authority. Frame the project differentiation as an integrated demonstrator combining a mobile rover, modular edge concept, three-node digital twin, AI-assisted explanation and operator-approved workflow.
+7. Do not claim AI makes autonomous utility switching decisions. Show the operator as the approval authority. Physical breaker isolation and load rerouting are simulated only in a safe, low-voltage tabletop setup.
+8. Use citations in small slide footers wherever factual external figures or standards are used. Include a final compact “Sources” footer on the relevant slides, not a separate 11th slide.
+
+VISUAL DIRECTION
+Use the uploaded Team Celestia logo. Use the visual direction from the playbook: deep charcoal/ink backgrounds, warm parchment or soft-stone surfaces, muted lavender, indigo/cobalt for primary actions, sage for normal state, saffron/amber for warning and coral for critical. Use elegant editorial serif headlines paired with a clean sans-serif for technical labels. Keep generous whitespace, strong contrast and clean diagrams. Avoid generic cyberpunk visuals, excessive glow, stock-photo overload and tiny text. Use consistent A/B/C node labels and status colours throughout. Keep body text short: ideally 3–5 concise bullets per slide. Use clear diagrams, not paragraphs.
+
+SLIDE-BY-SLIDE INSTRUCTIONS
+
+SLIDE 1 — TITLE
+Headline: SMARTGRID AIoT
+Subtitle: Intelligent Power Monitoring & Management System
+Supporting line: “From edge sensing to operator action.”
+Show Team Celestia, Akash, Sachin, Obed, Rayyan, BCA | 2nd Year | D Division, KLE Technological University. Mentor: None currently. Add POWER HACK 2026 and Theme 5: AIoT for Intelligent Energy Systems.
+Visuals: Team logo + actual front-view rover photograph. Use an uncluttered, premium cover. Do not use the concept website screenshot as if it were a live product.
+
+SLIDE 2 — PROBLEM IDENTIFICATION
+Headline: Distribution asset failures create a costly reliability challenge.
+Explain the problem: distribution transformers and associated assets face overload, thermal stress and changing load conditions; delayed visibility can make maintenance more reactive. Affected stakeholders: BESCOM operations teams, field technicians, households, businesses and EV charging infrastructure operators. Mention that utilities already use maintenance and monitoring methods; the gap this prototype explores is a connected, mobile-edge-to-operator response workflow.
+Use this verified BESCOM-specific data point: KERC’s Combined Tariff Order 2025 records BESCOM-reported repair expenditure of ₹134.44 crore for 36,035 faulty distribution transformers in FY 2023–24. State clearly that this is historical repair expenditure reported by BESCOM, NOT the amount SmartGrid AIoT will save.
+Visual: A simple custom vector illustration of a distribution transformer feeding homes, an EV charging hub and an industrial load, with a highlighted overload/thermal warning. Do not use an unverified photo and do not depict this as a photograph of a specific BESCOM site.
+Footer source: Karnataka Electricity Regulatory Commission, Combined Tariff Order 2025, BESCOM, Appendix 1A, printed p. 314. Link: https://data.opencity.in/dataset/9294a112-ab2a-4586-b4a4-7091fc9ab5ba/resource/3500f8d4-1d26-4ff8-a08f-8c2d8bac9fbd/download/kerc.pdf
+
+SLIDE 3 — PROPOSED SOLUTION
+Headline: One connected system: rover + digital twin + AI-assisted response.
+Explain in one visual: the rover represents edge inspection; three-node digital twin represents network visibility; AI assistant supports incident explanation; workflow lets an operator review and approve a response.
+Show the three nodes: A Residential Feeder (normal), B EV Charging Hub (load variation / warning scenario), C Industrial Transformer (simulated thermal fault). Keep node states clearly marked as an illustrative scenario, not live BESCOM data.
+Use the control-room and landing-page images as design concepts. If space permits, show the AI chat design concept as a smaller proposed interface inset. Label concept visuals “Proposed UI concept”.
+
+SLIDE 4 — INNOVATION / NOVELTY
+Headline: Beyond monitoring — connect field observation to an actionable operator workflow.
+Make an honest comparison:
+Existing practice / technology landscape: fixed DTMU or smart-meter-based monitoring can collect electrical and transformer health parameters and provide threshold alarms / central monitoring.
+SmartGrid AIoT prototype concept: mobile rover-based edge demonstration + modular sensing concept + three-node digital twin + AI-assisted incident explanation + human-approved workflow and simulated return commands.
+Innovation claim: the integration and demonstration of these components in one low-cost, modular educational prototype. Do not claim the individual technologies are new or that this is the first transformer IoT system. Patentability is not established; state “IP potential requires prior-art review” if mentioned.
+Use a clean two-column comparison and the AI workflow design concept as a clearly labelled proposed UI visual.
+Footer sources: CEA, Guidelines and Best Practices for O&M of Distribution Transformers (17 Mar 2023), DTMU discussion around p. 73; CEA, Revised Distribution Planning Criteria (2024), section 9.15, p. 133.
+Links:
+https://cea.nic.in/wp-content/uploads/dp_t/2023/03/Guidelines_for_OM_of_DTs.pdf
+https://cea.nic.in/wp-content/uploads/notification/2024/01/Final_Approved__Revised_Distribution_Planning_Criteria.pdf
+
+SLIDE 5 — TECHNICAL APPROACH
+Headline: A bidirectional physical-to-digital intelligence loop.
+Create a clean block diagram with two directions:
+OUTBOUND: ESP32-S3 rover + display + verified/selected sensors → Wi-Fi → Next.js API → Supabase/PostgreSQL + Realtime → React/React Flow digital twin.
+INTELLIGENCE: Gemini via OpenRouter for assisted incident summaries; ElevenLabs for voice alerts, only if these integrations are in the implemented build. Otherwise label as planned integration.
+RETURN: operator-approved command / threshold → Supabase Realtime → ESP32-S3 rover.
+Hardware in the team playbook: ESP32-S3 Wi-Fi board, SPI TFT LCD, rover motors, motor driver, modular sensor options, optional relay and buzzer. The playbook proposes DS18B20 / LM35 / DHT11 for temperature, INA219 / ACS712 for low-voltage current/voltage sensing, HC-SR04 for obstacle detection, and relay + buzzer for a safe demo response. Distinguish clearly between “visible in prototype photo”, “proposed sensor options” and “confirmed installed”.
+Software in the playbook: Next.js, React, Tailwind CSS, React Flow, Supabase/PostgreSQL/Realtime, Gemini/OpenRouter, ElevenLabs, Playwright, Git/GitHub and Vercel. Mark each as implemented or planned only if the team has verified it.
+Use the wiring top-view photo as a small labelled hardware inset. Do not draw unverified sensor connections as already wired.
+
+SLIDE 6 — PROTOTYPE / IMPLEMENTATION
+Headline: Physical rover prototype — current build evidence.
+Make this a photo-led slide. Use both actual rover photographs prominently: front-view photo with the TFT display and top-view wiring photograph. Add short factual labels only: four-wheel mobile chassis; controller development board; motor-driver-style board (model confirmation pending); TFT display; wiring and power enclosure. The front photo demonstrates the animated-eye TFT screen.
+Include a small “Evidence status” strip:
+• Demonstrated by photographs: assembled rover platform, display hardware, controller/motor-driver wiring.
+• Not yet evidenced in supplied assets: installed thermal/current/voltage/ultrasonic sensor suite; live telemetry reaching cloud dashboard; measured fault-detection performance; real command round-trip.
+Reserve clearly marked small placeholders for future actual sensor-reading screenshot, running dashboard screenshot and real test result. Do not generate fake screenshots or fabricated experimental graphs.
+Add safety statement: “Tabletop prototype only. No connection to live mains or BESCOM distribution assets. Isolation/rerouting shown only as a low-voltage simulation.”
+
+SLIDE 7 — FEASIBILITY & SCALABILITY
+Headline: Modular architecture supports staged, low-risk expansion.
+Discuss technical feasibility: ESP32-class edge controller, Wi-Fi telemetry, web backend, modular sensors and browser-based dashboard. Economic feasibility: low-cost prototyping approach, reuse of common development boards and staged sensor additions. Do NOT invent an overall cost or per-node deployment cost. Provide a clearly marked BOM table with blank/“team to fill” fields for component, quantity, actual purchase price, source and subtotal.
+Scalability path: one tabletop node → three-node demo → instrumented pilot on isolated low-voltage test rig → controlled utility-approved field pilot after engineering, cybersecurity, calibration and safety validation. Do not claim deployment-ready status.
+
+SLIDE 8 — EXPECTED IMPACT
+Headline: Measure reliability impact before claiming savings.
+Show expected value qualitatively: earlier visibility of abnormal conditions; clearer prioritisation for maintenance teams; faster incident understanding; traceable operator decisions; improved awareness of EV / industrial load scenarios.
+Use a KPI scorecard with these metrics marked “to be measured in prototype tests”: sensor-to-dashboard latency; alert latency; sensor accuracy against reference instrument; detection precision / false alarms; successful telemetry transmissions; total prototype BOM cost. Do not invent values or savings percentages.
+Include the KERC FY24 repair-expenditure context from Slide 2 in a small callout if useful, with the same caveat that it is not a projected saving.
+
+SLIDE 9 — SDG / SUSTAINABILITY / SOCIAL IMPACT
+Headline: Supporting more resilient and responsible energy infrastructure.
+Use official UN SDG icons, preferably Goals 7 (Affordable and Clean Energy), 9 (Industry, Innovation and Infrastructure), and 11 (Sustainable Cities and Communities). Goal 13 may be included only as an indirect potential co-benefit, not a measured carbon reduction claim.
+Connect each goal to the project narrowly: grid visibility and reliability; digital infrastructure innovation; potential improvement in continuity of essential electricity services. State that environmental benefits such as reduced equipment waste or emissions would require field validation and measured data.
+Source official icon assets from: https://www.un.org/sustainabledevelopment/news/communications-material/
+Use SDG icon files without the UN emblem. Do not imply UN endorsement. Include a small note: “This presentation has not been approved by the United Nations and does not reflect the views of the UN.”
+
+SLIDE 10 — CONCLUSION & FUTURE SCOPE
+Headline: From a tabletop prototype to smarter distribution operations.
+Summarise: distribution asset monitoring problem; mobile ESP32-S3 rover concept; digital-twin visibility; AI-assisted explanation; operator-approved workflow. Be transparent that this is an early prototype and not a live-grid product.
+Future scope: confirm and integrate calibrated temperature/current/voltage sensors; establish robust telemetry and offline buffering; validate alert thresholds; test sensor-to-dashboard latency and false alarms; complete the live digital-twin connection; harden cybersecurity and role-based access; conduct an isolated low-voltage pilot; seek utility review before any field deployment.
+Close with: “Sense earlier. Understand faster. Respond responsibly.”
+
+PRESENTER / DELIVERY REQUIREMENTS
+Create concise speaker notes or short presenter cues totalling approximately 5–7 minutes. Suggested timing: Slide 1 20 sec; Slide 2 40 sec; Slide 3 35 sec; Slide 4 40 sec; Slide 5 50 sec; Slide 6 60 sec; Slide 7 35 sec; Slide 8 35 sec; Slide 9 25 sec; Slide 10 25 sec. Ensure the physical prototype and the team's own contribution receive emphasis. Do not overload slides with text. Make all citations readable. Use consistent A/B/C node labels, technical terminology and status colours.
+
+FINAL QUALITY CHECK BEFORE EXPORT
+- Exactly 10 slides.
+- All team and institution details spelled correctly.
+- All four team members named: Akash, Sachin, Obed, Rayyan.
+- Actual photos are not confused with concept mockups.
+- No invented sensor installation, AI prediction, voice, cloud integration or live-grid control claims.
+- No fabricated costs, measurements, percentages or savings.
+- KERC figure is quoted with its exact FY2023–24 context and not presented as achievable project savings.
+- CEA DTMU technology is acknowledged as existing prior art / practice.
+- Simulation and live utility operation are clearly distinguished.
+- Final output is editable and presentation-ready.

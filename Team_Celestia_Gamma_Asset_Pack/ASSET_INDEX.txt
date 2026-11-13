@@ -1,0 +1,41 @@
+TEAM CELESTIA — SMARTGRID AIoT — GAMMA ASSET INDEX
+
+01_Prototype_Photos/
+- rover_front_prototype.jpg
+  Actual front-view rover photograph. TFT screen with animated-eye interface is visible.
+  Use on Slide 1 (small supporting image) and Slide 6 (main prototype evidence).
+- rover_wiring_top_view.jpg
+  Actual top-view wiring photograph. Four-wheel chassis, controller development board,
+  display PCB, motor-driver-style board and wiring are visible. Exact motor-driver model
+  should be confirmed by the team. No clearly identifiable thermal/current/ultrasonic
+  sensor modules are visible in this image.
+  Use on Slide 5 (physical hardware inset) and Slide 6 (main implementation evidence).
+
+02_Brand_and_UI_Concepts/
+- team_celestia_logo.png
+  Team logo. Use on Slide 1 and small footer/brand marks only if legible.
+- landing_page_design_concept.png
+  Website landing-page design concept. NOT proof of a deployed website.
+  Use on Slide 3 as a concept visual only.
+- control_room_design_concept.png
+  Control-room/dashboard design concept. NOT proof of a working dashboard.
+  Use on Slide 3 or Slide 5, explicitly labelled “UI design concept”.
+- ai_assistant_chat_design_concept.png
+  AI chat interface design concept. NOT proof of a functioning AI integration.
+  Use on Slide 3 or Slide 4, explicitly labelled “UI design concept”.
+- ai_workflow_design_concept.png
+  Workflow canvas design concept. NOT proof of a functioning workflow or live grid control.
+  Use on Slide 4, explicitly labelled “UI design concept”.
+
+03_Project_Reference/
+- Team_Celestia_SmartGrid_AIOT_Competition_Playbook.pdf
+  Project architecture, proposed technology stack, hardware options, role split, demo flow,
+  roadmap and UI direction. Use as a source of project-specific details, not as proof that
+  every planned feature has already been implemented.
+
+IMPORTANT EVIDENCE LABELS
+- “Prototype photograph” = physical hardware shown in the uploaded photographs.
+- “Design concept / proposed UI” = the four styleboard screenshots.
+- “Planned / proposed” = features listed in the playbook but not yet independently evidenced.
+- “Demonstrated / tested” = use only after the team supplies a real screenshot, log, video,
+  measurement or test record.

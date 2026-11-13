@@ -1,57 +1,45 @@
 "use client";
 
 import React from "react";
-import { Zap, Cpu, Navigation } from "lucide-react";
 import Link from "next/link";
+import { ArrowLeft } from "lucide-react";
 
 export default function AuthLayout({ children }: { children: React.ReactNode }) {
   return (
-    <div className="min-h-screen bg-[var(--color-bg)] text-[var(--color-text)] flex flex-col">
-      {/* Auth Navigation Bar */}
-      <header className="px-6 py-4 border-b border-[var(--color-border)] bg-[var(--color-bg)]/80 backdrop-blur-sm">
+    <div className="min-h-screen bg-[#11141b] text-[#f4f5f8] flex flex-col justify-between selection:bg-[#3b59f8] selection:text-white">
+      {/* Header */}
+      <header className="px-6 py-5 border-b border-[#222a3d] bg-[#141822]/90 backdrop-blur-md">
         <div className="max-w-7xl mx-auto flex items-center justify-between">
-          <Link href="/" className="flex items-center gap-2">
-            <div className="p-2 bg-[var(--color-accent-muted)] border border-[var(--color-accent)]/30 rounded-lg text-[var(--color-accent)] glow-accent">
-              <Zap className="w-5 h-5" />
+          <Link href="/" className="flex items-center gap-3">
+            <div className="grid grid-cols-3 gap-1 p-1.5 rounded-lg bg-[#1a1f2c] border border-[#2b3347]">
+              <span className="w-1.5 h-1.5 rounded-full bg-[#3b59f8]" />
+              <span className="w-1.5 h-1.5 rounded-full bg-[#3b59f8]" />
+              <span className="w-1.5 h-1.5 rounded-full bg-[#3b59f8]" />
+              <span className="w-1.5 h-1.5 rounded-full bg-[#3b59f8]" />
+              <span className="w-1.5 h-1.5 rounded-full bg-[#3b59f8]" />
+              <span className="w-1.5 h-1.5 rounded-full bg-[#3b59f8]" />
             </div>
-            <span className="text-lg font-bold tracking-wider text-[var(--color-text)] uppercase hidden sm:block">
-              SmartGrid <span className="text-[var(--color-accent)]">AIoT</span>
+            <span className="text-base sm:text-lg font-bold tracking-wider text-white uppercase">
+              SmartGrid <span className="text-[#3b59f8]">AIoT</span>
             </span>
           </Link>
-          <nav className="flex items-center gap-4">
-            <Link
-              href="/signin"
-              className="text-sm font-medium text-[var(--color-text-muted)] hover:text-[var(--color-text)] transition-colors"
-            >
-              Sign In
-            </Link>
-            <Link
-              href="/signup"
-              className="px-4 py-2 bg-[var(--color-accent)] hover:bg-[var(--color-accent-hover)] text-[var(--color-text-inverse)] font-bold text-sm rounded-xl transition-all shadow glow-accent"
-            >
-              Get Started
-            </Link>
-          </nav>
+
+          <Link
+            href="/"
+            className="text-xs font-mono text-[#9ca3af] hover:text-white flex items-center gap-1.5 transition-colors"
+          >
+            <ArrowLeft className="w-3.5 h-3.5" />
+            <span>Return to Landing</span>
+          </Link>
         </div>
       </header>
 
-      <main className="flex-1">{children}</main>
+      {/* Main Content */}
+      <main className="flex-1 flex items-center justify-center p-6">{children}</main>
 
-      {/* Auth Footer */}
-      <footer className="border-t border-[var(--color-border)] bg-[var(--color-bg)]/80 px-6 py-4">
-        <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-3 text-sm text-[var(--color-text-muted)]">
-          <p>SmartGrid AIoT Digital Twin • Built by Team Celestia</p>
-          <div className="flex items-center gap-4">
-            <span className="flex items-center gap-1.5 text-[var(--color-text-muted)]">
-              <Cpu className="w-4 h-4" />
-              ESP32 Edge Layer
-            </span>
-            <span className="flex items-center gap-1.5 text-[var(--color-text-muted)]">
-              <Navigation className="w-4 h-4" />
-              Cloud Digital Twin
-            </span>
-          </div>
-        </div>
+      {/* Footer */}
+      <footer className="border-t border-[#222a3d] bg-[#141822]/90 px-6 py-4 text-center text-xs font-mono text-[#6b7280]">
+        SmartGrid AIoT • Team Celestia (Akash, Sachin, Obed, Rayyan) • KLE Technological University
       </footer>
     </div>
   );

@@ -1,14 +1,15 @@
 import type { Metadata } from "next";
-import { Inter } from "next/font/google";
 import "./globals.css";
 import { GridProvider } from "./context/GridContext";
 import { ThemeProvider } from "./context/ThemeContext";
 
-const inter = Inter({ subsets: ["latin"], variable: "--font-sans" });
-
 export const metadata: Metadata = {
-  title: "SmartGrid AIoT • Command & Digital Twin Dashboard",
-  description: "Next.js App Router digital twin dashboard for ESP32 edge node grid telemetry and rover patrol control.",
+  title: "SmartGrid AIoT • Intelligent Power Monitoring & Management System",
+  description:
+    "Team Celestia's prototype combining an edge rover, a live grid twin, and AI-assisted operator response for Power Hack 2026.",
+  icons: {
+    icon: "/assets/team_celestia_logo.png",
+  },
 };
 
 export default function RootLayout({
@@ -21,8 +22,12 @@ export default function RootLayout({
       <head>
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+        <link
+          href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Newsreader:ital,opsz,wght@0,6..72,400..700;1,6..72,400..700&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap"
+          rel="stylesheet"
+        />
       </head>
-      <body className={`${inter.variable} font-sans bg-[var(--color-bg)] text-[var(--color-text)] min-h-screen antialiased selection:bg-[var(--color-accent)] selection:text-[var(--color-text-inverse)]`}>
+      <body className="font-sans bg-[#12151c] text-[#f4f5f7] min-h-screen antialiased selection:bg-[#3b59f8] selection:text-white">
         <ThemeProvider>
           <GridProvider>{children}</GridProvider>
         </ThemeProvider>
