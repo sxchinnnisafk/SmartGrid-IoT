@@ -2,17 +2,20 @@
 
 import { useEffect } from "react";
 import { usePathname } from "next/navigation";
+import { useGrid } from "../context/GridContext";
 
 /**
  * ScrollRevealObserver
  * High-performance, zero-dependency client component (<1.5 KB):
  * - Observes elements with class `.reveal` using IntersectionObserver.
  * - Automatically unobserves elements once revealed (no memory leaks, zero scroll overhead).
- * - Re-evaluates on Next.js route transitions.
- * - Respects `prefers-reduced-motion` by revealing elements immediately without animation.
+ * - Reacts immediately to Next.js route transitions, auth gate dismissals, and DOM mutations.
+ * - Instantly reveals any elements already within or above the viewport so content is never hidden.
+ * - Strictly respects `prefers-reduced-motion` by revealing elements immediately without animation.
  */
 export default function ScrollRevealObserver() {
   const pathname = usePathname();
+  const { isAuthenticated, hasSkippedAuth } = useGrid();
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -21,45 +24,65 @@ export default function ScrollRevealObserver() {
       "(prefers-reduced-motion: reduce)"
     ).matches;
 
-    const revealElements = document.querySelectorAll<HTMLElement>(".reveal");
-    if (!revealElements || revealElements.length === 0) return;
+    const scanAndReveal = () => {
+      const revealElements = document.querySelectorAll<HTMLElement>(".reveal:not(.is-revealed)");
+      if (!revealElements || revealElements.length === 0) return;
 
-    if (prefersReducedMotion || !("IntersectionObserver" in window)) {
-      revealElements.forEach((el) => el.classList.add("is-revealed"));
-      return;
-    }
-
-    const observer = new IntersectionObserver(
-      (entries, obs) => {
-        entries.forEach((entry) => {
-          if (entry.isIntersecting) {
-            entry.target.classList.add("is-revealed");
-            // Stop observing once animated to free memory and prevent CPU spikes
-            obs.unobserve(entry.target);
-          }
-        });
-      },
-      {
-        root: null,
-        rootMargin: "0px 0px -40px 0px", // Trigger slightly before element reaches bottom
-        threshold: 0.08,
+      if (prefersReducedMotion || !("IntersectionObserver" in window)) {
+        revealElements.forEach((el) => el.classList.add("is-revealed"));
+        return;
       }
-    );
 
-    revealElements.forEach((el) => {
-      // If element is already in initial viewport, reveal quickly
-      const rect = el.getBoundingClientRect();
-      if (rect.top < window.innerHeight && rect.bottom > 0) {
-        el.classList.add("is-revealed");
-      } else {
-        observer.observe(el);
-      }
+      const observer = new IntersectionObserver(
+        (entries, obs) => {
+          entries.forEach((entry) => {
+            if (entry.isIntersecting) {
+              entry.target.classList.add("is-revealed");
+              obs.unobserve(entry.target);
+            }
+          });
+        },
+        {
+          root: null,
+          rootMargin: "0px 0px -20px 0px",
+          threshold: 0.05,
+        }
+      );
+
+      revealElements.forEach((el) => {
+        const rect = el.getBoundingClientRect();
+        // Immediately reveal anything already inside or above the current viewport
+        if (rect.top < window.innerHeight + 50 && rect.bottom > -100) {
+          el.classList.add("is-revealed");
+        } else {
+          observer.observe(el);
+        }
+      });
+    };
+
+    // Run immediately and across multiple ticks to catch client transitions and React hydration
+    scanAndReveal();
+    const frameId = requestAnimationFrame(scanAndReveal);
+    const timer1 = setTimeout(scanAndReveal, 60);
+    const timer2 = setTimeout(scanAndReveal, 250);
+
+    // Watch DOM mutations (e.g. when Auth gate swaps to Landing page or chapter tab changes)
+    const mutationObserver = new MutationObserver(() => {
+      scanAndReveal();
+    });
+
+    mutationObserver.observe(document.body, {
+      childList: true,
+      subtree: true,
     });
 
     return () => {
-      observer.disconnect();
+      cancelAnimationFrame(frameId);
+      clearTimeout(timer1);
+      clearTimeout(timer2);
+      mutationObserver.disconnect();
     };
-  }, [pathname]);
+  }, [pathname, isAuthenticated, hasSkippedAuth]);
 
   return null;
 }

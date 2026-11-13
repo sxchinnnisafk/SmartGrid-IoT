@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useGrid } from "../context/GridContext";
@@ -21,8 +21,19 @@ export default function LandingHero() {
   const { isThermalFaultActive, triggerThermalFault, rover, startPatrol, stopPatrol, logout } = useGrid();
   const [activeHoverNode, setActiveHoverNode] = useState<string | null>(null);
 
+  // Guarantee all above-the-fold hero elements are immediately revealed on mount
+  useEffect(() => {
+    const revealHero = () => {
+      const heroEls = document.querySelectorAll<HTMLElement>("#hero-root .reveal");
+      heroEls.forEach((el) => el.classList.add("is-revealed"));
+    };
+    revealHero();
+    const t = setTimeout(revealHero, 40);
+    return () => clearTimeout(t);
+  }, []);
+
   return (
-    <div className="relative min-h-screen bg-[#11141b] text-[#f4f5f8] overflow-hidden flex flex-col justify-between selection:bg-[#3b59f8] selection:text-white">
+    <div id="hero-root" className="relative min-h-screen bg-[#11141b] text-[#f4f5f8] overflow-hidden flex flex-col justify-between selection:bg-[#3b59f8] selection:text-white">
       {/* Background Chalk & Mountain Horizon Silhouettes */}
       <div className="absolute inset-0 pointer-events-none z-0">
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_80%_60%_at_50%_-20%,rgba(59,89,248,0.15),transparent)]" />

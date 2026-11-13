@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import {
@@ -20,6 +20,22 @@ import {
 
 export default function LandingStoryChapters() {
   const [activeChapter, setActiveChapter] = useState<number>(1);
+
+  // Guarantee story chapters and chapter switches are always revealed
+  useEffect(() => {
+    const revealChapters = () => {
+      const chapterEls = document.querySelectorAll<HTMLElement>("#story-chapters .reveal");
+      chapterEls.forEach((el) => {
+        const rect = el.getBoundingClientRect();
+        if (rect.top < window.innerHeight) {
+          el.classList.add("is-revealed");
+        }
+      });
+    };
+    revealChapters();
+    const t = setTimeout(revealChapters, 50);
+    return () => clearTimeout(t);
+  }, [activeChapter]);
 
   const chapters = [
     {
