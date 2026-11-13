@@ -14,12 +14,11 @@ export default function LandingPage() {
     isDemoModalOpen,
     isAuthenticated,
     hasSkippedAuth,
-    isAuthLoaded,
   } = useGrid();
 
-  // If auth state has loaded and user is neither signed in nor has skipped auth,
-  // display the branded Sign In & Sign Up gate before revealing the main page.
-  const showAuthGate = isAuthLoaded && !isAuthenticated && !hasSkippedAuth;
+  // The branded Sign In & Sign Up gate appears before the main page.
+  // Once the operator logs in or clicks "Skip Sign In", the main page is revealed.
+  const showAuthGate = !isAuthenticated && !hasSkippedAuth;
 
   if (showAuthGate) {
     return (

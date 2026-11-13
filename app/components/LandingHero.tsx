@@ -18,7 +18,7 @@ import {
 
 export default function LandingHero() {
   const router = useRouter();
-  const { isThermalFaultActive, triggerThermalFault, rover, startPatrol, stopPatrol } = useGrid();
+  const { isThermalFaultActive, triggerThermalFault, rover, startPatrol, stopPatrol, logout } = useGrid();
   const [activeHoverNode, setActiveHoverNode] = useState<string | null>(null);
 
   return (
@@ -82,14 +82,25 @@ export default function LandingHero() {
           </a>
         </nav>
 
-        {/* Right CTA Button */}
-        <Link
-          href="/control-room"
-          className="pill-button-cobalt text-xs sm:text-sm font-semibold tracking-wide"
-        >
-          <span>Open Control Room</span>
-          <ArrowUpRight className="w-4 h-4" />
-        </Link>
+        {/* Right CTA Buttons */}
+        <div className="flex items-center gap-3">
+          <button
+            onClick={() => {
+              logout();
+            }}
+            className="hidden sm:inline-flex items-center gap-1.5 px-3.5 py-2 rounded-full bg-[#181c26] hover:bg-[#252c3d] text-xs font-mono text-[#cbd5e1] border border-[#2b3347] transition-all"
+            title="Lock Gateway / Return to Operator Sign In"
+          >
+            <span>Operator Sign In</span>
+          </button>
+          <Link
+            href="/control-room"
+            className="pill-button-cobalt text-xs sm:text-sm font-semibold tracking-wide"
+          >
+            <span>Open Control Room</span>
+            <ArrowUpRight className="w-4 h-4" />
+          </Link>
+        </div>
       </header>
 
       {/* Main Hero Body */}

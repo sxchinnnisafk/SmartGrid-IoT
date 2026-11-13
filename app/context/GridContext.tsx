@@ -327,27 +327,32 @@ export function GridProvider({ children }: { children: React.ReactNode }) {
   const [hasSkippedAuth, setHasSkippedAuth] = useState<boolean>(false);
   const [isAuthLoaded, setIsAuthLoaded] = useState<boolean>(false);
 
-  // Sync auth state from localStorage on mount (hydration-safe)
+  // Sync auth state on mount (hydration-safe)
+  // Clean up any stale permanent skip flags so fresh visits display the Sign In page
   useEffect(() => {
     try {
-      const storedUser = localStorage.getItem("smartgrid_auth_user");
-      const storedSkipped = localStorage.getItem("smartgrid_auth_skipped");
-      if (storedUser) {
-        const parsed = JSON.parse(storedUser);
+      // Clear legacy permanent skip flag so visiting the site link presents the Sign In gate
+      localStorage.removeItem("smartgrid_auth_skipped");
+
+      const sessionSkipped = sessionStorage.getItem("smartgrid_auth_skipped");
+      const savedUser = sessionStorage.getItem("smartgrid_auth_user") || localStorage.getItem("smartgrid_auth_user");
+
+      if (savedUser) {
+        const parsed = JSON.parse(savedUser);
         setUser(parsed);
         setIsAuthenticated(true);
-      } else if (storedSkipped === "true") {
+      } else if (sessionSkipped === "true") {
         setHasSkippedAuth(true);
         setUser({
           name: "Guest Operator",
           email: "guest@smartgrid.io",
-          role: "Field Observer",
+          role: "Observer Access",
           avatarText: "GO",
           isGuest: true,
         });
       }
     } catch {
-      // Local storage fallback
+      // Storage fallback
     } finally {
       setIsAuthLoaded(true);
     }
@@ -372,7 +377,9 @@ export function GridProvider({ children }: { children: React.ReactNode }) {
     setIsAuthenticated(true);
     setHasSkippedAuth(false);
     try {
+      sessionStorage.setItem("smartgrid_auth_user", JSON.stringify(newUser));
       localStorage.setItem("smartgrid_auth_user", JSON.stringify(newUser));
+      sessionStorage.removeItem("smartgrid_auth_skipped");
       localStorage.removeItem("smartgrid_auth_skipped");
     } catch {}
     addLog("SYSTEM", `Operator ${displayName} (${newUser.role}) authenticated successfully.`, "success");
@@ -394,8 +401,8 @@ export function GridProvider({ children }: { children: React.ReactNode }) {
     setHasSkippedAuth(true);
     setIsAuthenticated(false);
     try {
-      localStorage.setItem("smartgrid_auth_skipped", "true");
-      localStorage.removeItem("smartgrid_auth_user");
+      sessionStorage.setItem("smartgrid_auth_skipped", "true");
+      localStorage.removeItem("smartgrid_auth_skipped");
     } catch {}
     addLog("SYSTEM", "Guest operator access granted. Digital twin preview unlocked.", "info");
   };
@@ -407,8 +414,10 @@ export function GridProvider({ children }: { children: React.ReactNode }) {
     try {
       localStorage.removeItem("smartgrid_auth_user");
       localStorage.removeItem("smartgrid_auth_skipped");
+      sessionStorage.removeItem("smartgrid_auth_user");
+      sessionStorage.removeItem("smartgrid_auth_skipped");
     } catch {}
-    addLog("SYSTEM", "Operator session cleared. Returning to gate.", "info");
+    addLog("SYSTEM", "Operator signed out. Gateway locked.", "warn");
   };
 
   const addLog = (type: LogMessage["type"], message: string, level: LogMessage["level"]) => {
