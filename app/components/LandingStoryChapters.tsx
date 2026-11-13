@@ -94,7 +94,7 @@ export default function LandingStoryChapters() {
     <section id="story-chapters" className="py-24 bg-[#0d1017] text-[#f4f5f8] border-t border-[#1e2638]">
       <div className="max-w-[1700px] mx-auto px-6 sm:px-12">
         {/* Section Header */}
-        <div className="max-w-3xl mb-16">
+        <div className="max-w-3xl mb-16 reveal" data-delay="50">
           <div className="text-xs font-mono tracking-widest text-[#818cf8] uppercase mb-3 flex items-center gap-2">
             <Sparkles className="w-4 h-4" />
             <span>01 / DISCOVER • EDITORIAL LANDING STORY</span>
@@ -109,7 +109,7 @@ export default function LandingStoryChapters() {
         </div>
 
         {/* Chapter Navigation Tabs */}
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 mb-12">
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 mb-12 reveal" data-delay="100">
           {chapters.map((ch, idx) => (
             <button
               key={ch.num}
@@ -136,7 +136,8 @@ export default function LandingStoryChapters() {
             activeChapter === idx + 1 && (
               <div
                 key={ch.num}
-                className="rounded-3xl bg-[#161a25] border border-[#273247] p-8 sm:p-12 shadow-2xl grid grid-cols-1 lg:grid-cols-12 gap-8 items-center"
+                className="rounded-3xl bg-[#161a25] border border-[#273247] p-8 sm:p-12 shadow-2xl grid grid-cols-1 lg:grid-cols-12 gap-8 items-center reveal"
+                data-delay="150"
               >
                 {/* Left Text */}
                 <div className="lg:col-span-7 space-y-6">

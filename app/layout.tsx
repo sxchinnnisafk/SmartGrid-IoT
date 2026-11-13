@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 import { GridProvider } from "./context/GridContext";
 import { ThemeProvider } from "./context/ThemeContext";
+import ScrollRevealObserver from "./components/ScrollRevealObserver";
 
 export const metadata: Metadata = {
   title: "SmartGrid AIoT • Intelligent Power Monitoring & Management System",
@@ -27,9 +28,19 @@ export default function RootLayout({
           rel="stylesheet"
         />
       </head>
-      <body className="font-sans bg-[#12151c] text-[#f4f5f7] min-h-screen antialiased selection:bg-[#3b59f8] selection:text-white">
+      <body className="font-sans bg-[#12151c] text-[#f4f5f8] min-h-screen antialiased selection:bg-[#3b59f8] selection:text-white">
+        {/* Skip Link for Keyboard Accessibility */}
+        <a href="#main-content" className="skip-link">
+          Skip to main content
+        </a>
+
         <ThemeProvider>
-          <GridProvider>{children}</GridProvider>
+          <GridProvider>
+            <ScrollRevealObserver />
+            <div id="main-content" tabIndex={-1} className="outline-none">
+              {children}
+            </div>
+          </GridProvider>
         </ThemeProvider>
       </body>
     </html>

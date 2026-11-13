@@ -57,9 +57,50 @@
   --color-control-lavender: #6366f1;
   --color-control-bg: #e0e7ff;
   --color-control-text: #3730a3;
+
+  /* Easing & Transition timing */
+  --ease-classy: cubic-bezier(0.16, 1, 0.3, 1);
+  --duration-fast: 180ms;
+  --duration-normal: 280ms;
+  --duration-reveal: 600ms;
 }
 
-/* Background Chalk & Landscape Texture */
+/* ==========================================================================
+   Smooth Scroll & Base Focus Styles
+   ========================================================================== */
+html {
+  scroll-behavior: smooth;
+  -webkit-text-size-adjust: 100%;
+}
+
+:focus-visible {
+  outline: 2px solid var(--color-cobalt);
+  outline-offset: 3px;
+  border-radius: 6px;
+}
+
+.skip-link {
+  position: absolute;
+  top: -100px;
+  left: 1rem;
+  padding: 0.5rem 1rem;
+  background: var(--color-cobalt);
+  color: #fff;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  border-radius: 9999px;
+  z-index: 1000;
+  text-decoration: none;
+  transition: top var(--duration-fast) var(--ease-classy);
+}
+
+.skip-link:focus {
+  top: 1rem;
+}
+
+/* ==========================================================================
+   Background Chalk & Landscape Texture
+   ========================================================================== */
 .bg-ink-backdrop {
   background-color: #12151c;
   background-image: 
@@ -86,7 +127,9 @@
     repeating-radial-gradient(circle at 20% 80%, transparent 0, transparent 60px, rgba(180, 165, 145, 0.12) 61px, transparent 63px);
 }
 
-/* Button & Pill Components */
+/* ==========================================================================
+   Button & Pill Components
+   ========================================================================== */
 .pill-button-cobalt {
   display: inline-flex;
   align-items: center;
@@ -98,7 +141,7 @@
   border-radius: 9999px;
   padding: 0.625rem 1.375rem;
   font-size: 0.875rem;
-  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  transition: all var(--duration-fast) var(--ease-classy);
   box-shadow: 0 4px 14px rgba(59, 89, 248, 0.35);
   cursor: pointer;
   border: 1px solid rgba(255, 255, 255, 0.15);
@@ -126,7 +169,7 @@
   padding: 0.625rem 1.375rem;
   font-size: 0.875rem;
   border: 1px solid var(--color-paper-border);
-  transition: all 0.2s ease;
+  transition: all var(--duration-fast) var(--ease-classy);
   cursor: pointer;
 }
 
@@ -137,7 +180,9 @@
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
 }
 
-/* Scrollbar styling */
+/* ==========================================================================
+   Scrollbar styling
+   ========================================================================== */
 ::-webkit-scrollbar {
   width: 6px;
   height: 6px;
@@ -153,7 +198,9 @@
   background: rgba(140, 150, 170, 0.5);
 }
 
-/* Animated radar pulse */
+/* ==========================================================================
+   Subtle Micro-Animations
+   ========================================================================== */
 @keyframes signal-ping {
   0% { transform: scale(0.95); opacity: 0.8; }
   50% { transform: scale(1.15); opacity: 0.4; }
@@ -164,7 +211,6 @@
   animation: signal-ping 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
 }
 
-/* Rover movement pulse */
 @keyframes rover-glow {
   0%, 100% { filter: drop-shadow(0 0 6px rgba(59, 89, 248, 0.6)); }
   50% { filter: drop-shadow(0 0 16px rgba(59, 89, 248, 0.9)); }
@@ -172,4 +218,79 @@
 
 .rover-pulse {
   animation: rover-glow 2s ease-in-out infinite;
+}
+
+/* ==========================================================================
+   Scroll-Driven Reveal Animation System (IntersectionObserver)
+   ========================================================================== */
+.reveal {
+  opacity: 0;
+  transform: translateY(18px);
+  transition: opacity var(--duration-reveal) var(--ease-classy),
+              transform var(--duration-reveal) var(--ease-classy);
+  will-change: opacity, transform;
+}
+
+.reveal.is-revealed {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* Stagger delay helpers */
+.reveal[data-delay="50"] { transition-delay: 50ms; }
+.reveal[data-delay="100"] { transition-delay: 100ms; }
+.reveal[data-delay="150"] { transition-delay: 150ms; }
+.reveal[data-delay="200"] { transition-delay: 200ms; }
+.reveal[data-delay="250"] { transition-delay: 250ms; }
+.reveal[data-delay="300"] { transition-delay: 300ms; }
+
+/* ==========================================================================
+   Page Transitions (View Transition API)
+   ========================================================================== */
+@view-transition {
+  navigation: auto;
+}
+
+::view-transition-old(root) {
+  animation: page-fade-out 220ms var(--ease-classy) forwards;
+}
+
+::view-transition-new(root) {
+  animation: page-fade-in 220ms var(--ease-classy) forwards;
+}
+
+@keyframes page-fade-out {
+  from { opacity: 1; transform: translateY(0); }
+  to { opacity: 0; transform: translateY(-4px); }
+}
+
+@keyframes page-fade-in {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* ==========================================================================
+   Accessibility: Reduced Motion Preference Override
+   ========================================================================== */
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto !important;
+  }
+
+  *, *::before, *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+  }
+
+  .reveal {
+    opacity: 1 !important;
+    transform: none !important;
+    transition: none !important;
+  }
+
+  ::view-transition-old(root),
+  ::view-transition-new(root) {
+    animation: none !important;
+  }
 }

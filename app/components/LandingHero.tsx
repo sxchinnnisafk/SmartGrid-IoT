@@ -97,24 +97,24 @@ export default function LandingHero() {
         {/* Left Editorial Copy */}
         <div className="lg:col-span-5 space-y-8 text-left">
           {/* Kicker */}
-          <div className="text-xs sm:text-sm font-mono tracking-[0.2em] text-[#9ca3af] uppercase">
+          <div className="text-xs sm:text-sm font-mono tracking-[0.2em] text-[#9ca3af] uppercase reveal" data-delay="50">
             SENSING TODAY. A SAFER TOMORROW.
           </div>
 
           {/* Big Editorial Serif Headline */}
-          <h1 className="font-serif text-5xl sm:text-6xl xl:text-7xl font-normal leading-[1.08] tracking-tight text-[#f4f5f8]">
+          <h1 className="font-serif text-5xl sm:text-6xl xl:text-7xl font-normal leading-[1.08] tracking-tight text-[#f4f5f8] reveal" data-delay="100">
             See the grid <br />
             before it becomes <br />
             <span className="italic font-serif">a problem.</span>
           </h1>
 
           {/* Subhead */}
-          <p className="text-base sm:text-lg text-[#9ca3af] font-sans max-w-lg leading-relaxed">
+          <p className="text-base sm:text-lg text-[#9ca3af] font-sans max-w-lg leading-relaxed reveal" data-delay="150">
             From edge sensor to operator action.
           </p>
 
           {/* CTA Pill Button */}
-          <div className="pt-2 flex flex-wrap items-center gap-4">
+          <div className="pt-2 flex flex-wrap items-center gap-4 reveal" data-delay="200">
             <Link
               href="/control-room"
               className="pill-button-cobalt text-base py-3 px-8 shadow-cobalt"
@@ -133,7 +133,7 @@ export default function LandingHero() {
           </div>
 
           {/* Quick Stats / Credibility Callout */}
-          <div className="pt-6 border-t border-[#232a3b] grid grid-cols-3 gap-4 max-w-md font-mono text-xs">
+          <div className="pt-6 border-t border-[#232a3b] grid grid-cols-3 gap-4 max-w-md font-mono text-xs reveal" data-delay="250">
             <div>
               <div className="text-[#818cf8] font-bold text-base">3 Nodes</div>
               <div className="text-[#9ca3af] text-[11px]">Physical Twin Corridor</div>
@@ -150,7 +150,7 @@ export default function LandingHero() {
         </div>
 
         {/* Right Hero Visual: Isometric Grid Scene mirroring landing_page_design_concept.png */}
-        <div className="lg:col-span-7 relative flex items-center justify-center min-h-[460px] sm:min-h-[580px]">
+        <div className="lg:col-span-7 relative flex items-center justify-center min-h-[460px] sm:min-h-[580px] reveal" data-delay="200">
           {/* Top-Right Italic Serif Quote */}
           <div className="absolute top-0 right-4 hidden sm:block text-right">
             <p className="font-serif italic text-base sm:text-lg text-[#d1d5db] tracking-wide">
