@@ -22,6 +22,7 @@ export default function ScrollRevealObserver() {
     ).matches;
 
     const revealElements = document.querySelectorAll<HTMLElement>(".reveal");
+    if (!revealElements || revealElements.length === 0) return;
 
     if (prefersReducedMotion || !("IntersectionObserver" in window)) {
       revealElements.forEach((el) => el.classList.add("is-revealed"));
