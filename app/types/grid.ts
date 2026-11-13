@@ -1,3 +1,11 @@
+export interface UserProfile {
+  name: string;
+  email: string;
+  role: string;
+  avatarText: string;
+  isGuest: boolean;
+}
+
 export type NodeStatus = "normal" | "warning" | "critical";
 
 export interface GridNodeData {

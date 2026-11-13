@@ -10,6 +10,7 @@ import {
   LogMessage,
   WorkflowNodeItem,
   ChatMessage,
+  UserProfile,
 } from "../types/grid";
 
 interface GridContextType {
@@ -65,6 +66,16 @@ interface GridContextType {
   isPlayingVoice: boolean;
   toggleVoicePlayback: () => void;
   voiceProgress: number;
+
+  // Authentication & Guest Operator state
+  user: UserProfile | null;
+  isAuthenticated: boolean;
+  hasSkippedAuth: boolean;
+  isAuthLoaded: boolean;
+  login: (email: string, name?: string, role?: string) => void;
+  register: (name: string, email: string, role?: string) => void;
+  skipAuth: () => void;
+  logout: () => void;
 
   // Active view tab (for unified navigation)
   activeTab: "control-room" | "chat" | "workflow" | "artifacts";
@@ -309,6 +320,96 @@ export function GridProvider({ children }: { children: React.ReactNode }) {
 
   // Active view tab: control-room | chat | workflow | artifacts
   const [activeTab, setActiveTab] = useState<"control-room" | "chat" | "workflow" | "artifacts">("control-room");
+
+  // User profile & Auth gate state
+  const [user, setUser] = useState<UserProfile | null>(null);
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
+  const [hasSkippedAuth, setHasSkippedAuth] = useState<boolean>(false);
+  const [isAuthLoaded, setIsAuthLoaded] = useState<boolean>(false);
+
+  // Sync auth state from localStorage on mount (hydration-safe)
+  useEffect(() => {
+    try {
+      const storedUser = localStorage.getItem("smartgrid_auth_user");
+      const storedSkipped = localStorage.getItem("smartgrid_auth_skipped");
+      if (storedUser) {
+        const parsed = JSON.parse(storedUser);
+        setUser(parsed);
+        setIsAuthenticated(true);
+      } else if (storedSkipped === "true") {
+        setHasSkippedAuth(true);
+        setUser({
+          name: "Guest Operator",
+          email: "guest@smartgrid.io",
+          role: "Field Observer",
+          avatarText: "GO",
+          isGuest: true,
+        });
+      }
+    } catch {
+      // Local storage fallback
+    } finally {
+      setIsAuthLoaded(true);
+    }
+  }, []);
+
+  const login = (email: string, name?: string, role?: string) => {
+    const displayName = name || (email.includes("@") ? email.split("@")[0] : "Jordan Diaz");
+    const avatar = displayName
+      .split(" ")
+      .map((w) => w[0])
+      .join("")
+      .toUpperCase()
+      .slice(0, 2) || "JD";
+    const newUser: UserProfile = {
+      name: displayName,
+      email,
+      role: role || "Grid Operations",
+      avatarText: avatar,
+      isGuest: false,
+    };
+    setUser(newUser);
+    setIsAuthenticated(true);
+    setHasSkippedAuth(false);
+    try {
+      localStorage.setItem("smartgrid_auth_user", JSON.stringify(newUser));
+      localStorage.removeItem("smartgrid_auth_skipped");
+    } catch {}
+    addLog("SYSTEM", `Operator ${displayName} (${newUser.role}) authenticated successfully.`, "success");
+  };
+
+  const register = (name: string, email: string, role?: string) => {
+    login(email, name, role || "Grid Operations Lead");
+  };
+
+  const skipAuth = () => {
+    const guestUser: UserProfile = {
+      name: "Guest Operator",
+      email: "guest@smartgrid.io",
+      role: "Observer Access",
+      avatarText: "GO",
+      isGuest: true,
+    };
+    setUser(guestUser);
+    setHasSkippedAuth(true);
+    setIsAuthenticated(false);
+    try {
+      localStorage.setItem("smartgrid_auth_skipped", "true");
+      localStorage.removeItem("smartgrid_auth_user");
+    } catch {}
+    addLog("SYSTEM", "Guest operator access granted. Digital twin preview unlocked.", "info");
+  };
+
+  const logout = () => {
+    setUser(null);
+    setIsAuthenticated(false);
+    setHasSkippedAuth(false);
+    try {
+      localStorage.removeItem("smartgrid_auth_user");
+      localStorage.removeItem("smartgrid_auth_skipped");
+    } catch {}
+    addLog("SYSTEM", "Operator session cleared. Returning to gate.", "info");
+  };
 
   const addLog = (type: LogMessage["type"], message: string, level: LogMessage["level"]) => {
     const newLog: LogMessage = {
@@ -681,6 +782,16 @@ export function GridProvider({ children }: { children: React.ReactNode }) {
         isPlayingVoice,
         toggleVoicePlayback,
         voiceProgress,
+
+        // Auth state
+        user,
+        isAuthenticated,
+        hasSkippedAuth,
+        isAuthLoaded,
+        login,
+        register,
+        skipAuth,
+        logout,
 
         activeTab,
         setActiveTab,

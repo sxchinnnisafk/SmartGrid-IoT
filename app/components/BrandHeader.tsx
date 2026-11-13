@@ -1,8 +1,8 @@
 "use client";
 
-import React from "react";
+import React, { useState } from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useGrid } from "../context/GridContext";
 import {
   Bell,
@@ -14,7 +14,8 @@ import {
   PlayCircle,
   Camera,
   Layers,
-  ShieldAlert,
+  LogOut,
+  UserCheck,
 } from "lucide-react";
 
 interface BrandHeaderProps {
@@ -27,6 +28,7 @@ export default function BrandHeader({
   variant = "control-room",
 }: BrandHeaderProps) {
   const pathname = usePathname();
+  const router = useRouter();
   const {
     isThermalFaultActive,
     triggerThermalFault,
@@ -35,11 +37,22 @@ export default function BrandHeader({
     startEndToEndDemo,
     activeTab,
     setActiveTab,
+    user,
+    logout,
   } = useGrid();
 
-  const isControlRoom = pathname === "/control-room" || activeTab === "control-room";
-  const isAssistant = pathname === "/ai-assistant" || activeTab === "chat";
-  const isWorkflow = pathname === "/workflow" || activeTab === "workflow";
+  const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
+
+  const displayName = user?.name || "Jordan Diaz";
+  const displayRole = user?.role || "Grid Operations";
+  const displayAvatar = user?.avatarText || "JD";
+  const isGuest = user?.isGuest ?? false;
+
+  const handleSignOut = () => {
+    logout();
+    setIsUserMenuOpen(false);
+    router.push("/signin");
+  };
 
   return (
     <header className="sticky top-0 z-50 bg-[#12151c]/95 backdrop-blur-md border-b border-[#242b3b] px-4 lg:px-8 py-3 text-[#f4f5f8]">
@@ -170,22 +183,61 @@ export default function BrandHeader({
             </button>
           </div>
 
-          {/* Operator Status Pill */}
-          <div className="hidden md:flex items-center gap-2 px-3 py-1.5 rounded-full bg-[#181c26] border border-[#283144] text-xs">
-            <span className="w-2 h-2 rounded-full bg-[#22c55e] animate-pulse" />
-            <span className="text-[#e2e8f0] font-medium">Operator</span>
-            <ChevronDown className="w-3.5 h-3.5 text-[#8e97a9]" />
-          </div>
+          {/* Profile Dropdown */}
+          <div className="relative">
+            <button
+              onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
+              className="flex items-center gap-2.5 p-1 rounded-full hover:bg-[#1a2130] transition-colors"
+            >
+              {/* Operator Status Pill */}
+              <div className="hidden md:flex items-center gap-2 px-3 py-1.5 rounded-full bg-[#181c26] border border-[#283144] text-xs">
+                <span className={`w-2 h-2 rounded-full ${isGuest ? "bg-[#f59e0b]" : "bg-[#22c55e]"} animate-pulse`} />
+                <span className="text-[#e2e8f0] font-medium">{isGuest ? "Guest" : "Operator"}</span>
+                <ChevronDown className="w-3.5 h-3.5 text-[#8e97a9]" />
+              </div>
 
-          {/* Profile Avatar Badge */}
-          <div className="flex items-center gap-2.5 pl-1">
-            <div className="w-8 h-8 rounded-full bg-[#262f44] border border-[#3d4b6b] flex items-center justify-center text-xs font-bold text-white tracking-wider">
-              JD
-            </div>
-            <div className="hidden 2xl:block text-left text-xs leading-tight">
-              <div className="font-semibold text-white">Jordan Diaz</div>
-              <div className="text-[10px] text-[#8e97a9]">Grid Operations</div>
-            </div>
+              {/* Profile Avatar Badge */}
+              <div className="w-8 h-8 rounded-full bg-[#262f44] border border-[#3d4b6b] flex items-center justify-center text-xs font-bold text-white tracking-wider">
+                {displayAvatar}
+              </div>
+
+              <div className="hidden 2xl:block text-left text-xs leading-tight">
+                <div className="font-semibold text-white">{displayName}</div>
+                <div className="text-[10px] text-[#8e97a9]">{displayRole}</div>
+              </div>
+            </button>
+
+            {/* Dropdown Menu */}
+            {isUserMenuOpen && (
+              <div className="absolute right-0 top-12 z-50 w-56 rounded-2xl bg-[#181d2a] border border-[#2c374d] p-3 text-xs font-mono shadow-2xl">
+                <div className="px-3 py-2 border-b border-[#263145] mb-2">
+                  <div className="font-bold text-white">{displayName}</div>
+                  <div className="text-[10px] text-[#93c5fd]">{displayRole}</div>
+                  {isGuest && (
+                    <div className="mt-1 text-[10px] text-[#f59e0b]">
+                      ● Guest Session Active
+                    </div>
+                  )}
+                </div>
+
+                <Link
+                  href="/signin"
+                  onClick={() => setIsUserMenuOpen(false)}
+                  className="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-[#cbd5e1] hover:bg-[#253046] hover:text-white transition-colors"
+                >
+                  <UserCheck className="w-3.5 h-3.5 text-[#3b59f8]" />
+                  <span>Switch / Sign In</span>
+                </Link>
+
+                <button
+                  onClick={handleSignOut}
+                  className="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-[#ef4444] hover:bg-[#ef4444]/15 transition-colors mt-1"
+                >
+                  <LogOut className="w-3.5 h-3.5 text-[#ef4444]" />
+                  <span>Exit Session (Gate)</span>
+                </button>
+              </div>
+            )}
           </div>
         </div>
       </div>
