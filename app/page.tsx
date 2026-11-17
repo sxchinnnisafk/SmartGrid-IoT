@@ -34,13 +34,13 @@ export default function LandingPage() {
     );
   }
 
-  // Once authenticated or skipped, present the main landing page and 6-chapter editorial story
+  // Once authenticated or skipped, present the main landing page and 4-chapter editorial story
   return (
     <div className="min-h-screen bg-ink text-ink-text flex flex-col page-enter">
       {/* 1. Pixel-Perfect Landing Hero matching landing_page_design_concept.png */}
       <LandingHero />
 
-      {/* 2. Six-Chapter Visual Editorial Story from PDF Page 7 */}
+      {/* 2. Four-Chapter Visual Editorial Story */}
       <LandingStoryChapters />
 
       {/* Modals */}

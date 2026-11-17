@@ -101,7 +101,7 @@ export default function BrandHeader({
     {
       id: "nav-landing",
       label: "Go to Landing Story",
-      hint: "Overview & 6 chapters",
+      hint: "Overview & 4 chapters",
       action: () => router.push("/"),
     },
     {

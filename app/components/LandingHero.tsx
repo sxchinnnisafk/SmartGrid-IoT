@@ -212,7 +212,7 @@ export default function LandingHero() {
               href="#story-chapters"
               className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-ink-card hover:bg-ink-hover text-sm text-ink-secondary font-sans font-medium border border-ink-border transition-colors"
             >
-              <span>Explore 6-Chapter Story</span>
+              <span>Explore 4-Chapter Story</span>
               <ChevronRight className="w-4 h-4 text-cobalt-soft" aria-hidden="true" />
             </a>
           </div>

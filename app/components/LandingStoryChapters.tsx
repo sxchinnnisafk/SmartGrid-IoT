@@ -10,11 +10,8 @@ import {
   Volume2,
   Play,
   Pause,
-  ShieldCheck,
   Cpu,
   Radio,
-  Zap,
-  Globe,
   Layers,
 } from "lucide-react";
 
@@ -23,8 +20,6 @@ export default function LandingStoryChapters() {
     nodes,
     rover,
     isThermalFaultActive,
-    isBreakerIsolated,
-    toggleBreakerIsolation,
     isPlayingVoice,
     toggleVoicePlayback,
     voiceProgress,
@@ -34,7 +29,7 @@ export default function LandingStoryChapters() {
   const [scrollProgress, setScrollProgress] = useState<number>(0);
   const sectionRef = useRef<HTMLElement | null>(null);
 
-  // Scroll-linked reading progress hairline across the 6-chapter story
+  // Scroll-linked reading progress hairline across the 4-chapter story
   useEffect(() => {
     let rafId: number | null = null;
 
@@ -156,32 +151,6 @@ export default function LandingStoryChapters() {
         "AI explains and recommends. The human operator retains full authority over all switching and isolation actions.",
       tag: "AI & Voice",
       citation: "Human-in-the-Loop Operational Architecture",
-    },
-    {
-      num: "05",
-      id: "chapter-05",
-      shortTitle: "Operator Flow",
-      title: "Human-Approved Response",
-      subtitle: "Free-form visual workflow canvas for safe execution",
-      content:
-        "Response steps are arranged, reviewed, and published through a visual canvas. Operators confirm breaker isolation, halt rover motion, and trigger dispatch briefs. Breaker isolation and load rerouting are simulated on an isolated low-voltage tabletop setup.",
-      highlight:
-        "Tabletop simulation boundary: Safe, low-voltage educational demonstration with no direct mains or live utility grid connection.",
-      tag: "Operator Workflow",
-      citation: "Power Hack 2026 Safety & Simulation Boundary",
-    },
-    {
-      num: "06",
-      id: "chapter-06",
-      shortTitle: "Tabletop to Utility",
-      title: "Tabletop to Utility",
-      subtitle: "Staged scalability supporting UN Sustainable Development Goals",
-      content:
-        "The modular architecture supports phased expansion: from a 3-node tabletop demo to an instrumented pilot on an isolated test rig, and ultimately to a utility-reviewed field pilot. Aligned with UN SDGs 7 (Affordable and Clean Energy), 9 (Industry, Innovation and Infrastructure), and 11 (Sustainable Cities and Communities).",
-      highlight:
-        "Advancing UN SDGs 7, 9, and 11 through open, modular, intelligent energy monitoring.",
-      tag: "Scalability & SDGs",
-      citation: "UN Sustainable Development Goals (Goals 7, 9, 11)",
     },
   ];
 
@@ -345,7 +314,7 @@ export default function LandingStoryChapters() {
           </div>
         );
 
-      case 4:
+      default:
         return (
           <div className="space-y-4">
             <div className="flex items-center justify-between border-b border-ink-border pb-3">
@@ -397,103 +366,6 @@ export default function LandingStoryChapters() {
               <Link href="/ai-assistant" className="text-cobalt-soft hover:underline font-medium">
                 Open AI Assistant
               </Link>
-            </div>
-          </div>
-        );
-
-      case 5:
-        return (
-          <div className="space-y-4">
-            <div className="flex items-center justify-between border-b border-ink-border pb-3">
-              <span className="text-xs font-sans font-medium text-ink-secondary flex items-center gap-2">
-                <ShieldCheck className="w-4 h-4 text-signal-normalBright" aria-hidden="true" />
-                Human-in-the-Loop Interlock
-              </span>
-              <span className="text-xs font-sans font-medium text-signal-normalBright">Low-Voltage Sim</span>
-            </div>
-
-            <div className="p-4 rounded-2xl bg-parchment text-parchment-text border border-parchment-border space-y-3">
-              <div className="flex items-center justify-between">
-                <div>
-                  <div className="font-semibold text-sm">Breaker SC-12 Isolation</div>
-                  <div className="text-xs text-parchment-muted">Node C simulated contactor</div>
-                </div>
-                <button
-                  type="button"
-                  onClick={toggleBreakerIsolation}
-                  className={`px-3 py-1.5 rounded-full text-xs font-semibold transition-colors ${
-                    isBreakerIsolated
-                      ? "bg-cobalt text-ink-onAccent"
-                      : "bg-parchment-dark text-parchment-text border border-parchment-borderStrong"
-                  }`}
-                >
-                  {isBreakerIsolated ? "Armed" : "Standby"}
-                </button>
-              </div>
-              <p className="text-xs text-parchment-secondary leading-relaxed">
-                AI recommends switching steps, while the operator reviews and explicitly publishes every circuit action.
-              </p>
-            </div>
-
-            <div className="flex items-center justify-between text-xs px-1">
-              <span className="text-ink-muted">No live utility mains connection</span>
-              <Link href="/workflow" className="text-cobalt-soft hover:underline font-medium">
-                Open Workflow Canvas
-              </Link>
-            </div>
-          </div>
-        );
-
-      default:
-        return (
-          <div className="space-y-4">
-            <div className="flex items-center justify-between border-b border-ink-border pb-3">
-              <span className="text-xs font-sans font-medium text-ink-secondary flex items-center gap-2">
-                <Globe className="w-4 h-4 text-signal-normalBright" aria-hidden="true" />
-                Phased Scalability & UN SDGs
-              </span>
-              <span className="text-xs font-sans font-medium text-cobalt-soft">SDGs 7, 9, 11</span>
-            </div>
-
-            <div className="space-y-2.5 text-xs">
-              <div className="p-3 rounded-xl bg-ink-card border border-cobalt-border flex items-center justify-between">
-                <div>
-                  <div className="font-semibold text-ink-text">Stage 1: Tabletop Twin</div>
-                  <div className="text-ink-muted">3-node corridor + ESP32-S3 rover</div>
-                </div>
-                <span className="px-2 py-0.5 rounded bg-signal-normalBg text-signal-normalText font-semibold">
-                  Active
-                </span>
-              </div>
-              <div className="p-3 rounded-xl bg-ink-card border border-ink-border flex items-center justify-between">
-                <div>
-                  <div className="font-semibold text-ink-text">Stage 2: Instrumented Test Rig</div>
-                  <div className="text-ink-muted">Isolated lab switchgear sensors</div>
-                </div>
-                <span className="text-ink-muted font-sans">Next</span>
-              </div>
-              <div className="p-3 rounded-xl bg-ink-card border border-ink-border flex items-center justify-between">
-                <div>
-                  <div className="font-semibold text-ink-text">Stage 3: Utility Field Pilot</div>
-                  <div className="text-ink-muted">Reviewed feeder deployment</div>
-                </div>
-                <span className="text-ink-muted font-sans">Planned</span>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-3 gap-2 text-center text-xs">
-              <div className="p-2 rounded-xl bg-parchment text-parchment-text font-semibold">
-                <Zap className="w-3.5 h-3.5 mx-auto mb-1 text-cobalt" aria-hidden="true" />
-                SDG 7
-              </div>
-              <div className="p-2 rounded-xl bg-parchment text-parchment-text font-semibold">
-                <Cpu className="w-3.5 h-3.5 mx-auto mb-1 text-cobalt" aria-hidden="true" />
-                SDG 9
-              </div>
-              <div className="p-2 rounded-xl bg-parchment text-parchment-text font-semibold">
-                <Globe className="w-3.5 h-3.5 mx-auto mb-1 text-cobalt" aria-hidden="true" />
-                SDG 11
-              </div>
             </div>
           </div>
         );
@@ -559,23 +431,23 @@ export default function LandingStoryChapters() {
       <div id="solutions" className="scroll-mt-20 max-w-[1440px] mx-auto px-6 sm:px-10 pt-16 pb-10">
         <div className="max-w-2xl reveal" data-delay="50">
           <p className="text-sm font-sans font-medium text-cobalt-soft mb-2">
-            Six-chapter scroll story
+            Four-chapter scroll story
           </p>
           <h2 className="font-serif text-4xl sm:text-5xl font-normal tracking-tight text-ink-text leading-tight break-words min-w-0">
             A grid story, made visible.
           </h2>
           <p className="mt-3 text-base text-ink-muted leading-relaxed">
-            Scroll smoothly through the prototype journey from edge sensing to network visibility and operator-approved response.
+            Scroll smoothly through the prototype journey from edge sensing to network visibility and AI-assisted diagnostics.
           </p>
         </div>
       </div>
 
-      {/* Sequential Scroll-Driven Editorial Chapters */}
+      {/* Sequential Scroll-Driven Editorial Chapters (01 to 04) */}
       <div className="max-w-[1440px] mx-auto px-6 sm:px-10 pb-24 space-y-12 sm:space-y-16">
         {chapters.map((ch, idx) => {
           const chapterNum = idx + 1;
           const isEven = chapterNum % 2 === 0;
-          const isImpact = chapterNum === 6;
+          const isImpact = chapterNum === 4;
           const nextChapter = chapters[idx + 1];
 
           return (
@@ -585,7 +457,7 @@ export default function LandingStoryChapters() {
               data-chapter-band={chapterNum}
               className="scroll-mt-24 rounded-3xl bg-ink-surface border border-ink-border p-7 sm:p-10 shadow-xl grid grid-cols-1 lg:grid-cols-12 gap-8 items-stretch reveal"
             >
-              {/* Anchor alias for chapter-06 when id="impact" is on the article */}
+              {/* Anchor alias for chapter-04 when id="impact" is on the article */}
               {isImpact && (
                 <span id={ch.id} className="sr-only" aria-hidden="true" />
               )}
