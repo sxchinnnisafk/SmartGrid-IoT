@@ -1,6 +1,6 @@
 "use client";
 
-import React, { createContext, useContext, useState, useEffect, useMemo } from "react";
+import React, { createContext, useContext, useState, useEffect, useMemo, useRef } from "react";
 import {
   GridNodeData,
   ThresholdConfig,
@@ -43,9 +43,16 @@ interface GridContextType {
   testWorkflow: () => void;
   publishWorkflow: () => void;
 
-  // Chat & AI Assistant state
+  // Chat & AI Assistant state (Gemini + OpenRouter + Fallback)
   chatMessages: ChatMessage[];
   sendChatMessage: (text: string) => void;
+  isChatLoading: boolean;
+  aiStatus: {
+    gemini: boolean;
+    elevenLabs: boolean;
+    provider: string;
+    model: string;
+  };
   activeChatId: string;
   setActiveChatId: (id: string) => void;
 
@@ -62,10 +69,15 @@ interface GridContextType {
   isEvidenceModalOpen: boolean;
   setIsEvidenceModalOpen: (open: boolean) => void;
 
-  // Audio Dispatch Player
+  // Audio Dispatch & ElevenLabs Voice Player
   isPlayingVoice: boolean;
   toggleVoicePlayback: () => void;
   voiceProgress: number;
+  speakingMessageId: string | null;
+  speakText: (text: string, messageId?: string) => Promise<void>;
+  stopSpeaking: () => void;
+  autoReadVoice: boolean;
+  setAutoReadVoice: React.Dispatch<React.SetStateAction<boolean>>;
 
   // Authentication & Guest Operator state
   user: UserProfile | null;
@@ -306,7 +318,47 @@ export function GridProvider({ children }: { children: React.ReactNode }) {
   const [isBreakerIsolated, setIsBreakerIsolated] = useState<boolean>(true);
   const [isWorkflowExecuting, setIsWorkflowExecuting] = useState<boolean>(false);
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>(initialChatMessages);
+  const [isChatLoading, setIsChatLoading] = useState<boolean>(false);
+  const [aiStatus, setAiStatus] = useState<{
+    gemini: boolean;
+    elevenLabs: boolean;
+    provider: string;
+    model: string;
+  }>({
+    gemini: false,
+    elevenLabs: false,
+    provider: "fallback",
+    model: "local-telemetry",
+  });
   const [activeChatId, setActiveChatId] = useState<string>("chat-today-node-c");
+  const [speakingMessageId, setSpeakingMessageId] = useState<string | null>(null);
+  const [autoReadVoice, setAutoReadVoice] = useState<boolean>(false);
+
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+  const audioUrlRef = useRef<string | null>(null);
+  const fallbackTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  // Check Gemini & ElevenLabs API configuration status once on mount
+  useEffect(() => {
+    let active = true;
+    fetch("/api/status")
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (!active || !data) return;
+        setAiStatus({
+          gemini: Boolean(data.gemini),
+          elevenLabs: Boolean(data.elevenLabs),
+          provider: String(data.provider || "fallback"),
+          model: String(data.model || "local-telemetry"),
+        });
+      })
+      .catch(() => {
+        // Keep safe defaults
+      });
+    return () => {
+      active = false;
+    };
+  }, []);
 
   // 5-Step Demo Controller State
   const [currentDemoStep, setCurrentDemoStep] = useState<number>(1);
@@ -489,86 +541,209 @@ export function GridProvider({ children }: { children: React.ReactNode }) {
     alert("Workflow published! Commands dispatched to ESP32-S3 Rover and edge controllers.");
   };
 
+  const stopSpeaking = () => {
+    if (audioRef.current) {
+      audioRef.current.pause();
+      audioRef.current.currentTime = 0;
+      audioRef.current = null;
+    }
+    if (audioUrlRef.current) {
+      URL.revokeObjectURL(audioUrlRef.current);
+      audioUrlRef.current = null;
+    }
+    if (fallbackTimerRef.current) {
+      clearInterval(fallbackTimerRef.current);
+      fallbackTimerRef.current = null;
+    }
+    if (typeof window !== "undefined" && "speechSynthesis" in window) {
+      window.speechSynthesis.cancel();
+    }
+    setIsPlayingVoice(false);
+    setSpeakingMessageId(null);
+    setVoiceProgress(0);
+  };
+
+  const speakText = async (text: string, messageId?: string) => {
+    const cleanText = text.trim();
+    if (!cleanText) return;
+
+    // Toggle off if already playing the same message
+    if (isPlayingVoice && (!messageId || speakingMessageId === messageId)) {
+      stopSpeaking();
+      return;
+    }
+
+    stopSpeaking();
+    setIsPlayingVoice(true);
+    setSpeakingMessageId(messageId || "dispatch-preview");
+    setVoiceProgress(0);
+
+    try {
+      const res = await fetch("/api/tts", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ text: cleanText }),
+      });
+
+      if (res.ok && res.headers.get("content-type")?.includes("audio")) {
+        const blob = await res.blob();
+        const url = URL.createObjectURL(blob);
+        audioUrlRef.current = url;
+        const audio = new Audio(url);
+        audioRef.current = audio;
+
+        addLog("SYSTEM", "Playing ElevenLabs synthesized voice audio.", "success");
+
+        audio.ontimeupdate = () => {
+          if (audio.duration && Number.isFinite(audio.duration)) {
+            setVoiceProgress(Math.min(18, Math.round((audio.currentTime / audio.duration) * 18)));
+          }
+        };
+        audio.onended = () => {
+          stopSpeaking();
+        };
+        audio.onerror = () => {
+          stopSpeaking();
+        };
+
+        await audio.play();
+        return;
+      }
+    } catch {
+      // Fall through to Web Speech / visual timer fallback
+    }
+
+    // Graceful fallback: Browser Web Speech API + progress timer when ELEVENLABS_API_KEY is not set
+    addLog("SYSTEM", "ElevenLabs key not configured; using browser voice fallback.", "info");
+    if (typeof window !== "undefined" && "speechSynthesis" in window) {
+      const utterance = new SpeechSynthesisUtterance(cleanText);
+      utterance.rate = 1.02;
+      utterance.onend = () => stopSpeaking();
+      utterance.onerror = () => stopSpeaking();
+      window.speechSynthesis.speak(utterance);
+    }
+
+    fallbackTimerRef.current = setInterval(() => {
+      setVoiceProgress((p) => {
+        if (p >= 18) {
+          stopSpeaking();
+          return 0;
+        }
+        return p + 1;
+      });
+    }, 1000);
+  };
+
+  // Cleanup audio resources on unmount
+  useEffect(() => {
+    return () => {
+      stopSpeaking();
+    };
+  }, []);
+
   const sendChatMessage = (text: string) => {
-    if (!text.trim()) return;
+    const trimmed = text.trim();
+    if (!trimmed) return;
 
     const userMsg: ChatMessage = {
       id: `msg-${Date.now()}`,
       sender: "user",
-      senderName: "Jordan Diaz",
-      avatarText: "JD",
+      senderName: user?.name || "Jordan Diaz",
+      avatarText: user?.avatarText || "JD",
       timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
-      content: text,
+      content: trimmed,
     };
 
+    const historyPayload = chatMessages.slice(-8).map((m) => ({
+      sender: m.sender,
+      content: m.content,
+    }));
+
     setChatMessages((prev) => [...prev, userMsg]);
-    addLog("SYSTEM", `Operator queried AI Assistant: "${text}"`, "info");
+    setIsChatLoading(true);
+    addLog("SYSTEM", `Operator queried AI Assistant: "${trimmed}"`, "info");
 
-    // Simulate intelligent context-aware reply
-    setTimeout(() => {
-      let replyContent = "I have cross-checked recent telemetry with IEEE distribution guidelines. ";
-      let recommendations: string[] | undefined;
-      let isCritical = false;
+    fetch("/api/chat", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        message: trimmed,
+        history: historyPayload,
+        gridContext: {
+          nodes,
+          rover,
+          isThermalFaultActive,
+          isBreakerIsolated,
+          activeAlertsCount: alerts.filter((a) => a.status === "ACTIVE").length,
+        },
+      }),
+    })
+      .then((res) => (res.ok ? res.json() : Promise.reject(new Error(`HTTP ${res.status}`))))
+      .then((data) => {
+        const replyText =
+          typeof data.reply === "string" && data.reply.trim()
+            ? data.reply.trim()
+            : "Telemetry analyzed. All three corridor nodes remain under active supervision.";
 
-      if (text.toLowerCase().includes("node c") || text.toLowerCase().includes("risk") || text.toLowerCase().includes("thermal")) {
-        replyContent =
-          "Node C remains in a critical thermal state (102°C). Coil winding degradation risk is elevated. Recommended response sequence is active.";
-        recommendations = [
-          "Isolate Node C breaker to prevent physical coil damage.",
-          "Hold Rover R-1 at Node B waypoint.",
-          "Reroute 26MW to Node A and Node B feeders.",
-          "Dispatch emergency maintenance team with standard kit.",
-        ];
-        isCritical = true;
-      } else if (text.toLowerCase().includes("patrol") || text.toLowerCase().includes("rover")) {
-        replyContent =
-          "ESP32-S3 Rover R-1 is currently patrolling between Node B and Node C at 1.8 m/s. Battery is at 89%. Optical TFT displays live telemetry eyes.";
-      } else {
-        replyContent =
-          "Grid status across all 3 nodes is being continuously monitored. Node A is stable (Baseline), Node B is handling evening EV peak load, and Node C has an active simulated fault ticket.";
-      }
+        const aiMsgId = `msg-${Date.now() + 1}`;
+        const aiMsg: ChatMessage = {
+          id: aiMsgId,
+          sender: "assistant",
+          senderName: data.provider === "gemini" ? "SmartGrid AI (Gemini)" : "SmartGrid AI",
+          timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+          content: replyText,
+          isCriticalAlert: Boolean(data.isCriticalAlert),
+          recommendations: Array.isArray(data.recommendations) && data.recommendations.length > 0
+            ? data.recommendations
+            : undefined,
+          workflowCard: data.suggestWorkflow
+            ? {
+                title: "Fault response workflow",
+                description: "Pre-filled with recommended actions for Node C.",
+                buttonText: "Open in Workflow",
+              }
+            : undefined,
+        };
 
-      const aiMsg: ChatMessage = {
-        id: `msg-${Date.now() + 1}`,
-        sender: "assistant",
-        senderName: "SmartGrid AI",
-        timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
-        content: replyContent,
-        isCriticalAlert: isCritical,
-        recommendations,
-      };
-
-      setChatMessages((prev) => [...prev, aiMsg]);
-    }, 900);
+        setChatMessages((prev) => [...prev, aiMsg]);
+        if (data.provider === "gemini" || data.provider === "openrouter") {
+          addLog("SYSTEM", `AI reply generated via ${data.provider} (${data.model}).`, "success");
+        }
+        if (autoReadVoice) {
+          void speakText(replyText, aiMsgId);
+        }
+      })
+      .catch(() => {
+        const fallbackMsg: ChatMessage = {
+          id: `msg-${Date.now() + 1}`,
+          sender: "assistant",
+          senderName: "SmartGrid AI",
+          timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+          content:
+            "Unable to reach the AI endpoint right now. Local corridor telemetry shows Node A stable, Node B elevated load, and Node C under monitoring.",
+        };
+        setChatMessages((prev) => [...prev, fallbackMsg]);
+        addLog("SYSTEM", "AI endpoint unreachable; served local telemetry summary.", "warn");
+      })
+      .finally(() => {
+        setIsChatLoading(false);
+      });
   };
 
-  // Voice playback timer simulation
+  // Voice dispatch preview player (uses ElevenLabs API when configured)
   const toggleVoicePlayback = () => {
     if (isPlayingVoice) {
-      setIsPlayingVoice(false);
-      setVoiceProgress(0);
-    } else {
-      setIsPlayingVoice(true);
-      setVoiceProgress(0);
-      addLog("SYSTEM", "Playing ElevenLabs voice dispatch alert audio preview (18s)...", "info");
+      stopSpeaking();
+      return;
     }
+    const nodeC = nodes.find((n) => n.id === "node-c");
+    const dispatchScript = `Dispatching field crew to Node C. Thermal fault confirmed at ${
+      nodeC?.temperature ?? 102
+    } degrees Celsius on Industrial Transformer. Breaker SC-12 isolation ${
+      isBreakerIsolated ? "is armed" : "is standing by"
+    }. Bring standard repair kit.`;
+    void speakText(dispatchScript, "dispatch-preview");
   };
-
-  useEffect(() => {
-    let timer: NodeJS.Timeout;
-    if (isPlayingVoice) {
-      timer = setInterval(() => {
-        setVoiceProgress((p) => {
-          if (p >= 18) {
-            setIsPlayingVoice(false);
-            return 0;
-          }
-          return p + 1;
-        });
-      }, 1000);
-    }
-    return () => clearInterval(timer);
-  }, [isPlayingVoice]);
 
   // 5-Step End-to-End Demo Sequence (from PDF Page 6)
   const runDemoStep = (step: number) => {
@@ -747,6 +922,8 @@ export function GridProvider({ children }: { children: React.ReactNode }) {
 
         chatMessages,
         sendChatMessage,
+        isChatLoading,
+        aiStatus,
         activeChatId,
         setActiveChatId,
 
@@ -764,6 +941,11 @@ export function GridProvider({ children }: { children: React.ReactNode }) {
         isPlayingVoice,
         toggleVoicePlayback,
         voiceProgress,
+        speakingMessageId,
+        speakText,
+        stopSpeaking,
+        autoReadVoice,
+        setAutoReadVoice,
 
         // Auth state
         user,

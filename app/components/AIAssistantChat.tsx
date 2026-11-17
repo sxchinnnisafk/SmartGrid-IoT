@@ -10,6 +10,10 @@ import {
   Paperclip,
   Mic,
   Send,
+  Volume2,
+  VolumeX,
+  Square,
+  Loader2,
 } from "lucide-react";
 
 interface AIAssistantChatProps {
@@ -24,17 +28,29 @@ const QUICK_PROMPTS = [
 
 export default function AIAssistantChat({ onSwitchToWorkflow }: AIAssistantChatProps) {
   const router = useRouter();
-  const { chatMessages, sendChatMessage, setActiveTab } = useGrid();
+  const {
+    chatMessages,
+    sendChatMessage,
+    isChatLoading,
+    aiStatus,
+    setActiveTab,
+    isPlayingVoice,
+    speakingMessageId,
+    speakText,
+    stopSpeaking,
+    autoReadVoice,
+    setAutoReadVoice,
+  } = useGrid();
   const [inputText, setInputText] = useState("");
   const streamEndRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
     streamEndRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
-  }, [chatMessages.length]);
+  }, [chatMessages.length, isChatLoading]);
 
   const handleSend = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!inputText.trim()) return;
+    if (!inputText.trim() || isChatLoading) return;
     sendChatMessage(inputText);
     setInputText("");
   };
@@ -50,7 +66,7 @@ export default function AIAssistantChat({ onSwitchToWorkflow }: AIAssistantChatP
   return (
     <div className="flex-1 min-w-0 rounded-3xl bg-parchment border border-parchment-border text-parchment-text shadow-parchment p-5 xl:p-6 flex flex-col justify-between overflow-hidden">
       <div className="min-w-0">
-        {/* Header */}
+        {/* Header with Live Gemini & ElevenLabs Status */}
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 pb-3.5 mb-3.5 border-b border-parchment-border">
           <div className="min-w-0">
             <h1 className="font-serif text-2xl xl:text-3xl font-normal text-parchment-text tracking-tight">
@@ -61,8 +77,48 @@ export default function AIAssistantChat({ onSwitchToWorkflow }: AIAssistantChatP
             </p>
           </div>
 
-          <div className="text-xs font-sans text-parchment-muted shrink-0">
-            Real-time diagnostic advisor
+          <div className="flex flex-wrap items-center gap-2 shrink-0">
+            <span
+              className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-sans font-semibold border ${
+                aiStatus.gemini
+                  ? "bg-signal-normalBg text-signal-normalText border-signal-normalBorder"
+                  : "bg-parchment-light text-parchment-secondary border-parchment-borderStrong"
+              }`}
+              title={
+                aiStatus.gemini
+                  ? `Connected to ${aiStatus.model}`
+                  : "Add GEMINI_API_KEY in .env for live Gemini responses"
+              }
+            >
+              <span
+                className={`w-1.5 h-1.5 rounded-full ${
+                  aiStatus.gemini ? "bg-signal-normalBright" : "bg-parchment-subtle"
+                }`}
+              />
+              <span>{aiStatus.gemini ? "Gemini Live" : "Gemini Standby"}</span>
+            </span>
+
+            <button
+              type="button"
+              onClick={() => setAutoReadVoice((v) => !v)}
+              className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-sans font-semibold border transition-colors ${
+                autoReadVoice
+                  ? "bg-cobalt text-ink-onAccent border-cobalt"
+                  : "bg-parchment-light text-parchment-secondary border-parchment-borderStrong hover:border-cobalt"
+              }`}
+              title={
+                aiStatus.elevenLabs
+                  ? "Toggle automatic ElevenLabs voice playback for AI replies"
+                  : "Toggle automatic voice playback (add ELEVENLABS_API_KEY in .env for ElevenLabs neural voice)"
+              }
+            >
+              {autoReadVoice ? (
+                <Volume2 className="w-3.5 h-3.5" aria-hidden="true" />
+              ) : (
+                <VolumeX className="w-3.5 h-3.5" aria-hidden="true" />
+              )}
+              <span>{aiStatus.elevenLabs ? "ElevenLabs Auto" : "Auto Voice"}</span>
+            </button>
           </div>
         </div>
 
@@ -107,10 +163,10 @@ export default function AIAssistantChat({ onSwitchToWorkflow }: AIAssistantChatP
               );
             }
 
-            // Strip duplicated prefix when critical alert header is shown
             const cleanBody = msg.isCriticalAlert
               ? msg.content.replace(/^Node C is in a critical state\.\s*/i, "")
               : msg.content;
+            const isThisMessageSpeaking = isPlayingVoice && speakingMessageId === msg.id;
 
             return (
               <div key={msg.id} className="flex items-start gap-2.5">
@@ -172,13 +228,60 @@ export default function AIAssistantChat({ onSwitchToWorkflow }: AIAssistantChatP
                     </div>
                   )}
 
-                  <div className="text-[10px] font-mono text-parchment-subtle">
-                    {msg.timestamp}
+                  <div className="flex items-center justify-between pt-1">
+                    <span className="text-[10px] font-mono text-parchment-subtle">
+                      {msg.timestamp}
+                    </span>
+
+                    <button
+                      type="button"
+                      onClick={() =>
+                        isThisMessageSpeaking
+                          ? stopSpeaking()
+                          : void speakText(msg.content, msg.id)
+                      }
+                      className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-sans font-medium border transition-colors ${
+                        isThisMessageSpeaking
+                          ? "bg-cobalt text-ink-onAccent border-cobalt"
+                          : "bg-parchment-light text-parchment-secondary border-parchment-border hover:border-cobalt hover:text-parchment-text"
+                      }`}
+                      title={
+                        isThisMessageSpeaking
+                          ? "Stop audio playback"
+                          : aiStatus.elevenLabs
+                          ? "Listen via ElevenLabs voice"
+                          : "Listen via voice synthesis"
+                      }
+                    >
+                      {isThisMessageSpeaking ? (
+                        <>
+                          <Square className="w-3 h-3 fill-current" aria-hidden="true" />
+                          <span>Stop</span>
+                        </>
+                      ) : (
+                        <>
+                          <Volume2 className="w-3.5 h-3.5" aria-hidden="true" />
+                          <span>Listen</span>
+                        </>
+                      )}
+                    </button>
                   </div>
                 </div>
               </div>
             );
           })}
+
+          {isChatLoading && (
+            <div className="flex items-start gap-2.5">
+              <div className="w-8 h-8 rounded-full bg-control-bg border border-cobalt-border flex items-center justify-center text-control shrink-0">
+                <Loader2 className="w-4 h-4 animate-spin" aria-hidden="true" />
+              </div>
+              <div className="bg-parchment-bright border border-parchment-borderStrong rounded-2xl rounded-tl-sm px-4 py-3 text-xs text-parchment-muted font-sans">
+                Analyzing live corridor telemetry with {aiStatus.gemini ? aiStatus.model : "SmartGrid AI"}...
+              </div>
+            </div>
+          )}
+
           <div ref={streamEndRef} />
         </div>
       </div>
@@ -190,8 +293,9 @@ export default function AIAssistantChat({ onSwitchToWorkflow }: AIAssistantChatP
             <button
               key={prompt}
               type="button"
+              disabled={isChatLoading}
               onClick={() => sendChatMessage(prompt)}
-              className="px-3 py-1 rounded-full bg-parchment-light hover:bg-parchment-bright border border-parchment-borderStrong text-[11px] font-sans text-parchment-secondary hover:text-parchment-text transition-colors"
+              className="px-3 py-1 rounded-full bg-parchment-light hover:bg-parchment-bright disabled:opacity-50 border border-parchment-borderStrong text-[11px] font-sans text-parchment-secondary hover:text-parchment-text transition-colors"
             >
               {prompt}
             </button>
@@ -204,8 +308,9 @@ export default function AIAssistantChat({ onSwitchToWorkflow }: AIAssistantChatP
         >
           <button
             type="button"
-            onClick={() => sendChatMessage("Attach current three-node telemetry snapshot.")}
-            className="p-1.5 text-parchment-subtle hover:text-parchment-text transition-colors"
+            disabled={isChatLoading}
+            onClick={() => sendChatMessage("Attach current three-node telemetry snapshot and diagnose anomalies.")}
+            className="p-1.5 text-parchment-subtle hover:text-parchment-text transition-colors disabled:opacity-50"
             title="Attach telemetry snapshot"
             aria-label="Attach telemetry snapshot"
           >
@@ -216,26 +321,35 @@ export default function AIAssistantChat({ onSwitchToWorkflow }: AIAssistantChatP
             type="text"
             value={inputText}
             onChange={(e) => setInputText(e.target.value)}
-            placeholder="Ask about the grid..."
+            placeholder="Ask Gemini about the grid..."
             className="flex-1 bg-transparent text-xs sm:text-sm font-sans text-parchment-text placeholder-parchment-subtle focus:outline-none min-w-0"
           />
 
           <button
             type="button"
-            onClick={() => sendChatMessage("Generate spoken voice dispatch for Node C.")}
-            className="p-1.5 text-parchment-subtle hover:text-parchment-text transition-colors"
-            title="Voice dispatch prompt"
-            aria-label="Voice dispatch prompt"
+            disabled={isChatLoading}
+            onClick={() => {
+              setAutoReadVoice(true);
+              sendChatMessage("Generate spoken voice dispatch brief for Node C.");
+            }}
+            className="p-1.5 text-parchment-subtle hover:text-parchment-text transition-colors disabled:opacity-50"
+            title="Request spoken ElevenLabs dispatch brief"
+            aria-label="Request spoken ElevenLabs dispatch brief"
           >
             <Mic className="w-4 h-4" aria-hidden="true" />
           </button>
 
           <button
             type="submit"
-            className="pill-button-cobalt text-xs py-1.5 px-4"
+            disabled={isChatLoading}
+            className="pill-button-cobalt text-xs py-1.5 px-4 disabled:opacity-60"
           >
-            <Send className="w-3.5 h-3.5" aria-hidden="true" />
-            <span>Send</span>
+            {isChatLoading ? (
+              <Loader2 className="w-3.5 h-3.5 animate-spin" aria-hidden="true" />
+            ) : (
+              <Send className="w-3.5 h-3.5" aria-hidden="true" />
+            )}
+            <span>{isChatLoading ? "Sending" : "Send"}</span>
           </button>
         </form>
 
