@@ -177,10 +177,13 @@ export async function POST(request: NextRequest) {
     const systemPrompt = buildSystemPrompt(body.gridContext);
     const recentHistory = (body.history || []).slice(-8);
 
-    // 1. Direct Google Gemini API (Primary)
+    // 1. Direct Google Gemini API (Primary — defaults to latest gemini-3.8-flash with automatic fallback)
     const geminiKey = process.env.GEMINI_API_KEY;
     if (isConfigured(geminiKey)) {
-      const model = process.env.GEMINI_MODEL || "gemini-2.5-flash";
+      const primaryModel = (process.env.GEMINI_MODEL || "gemini-3.8-flash").trim();
+      const candidateModels = Array.from(
+        new Set([primaryModel, "gemini-3.8-flash", "gemini-3.6-flash", "gemini-3.5-flash-lite"])
+      );
       const contents = [
         ...recentHistory.map((h) => ({
           role: h.sender === "user" ? "user" : "model",
@@ -189,52 +192,56 @@ export async function POST(request: NextRequest) {
         { role: "user", parts: [{ text: message }] },
       ];
 
-      const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(
-        model
-      )}:generateContent?key=${encodeURIComponent(geminiKey!.trim())}`;
+      for (const model of candidateModels) {
+        const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(
+          model
+        )}:generateContent?key=${encodeURIComponent(geminiKey!.trim())}`;
 
-      const res = await fetch(geminiUrl, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          systemInstruction: { parts: [{ text: systemPrompt }] },
-          contents,
-          generationConfig: {
-            temperature: 0.35,
-            maxOutputTokens: 512,
-            responseMimeType: "application/json",
-          },
-        }),
-      });
+        const res = await fetch(geminiUrl, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            systemInstruction: { parts: [{ text: systemPrompt }] },
+            contents,
+            generationConfig: {
+              temperature: 0.35,
+              maxOutputTokens: 512,
+              responseMimeType: "application/json",
+            },
+          }),
+        });
 
-      if (res.ok) {
-        const data = await res.json();
-        const rawText =
-          data?.candidates?.[0]?.content?.parts
-            ?.map((p: { text?: string }) => p.text || "")
-            .join("") || "";
+        if (res.ok) {
+          const data = await res.json();
+          const rawText =
+            data?.candidates?.[0]?.content?.parts
+              ?.map((p: { text?: string }) => p.text || "")
+              .join("") || "";
 
-        if (rawText) {
-          const structured = parseStructuredReply(
-            rawText,
-            Boolean(body.gridContext?.isThermalFaultActive)
-          );
-          return NextResponse.json({
-            provider: "gemini",
-            model,
-            ...structured,
-          });
+          if (rawText) {
+            const structured = parseStructuredReply(
+              rawText,
+              Boolean(body.gridContext?.isThermalFaultActive)
+            );
+            return NextResponse.json({
+              provider: "gemini",
+              model,
+              ...structured,
+            });
+          }
+        } else {
+          const errText = await res.text().catch(() => "");
+          console.error(`Gemini API error (${model}):`, res.status, errText);
+          // Only retry next model on 404/503/429
+          if (![404, 429, 503].includes(res.status)) break;
         }
-      } else {
-        const errText = await res.text().catch(() => "");
-        console.error("Gemini API error:", res.status, errText);
       }
     }
 
     // 2. Optional OpenRouter Fallback (if OPENROUTER_API_KEY is configured)
     const openRouterKey = process.env.OPENROUTER_API_KEY;
     if (isConfigured(openRouterKey)) {
-      const model = process.env.OPENROUTER_MODEL || "google/gemini-2.5-flash";
+      const model = process.env.OPENROUTER_MODEL || "google/gemini-3.8-flash";
       const res = await fetch("https://openrouter.ai/api/v1/chat/completions", {
         method: "POST",
         headers: {

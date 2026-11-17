@@ -17,11 +17,12 @@ export async function GET() {
     gemini: geminiDirect || openRouter,
     provider: geminiDirect ? "gemini" : openRouter ? "openrouter" : "fallback",
     model: geminiDirect
-      ? process.env.GEMINI_MODEL || "gemini-2.5-flash"
+      ? process.env.GEMINI_MODEL || "gemini-3.8-flash"
       : openRouter
-      ? process.env.OPENROUTER_MODEL || "google/gemini-2.5-flash"
+      ? process.env.OPENROUTER_MODEL || "google/gemini-3.8-flash"
       : "local-telemetry",
     elevenLabs,
-    voiceId: process.env.ELEVENLABS_VOICE_ID || "21m00Tcm4TlvDq8ikWAM",
+    elevenLabsModel: process.env.ELEVENLABS_MODEL_ID || "eleven_flash_v2_5",
+    voiceId: process.env.ELEVENLABS_VOICE_ID || "JBFqnCBsd6RMkjVDRZzb",
   });
 }
