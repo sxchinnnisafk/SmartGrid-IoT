@@ -13,32 +13,25 @@ export default function ControlRoomPage() {
   const { isEvidenceModalOpen, isDemoModalOpen } = useGrid();
 
   return (
-    <div className="min-h-screen bg-[#11141b] text-[#f4f5f8] flex flex-col justify-between selection:bg-[#3b59f8] selection:text-white">
-      {/* 1. Brand Header */}
+    <div className="min-h-screen bg-ink text-ink-text flex flex-col justify-between selection:bg-cobalt selection:text-ink-onAccent">
       <BrandHeader currentViewTitle="Control Room" variant="control-room" />
 
-      {/* 2. Main Stage */}
-      <main className="flex-1 max-w-[1700px] w-full mx-auto px-4 lg:px-8 py-6 flex flex-col justify-between gap-6">
-        {/* Upper Grid: Left Canvas + Right Sidebar */}
-        <div className="flex flex-col lg:flex-row gap-6 flex-1 items-stretch">
-          {/* Main Isometric Interactive Stage */}
-          <div className="flex-1 flex flex-col">
+      <main className="flex-1 max-w-[1600px] w-full mx-auto px-4 lg:px-6 py-4 flex flex-col justify-between gap-4">
+        <div className="flex flex-col lg:flex-row gap-5 flex-1 items-stretch min-w-0">
+          <div className="flex-1 flex flex-col min-w-0">
             <ControlRoomCanvas />
           </div>
 
-          {/* Right Status Sidebar */}
-          <div className="flex lg:flex-none">
+          <div className="flex lg:flex-none min-w-0">
             <ControlRoomSidebar />
           </div>
         </div>
 
-        {/* Lower Action Dock (Start Patrol, Test Scenario, Publish Changes) */}
         <div className="w-full">
           <ControlRoomActionDock />
         </div>
       </main>
 
-      {/* Modals */}
       {isEvidenceModalOpen && <HardwareEvidenceModal />}
       {isDemoModalOpen && <EndToEndDemoModal />}
     </div>

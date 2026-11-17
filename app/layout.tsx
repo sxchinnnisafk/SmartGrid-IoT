@@ -5,7 +5,7 @@ import { ThemeProvider } from "./context/ThemeContext";
 import ScrollRevealObserver from "./components/ScrollRevealObserver";
 
 export const metadata: Metadata = {
-  title: "SmartGrid AIoT • Intelligent Power Monitoring & Management System",
+  title: "SmartGrid AIoT — Intelligent Power Monitoring & Management System",
   description:
     "Team Celestia's prototype combining an edge rover, a live grid twin, and AI-assisted operator response for Power Hack 2026.",
   icons: {
@@ -28,7 +28,7 @@ export default function RootLayout({
           rel="stylesheet"
         />
       </head>
-      <body className="font-sans bg-[#12151c] text-[#f4f5f8] min-h-screen antialiased selection:bg-[#3b59f8] selection:text-white">
+      <body className="font-sans bg-ink text-ink-text min-h-screen antialiased selection:bg-cobalt selection:text-ink-onAccent">
         {/* Skip Link for Keyboard Accessibility */}
         <a href="#main-content" className="skip-link">
           Skip to main content

@@ -1,7 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
-import Link from "next/link";
+import React, { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useGrid } from "../context/GridContext";
 import {
@@ -11,20 +10,27 @@ import {
   Paperclip,
   Mic,
   Send,
-  ArrowRight,
-  ShieldAlert,
-  CheckCircle2,
-  Cpu,
 } from "lucide-react";
 
 interface AIAssistantChatProps {
   onSwitchToWorkflow?: () => void;
 }
 
+const QUICK_PROMPTS = [
+  "Summarize Node C thermal risk",
+  "Check ESP32-S3 rover patrol status",
+  "Draft field crew dispatch brief",
+];
+
 export default function AIAssistantChat({ onSwitchToWorkflow }: AIAssistantChatProps) {
   const router = useRouter();
-  const { chatMessages, sendChatMessage, activeTab, setActiveTab } = useGrid();
+  const { chatMessages, sendChatMessage, setActiveTab } = useGrid();
   const [inputText, setInputText] = useState("");
+  const streamEndRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    streamEndRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
+  }, [chatMessages.length]);
 
   const handleSend = (e: React.FormEvent) => {
     e.preventDefault();
@@ -42,92 +48,95 @@ export default function AIAssistantChat({ onSwitchToWorkflow }: AIAssistantChatP
   };
 
   return (
-    <div className="flex-1 rounded-3xl bg-[#ede4d8] border border-[#d8cdbd] text-[#1c1f28] shadow-parchment p-6 xl:p-8 flex flex-col justify-between overflow-hidden">
-      <div>
-        {/* Header matching concept screenshot */}
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 pb-4 mb-4 border-b border-[#ded2c1]">
-          <div>
-            <h1 className="font-serif text-3xl xl:text-4xl font-normal text-[#181a24] tracking-tight">
+    <div className="flex-1 min-w-0 rounded-3xl bg-parchment border border-parchment-border text-parchment-text shadow-parchment p-5 xl:p-6 flex flex-col justify-between overflow-hidden">
+      <div className="min-w-0">
+        {/* Header */}
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 pb-3.5 mb-3.5 border-b border-parchment-border">
+          <div className="min-w-0">
+            <h1 className="font-serif text-2xl xl:text-3xl font-normal text-parchment-text tracking-tight">
               SmartGrid AI Assistant
             </h1>
-            <p className="text-xs sm:text-sm text-[#5d6475] font-sans mt-0.5">
+            <p className="text-xs sm:text-sm text-parchment-muted font-sans mt-0.5">
               Your AI partner for a more resilient grid.
             </p>
           </div>
 
-          <div className="text-[10px] font-mono tracking-widest text-[#717888] uppercase text-right">
-            REAL-TIME DATA • SECURE • BUILT FOR A CLEANER TOMORROW
+          <div className="text-xs font-sans text-parchment-muted shrink-0">
+            Real-time diagnostic advisor
           </div>
         </div>
 
         {/* Mode Switcher Pills: Chat vs Workflow */}
-        <div className="flex items-center justify-center mb-6">
-          <div className="inline-flex p-1 rounded-full bg-[#dfd4c3] border border-[#cfc3b0]">
+        <div className="flex items-center justify-center mb-4">
+          <div className="inline-flex p-1 rounded-full bg-parchment-dark border border-parchment-borderStrong">
             <button
+              type="button"
               onClick={() => setActiveTab("chat")}
-              className="flex items-center gap-2 px-6 py-2 rounded-full bg-[#3b59f8] text-white text-xs font-semibold shadow-sm transition-all"
+              className="flex items-center gap-2 px-5 py-1.5 rounded-full bg-cobalt text-ink-onAccent text-xs font-semibold shadow-sm transition-colors"
             >
-              <MessageSquare className="w-3.5 h-3.5" />
+              <MessageSquare className="w-3.5 h-3.5" aria-hidden="true" />
               <span>Chat</span>
             </button>
             <button
+              type="button"
               onClick={handleOpenWorkflow}
-              className="flex items-center gap-2 px-6 py-2 rounded-full text-[#525968] hover:text-[#181a24] text-xs font-semibold transition-all"
+              className="flex items-center gap-2 px-5 py-1.5 rounded-full text-parchment-secondary hover:text-parchment-text text-xs font-semibold transition-colors"
             >
-              <GitBranch className="w-3.5 h-3.5" />
+              <GitBranch className="w-3.5 h-3.5" aria-hidden="true" />
               <span>Workflow</span>
             </button>
           </div>
         </div>
 
         {/* Conversation Stream */}
-        <div className="space-y-6 max-h-[460px] overflow-y-auto pr-2">
+        <div className="space-y-4 max-h-[400px] overflow-y-auto pr-1.5">
           {chatMessages.map((msg) => {
             if (msg.sender === "user") {
               return (
-                <div key={msg.id} className="flex items-start justify-end gap-3">
-                  <div className="max-w-xl bg-[#f5eee5] border border-[#d8ccbb] rounded-2xl rounded-tr-sm p-4 text-xs sm:text-sm text-[#181a24] shadow-sm">
+                <div key={msg.id} className="flex items-start justify-end gap-2.5">
+                  <div className="max-w-lg bg-parchment-light border border-parchment-borderStrong rounded-2xl rounded-tr-sm p-3.5 text-xs sm:text-sm text-parchment-text shadow-sm">
                     <p>{msg.content}</p>
-                    <div className="text-[10px] font-mono text-[#788092] text-right mt-1.5">
+                    <div className="text-[10px] font-mono text-parchment-subtle text-right mt-1">
                       {msg.timestamp}
                     </div>
                   </div>
-                  <div className="w-8 h-8 rounded-full bg-[#262f44] border border-[#3d4b6b] flex items-center justify-center text-xs font-bold text-white shrink-0 shadow">
+                  <div className="w-8 h-8 rounded-full bg-ink-hover border border-ink-borderStrong flex items-center justify-center text-xs font-bold text-ink-text shrink-0">
                     {msg.avatarText || "JD"}
                   </div>
                 </div>
               );
             }
 
-            // Assistant Response
+            // Strip duplicated prefix when critical alert header is shown
+            const cleanBody = msg.isCriticalAlert
+              ? msg.content.replace(/^Node C is in a critical state\.\s*/i, "")
+              : msg.content;
+
             return (
-              <div key={msg.id} className="flex items-start gap-3">
-                <div className="w-8 h-8 rounded-full bg-[#e0e7ff] border border-[#818cf8]/40 flex items-center justify-center text-[#4f46e5] shrink-0 shadow">
-                  <Sparkles className="w-4 h-4" />
+              <div key={msg.id} className="flex items-start gap-2.5">
+                <div className="w-8 h-8 rounded-full bg-control-bg border border-cobalt-border flex items-center justify-center text-control shrink-0">
+                  <Sparkles className="w-4 h-4" aria-hidden="true" />
                 </div>
 
-                <div className="max-w-2xl bg-[#faf6f0] border border-[#d8ccbb] rounded-2xl rounded-tl-sm p-5 text-xs sm:text-sm text-[#181a24] shadow-sm space-y-3">
-                  <div>
+                <div className="max-w-xl bg-parchment-bright border border-parchment-borderStrong rounded-2xl rounded-tl-sm p-4 text-xs sm:text-sm text-parchment-text shadow-sm space-y-3 min-w-0">
+                  <div className="leading-relaxed">
                     {msg.isCriticalAlert && (
-                      <span className="font-semibold text-xs text-[#181a24]">
-                        Node C is in a <span className="text-[#dc2626] font-bold">critical</span> state.{" "}
+                      <span className="font-semibold text-parchment-text">
+                        Node C is in a <span className="text-signal-critical font-bold">critical</span> state.{" "}
                       </span>
                     )}
-                    <span className="text-[#3b4152] leading-relaxed">
-                      {msg.content}
-                    </span>
+                    <span className="text-parchment-secondary">{cleanBody}</span>
                   </div>
 
-                  {/* Safest response recommendations list */}
                   {msg.recommendations && msg.recommendations.length > 0 && (
-                    <div className="pt-2">
-                      <div className="font-bold text-xs text-[#181a24] mb-2 font-sans">
+                    <div className="pt-1">
+                      <div className="font-semibold text-xs text-parchment-text mb-2 font-sans">
                         Safest response (recommended):
                       </div>
-                      <div className="space-y-1.5 pl-1">
+                      <div className="space-y-1.5 pl-0.5">
                         {msg.recommendations.map((rec, rIdx) => (
-                          <div key={rIdx} className="flex items-start gap-2.5 text-xs text-[#3b4152]">
-                            <span className="w-4 h-4 rounded-full bg-[#4f46e5] text-white flex items-center justify-center font-bold text-[10px] shrink-0 mt-0.5">
+                          <div key={rIdx} className="flex items-start gap-2 text-xs text-parchment-secondary">
+                            <span className="w-4 h-4 rounded-full bg-control text-ink-onAccent flex items-center justify-center font-bold text-[10px] shrink-0 mt-0.5">
                               {rIdx + 1}
                             </span>
                             <span className="leading-snug">{rec}</span>
@@ -137,94 +146,101 @@ export default function AIAssistantChat({ onSwitchToWorkflow }: AIAssistantChatP
                     </div>
                   )}
 
-                  {/* Pre-fill workflow helper text */}
                   {msg.workflowCard && (
-                    <p className="text-xs text-[#525968] leading-relaxed pt-1">
-                      I can open the recommended workflow with these steps pre-filled so your team can execute quickly.
-                    </p>
-                  )}
-
-                  {/* Embedded Workflow Action Card matching mockup */}
-                  {msg.workflowCard && (
-                    <div className="mt-3 p-3.5 rounded-xl bg-[#f0e7db] border border-[#d5c7b3] flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
-                      <div className="flex items-center gap-3">
-                        <div className="w-9 h-9 rounded-lg bg-[#3b59f8]/15 border border-[#3b59f8]/30 flex items-center justify-center text-[#3b59f8] shrink-0">
-                          <GitBranch className="w-4 h-4" />
+                    <div className="mt-2 p-3 rounded-xl bg-parchment-card border border-parchment-borderStrong flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+                      <div className="flex items-center gap-2.5 min-w-0">
+                        <div className="w-8 h-8 rounded-lg bg-cobalt-tint border border-cobalt-border flex items-center justify-center text-cobalt shrink-0">
+                          <GitBranch className="w-4 h-4" aria-hidden="true" />
                         </div>
-                        <div>
-                          <div className="font-bold text-xs text-[#181a24]">
+                        <div className="min-w-0">
+                          <div className="font-semibold text-xs text-parchment-text truncate">
                             {msg.workflowCard.title}
                           </div>
-                          <div className="text-[11px] text-[#636a7b]">
+                          <div className="text-[11px] text-parchment-muted truncate">
                             {msg.workflowCard.description}
                           </div>
                         </div>
                       </div>
 
                       <button
+                        type="button"
                         onClick={handleOpenWorkflow}
-                        className="pill-button-cobalt text-xs py-2 px-4 shrink-0 shadow-sm"
+                        className="pill-button-cobalt text-xs py-1.5 px-3.5 shrink-0"
                       >
-                        <span>{msg.workflowCard.buttonText}</span>
+                        <span>Open in Workflow</span>
                       </button>
                     </div>
                   )}
 
-                  <div className="text-[10px] font-mono text-[#788092] mt-2">
+                  <div className="text-[10px] font-mono text-parchment-subtle">
                     {msg.timestamp}
                   </div>
                 </div>
               </div>
             );
           })}
+          <div ref={streamEndRef} />
         </div>
       </div>
 
-      {/* Input Bar at bottom */}
-      <div className="pt-4 border-t border-[#ded2c1] mt-4">
+      {/* Quick Prompts & Input Bar */}
+      <div className="pt-3.5 border-t border-parchment-border mt-3.5 space-y-2.5">
+        <div className="flex flex-wrap items-center gap-1.5">
+          {QUICK_PROMPTS.map((prompt) => (
+            <button
+              key={prompt}
+              type="button"
+              onClick={() => sendChatMessage(prompt)}
+              className="px-3 py-1 rounded-full bg-parchment-light hover:bg-parchment-bright border border-parchment-borderStrong text-[11px] font-sans text-parchment-secondary hover:text-parchment-text transition-colors"
+            >
+              {prompt}
+            </button>
+          ))}
+        </div>
+
         <form
           onSubmit={handleSend}
-          className="bg-[#f7f2ea] border border-[#d6c7b3] rounded-2xl p-2 px-3 flex items-center gap-2 shadow-sm focus-within:border-[#3b59f8] transition-colors"
+          className="bg-parchment-bright border border-parchment-borderStrong rounded-2xl p-1.5 px-3 flex items-center gap-2 shadow-sm focus-within:border-cobalt transition-colors"
         >
-          {/* Attachment Paperclip */}
           <button
             type="button"
-            className="p-2 text-[#788092] hover:text-[#181a24] transition-colors"
-            title="Attach telemetry snapshot or sensor log"
+            onClick={() => sendChatMessage("Attach current three-node telemetry snapshot.")}
+            className="p-1.5 text-parchment-subtle hover:text-parchment-text transition-colors"
+            title="Attach telemetry snapshot"
+            aria-label="Attach telemetry snapshot"
           >
-            <Paperclip className="w-4 h-4" />
+            <Paperclip className="w-4 h-4" aria-hidden="true" />
           </button>
 
-          {/* Text Input */}
           <input
             type="text"
             value={inputText}
             onChange={(e) => setInputText(e.target.value)}
             placeholder="Ask about the grid..."
-            className="flex-1 bg-transparent text-xs sm:text-sm font-sans text-[#181a24] placeholder-[#788092] focus:outline-none"
+            className="flex-1 bg-transparent text-xs sm:text-sm font-sans text-parchment-text placeholder-parchment-subtle focus:outline-none min-w-0"
           />
 
-          {/* Microphone Voice Input */}
           <button
             type="button"
-            className="p-2 text-[#788092] hover:text-[#181a24] transition-colors"
-            title="Voice prompt"
+            onClick={() => sendChatMessage("Generate spoken voice dispatch for Node C.")}
+            className="p-1.5 text-parchment-subtle hover:text-parchment-text transition-colors"
+            title="Voice dispatch prompt"
+            aria-label="Voice dispatch prompt"
           >
-            <Mic className="w-4 h-4" />
+            <Mic className="w-4 h-4" aria-hidden="true" />
           </button>
 
-          {/* Send Button */}
           <button
             type="submit"
-            className="pill-button-cobalt text-xs py-2 px-4 shadow-sm"
+            className="pill-button-cobalt text-xs py-1.5 px-4"
           >
-            <Send className="w-3.5 h-3.5" />
+            <Send className="w-3.5 h-3.5" aria-hidden="true" />
             <span>Send</span>
           </button>
         </form>
 
-        <div className="text-center text-[10px] font-mono text-[#788092] mt-2">
-          SmartGrid AI can make mistakes. Check critical information.
+        <div className="text-center text-[11px] font-sans text-parchment-muted">
+          SmartGrid AI advises only. Operators approve all switching actions.
         </div>
       </div>
     </div>

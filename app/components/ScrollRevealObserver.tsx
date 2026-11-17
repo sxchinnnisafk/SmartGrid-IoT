@@ -6,12 +6,12 @@ import { useGrid } from "../context/GridContext";
 
 /**
  * ScrollRevealObserver
- * High-performance, zero-dependency client component (<1.5 KB):
- * - Observes elements with class `.reveal` using IntersectionObserver.
- * - Automatically unobserves elements once revealed (no memory leaks, zero scroll overhead).
- * - Reacts immediately to Next.js route transitions, auth gate dismissals, and DOM mutations.
- * - Instantly reveals any elements already within or above the viewport so content is never hidden.
- * - Strictly respects `prefers-reduced-motion` by revealing elements immediately without animation.
+ * Efficient, leak-free scroll reveal observer:
+ * - Marks `html.js-ready` so `.reveal` elements remain visible if JS is disabled.
+ * - Reuses a single persistent IntersectionObserver with WeakSet tracking (zero leaks).
+ * - Coalesces DOM mutation scans via requestAnimationFrame to prevent layout thrash
+ *   during periodic 2.5s telemetry ticks.
+ * - Strictly honors `prefers-reduced-motion: reduce`.
  */
 export default function ScrollRevealObserver() {
   const pathname = usePathname();
@@ -24,51 +24,70 @@ export default function ScrollRevealObserver() {
       "(prefers-reduced-motion: reduce)"
     ).matches;
 
-    const scanAndReveal = () => {
-      const revealElements = document.querySelectorAll<HTMLElement>(".reveal:not(.is-revealed)");
-      if (!revealElements || revealElements.length === 0) return;
+    if (prefersReducedMotion || !("IntersectionObserver" in window)) {
+      document.documentElement.classList.remove("js-ready");
+      document.querySelectorAll<HTMLElement>(".reveal").forEach((el) => {
+        el.classList.add("is-revealed");
+      });
+      return;
+    }
 
-      if (prefersReducedMotion || !("IntersectionObserver" in window)) {
-        revealElements.forEach((el) => el.classList.add("is-revealed"));
-        return;
-      }
+    document.documentElement.classList.add("js-ready");
 
-      const observer = new IntersectionObserver(
-        (entries, obs) => {
-          entries.forEach((entry) => {
-            if (entry.isIntersecting) {
-              entry.target.classList.add("is-revealed");
-              obs.unobserve(entry.target);
-            }
-          });
-        },
-        {
-          root: null,
-          rootMargin: "0px 0px -20px 0px",
-          threshold: 0.05,
+    const observed = new WeakSet<Element>();
+    const observer = new IntersectionObserver(
+      (entries) => {
+        for (const entry of entries) {
+          if (entry.isIntersecting) {
+            entry.target.classList.add("is-revealed");
+            observer.unobserve(entry.target);
+          }
         }
-      );
+      },
+      {
+        root: null,
+        rootMargin: "0px 0px -24px 0px",
+        threshold: 0.05,
+      }
+    );
 
-      revealElements.forEach((el) => {
+    let rafId: number | null = null;
+
+    const scan = () => {
+      rafId = null;
+      const elements = document.querySelectorAll<HTMLElement>(
+        ".reveal:not(.is-revealed)"
+      );
+      if (elements.length === 0) return;
+
+      const viewportHeight = window.innerHeight;
+      for (const el of elements) {
+        if (observed.has(el)) continue;
         const rect = el.getBoundingClientRect();
-        // Immediately reveal anything already inside or above the current viewport
-        if (rect.top < window.innerHeight + 50 && rect.bottom > -100) {
+        if (rect.top < viewportHeight + 60 && rect.bottom > -100) {
           el.classList.add("is-revealed");
         } else {
+          observed.add(el);
           observer.observe(el);
         }
-      });
+      }
     };
 
-    // Run immediately and across multiple ticks to catch client transitions and React hydration
-    scanAndReveal();
-    const frameId = requestAnimationFrame(scanAndReveal);
-    const timer1 = setTimeout(scanAndReveal, 60);
-    const timer2 = setTimeout(scanAndReveal, 250);
+    const scheduleScan = () => {
+      if (rafId !== null) return;
+      rafId = requestAnimationFrame(scan);
+    };
 
-    // Watch DOM mutations (e.g. when Auth gate swaps to Landing page or chapter tab changes)
-    const mutationObserver = new MutationObserver(() => {
-      scanAndReveal();
+    scan();
+    const fallbackTimer = window.setTimeout(scheduleScan, 120);
+
+    const mutationObserver = new MutationObserver((mutations) => {
+      for (const m of mutations) {
+        if (m.addedNodes.length > 0) {
+          scheduleScan();
+          break;
+        }
+      }
     });
 
     mutationObserver.observe(document.body, {
@@ -77,10 +96,10 @@ export default function ScrollRevealObserver() {
     });
 
     return () => {
-      cancelAnimationFrame(frameId);
-      clearTimeout(timer1);
-      clearTimeout(timer2);
+      if (rafId !== null) cancelAnimationFrame(rafId);
+      window.clearTimeout(fallbackTimer);
       mutationObserver.disconnect();
+      observer.disconnect();
     };
   }, [pathname, isAuthenticated, hasSkippedAuth]);
 

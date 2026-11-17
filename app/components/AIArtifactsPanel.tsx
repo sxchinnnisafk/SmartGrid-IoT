@@ -9,230 +9,225 @@ import {
   Volume2,
   Play,
   Pause,
-  ExternalLink,
-  Layers,
-  Sparkles,
-  AlertTriangle,
   X,
 } from "lucide-react";
 
 export default function AIArtifactsPanel() {
   const router = useRouter();
   const {
+    nodes,
     isPlayingVoice,
     toggleVoicePlayback,
     voiceProgress,
     isThermalFaultActive,
-    setActiveTab,
   } = useGrid();
 
   const [activeModalArtifact, setActiveModalArtifact] = useState<string | null>(null);
 
+  const nodeA = nodes.find((n) => n.id === "node-a") || nodes[0];
+  const nodeB = nodes.find((n) => n.id === "node-b") || nodes[1];
+  const nodeC = nodes.find((n) => n.id === "node-c") || nodes[2];
+
   return (
     <>
-      <aside className="w-full lg:w-80 xl:w-96 rounded-3xl bg-[#141822] border border-[#242c3e] text-[#f4f5f8] p-5 xl:p-6 flex flex-col justify-between select-none">
+      <aside className="w-full lg:w-72 xl:w-80 shrink-0 rounded-3xl bg-ink-surface border border-ink-border text-ink-text p-5 flex flex-col justify-between select-none">
         <div>
-          {/* Header */}
-          <div className="flex items-center gap-2 mb-5">
-            <FileText className="w-4 h-4 text-[#818cf8]" />
-            <h2 className="font-serif text-2xl font-normal text-white">
+          <div className="flex items-center gap-2 mb-4">
+            <FileText className="w-4 h-4 text-cobalt-soft" aria-hidden="true" />
+            <h2 className="font-serif text-2xl font-normal text-ink-text">
               Current artifacts
             </h2>
           </div>
 
-          <div className="space-y-4">
-            {/* ARTIFACT 1: Grid Snapshot */}
-            <div className="rounded-2xl bg-[#1b2230] border border-[#29354a] p-4 text-xs font-sans">
-              <div className="flex items-center justify-between mb-3">
-                <div>
-                  <h3 className="font-semibold text-white text-xs">
+          <div className="space-y-3.5">
+            {/* ARTIFACT 1: Live Grid Snapshot */}
+            <div className="rounded-2xl bg-ink-card border border-ink-border p-3.5 text-xs font-sans">
+              <div className="flex items-center justify-between gap-2 mb-3">
+                <div className="min-w-0">
+                  <h3 className="font-semibold text-ink-text text-xs truncate">
                     Grid snapshot
                   </h3>
-                  <div className="flex items-center gap-1.5 text-[10px] text-[#22c55e] font-mono mt-0.5">
-                    <span className="w-1.5 h-1.5 rounded-full bg-[#22c55e] animate-pulse" />
-                    <span>Live data • 10:24 AM</span>
+                  <div className="flex items-center gap-1.5 text-[11px] text-signal-normalBright font-mono mt-0.5">
+                    <span className="w-1.5 h-1.5 rounded-full bg-signal-normalBright animate-pulse" />
+                    <span>Live data</span>
                   </div>
                 </div>
 
                 <button
+                  type="button"
                   onClick={() => setActiveModalArtifact("snapshot")}
-                  className="px-3 py-1 rounded-full bg-[#3b59f8] hover:bg-[#2f4bd8] text-white text-[11px] font-semibold transition-colors"
+                  className="px-3 py-1 rounded-full bg-cobalt hover:bg-cobalt-hover text-ink-onAccent text-[11px] font-semibold transition-colors shrink-0"
                 >
                   Open
                 </button>
               </div>
 
-              {/* Mini Topology Map matching photo */}
-              <div className="rounded-xl bg-[#121620] border border-[#232d3f] p-3 relative overflow-hidden">
-                <svg className="w-full h-16" viewBox="0 0 240 60" fill="none">
-                  {/* Energy Line */}
+              <div className="rounded-xl bg-ink-deep border border-ink-border p-3 relative overflow-hidden">
+                <svg aria-hidden="true" className="w-full h-14" viewBox="0 0 240 56" fill="none">
                   <path
-                    d="M 30,45 Q 120,15 210,45"
-                    stroke="#3b59f8"
+                    d="M 30,42 Q 120,12 210,42"
+                    stroke="var(--color-cobalt)"
                     strokeWidth="2"
                     fill="none"
                   />
-                  {/* Node A (98 MW, Green) */}
-                  <circle cx="30" cy="45" r="7" fill="#22c55e" />
-                  {/* Node C (102°C, Red Alert) */}
-                  <circle cx="120" cy="22" r="8" fill="#ef4444" className="animate-pulse" />
-                  {/* Node B (76 MW, Green) */}
-                  <circle cx="210" cy="45" r="7" fill="#22c55e" />
+                  <circle cx="30" cy="42" r="6.5" fill="var(--color-signal-normal-bright)" />
+                  <circle
+                    cx="120"
+                    cy="20"
+                    r="7.5"
+                    fill={
+                      isThermalFaultActive
+                        ? "var(--color-signal-critical-bright)"
+                        : "var(--color-signal-normal-bright)"
+                    }
+                    className={isThermalFaultActive ? "animate-pulse" : ""}
+                  />
+                  <circle cx="210" cy="42" r="6.5" fill="var(--color-signal-warning-bright)" />
                 </svg>
 
-                {/* Node labels */}
-                <div className="flex items-center justify-between text-[9px] font-mono mt-1">
+                <div className="grid grid-cols-3 text-[10px] font-mono mt-1">
                   <div className="text-left">
-                    <div className="text-white font-bold">Node A</div>
-                    <div className="text-[#9ca3af]">98 MW</div>
+                    <div className="text-ink-text font-semibold">Node A</div>
+                    <div className="text-ink-muted">{nodeA.powerLoad} MW</div>
                   </div>
-                  <div className="text-center text-[#ef4444] font-bold">
+                  <div
+                    className={`text-center font-semibold ${
+                      isThermalFaultActive ? "text-signal-criticalBright" : "text-signal-normalBright"
+                    }`}
+                  >
                     <div>Node C</div>
-                    <div>102 °C</div>
+                    <div>{nodeC.temperature}°C</div>
                   </div>
                   <div className="text-right">
-                    <div className="text-white font-bold">Node B</div>
-                    <div className="text-[#9ca3af]">76 MW</div>
+                    <div className="text-ink-text font-semibold">Node B</div>
+                    <div className="text-ink-muted">{nodeB.powerLoad} MW</div>
                   </div>
-                </div>
-
-                {/* Mini Legend */}
-                <div className="mt-2 pt-2 border-t border-[#1e2738] flex items-center justify-end gap-3 text-[8px] font-mono text-[#9ca3af]">
-                  <span className="flex items-center gap-1">
-                    <span className="w-1.5 h-1.5 rounded-full bg-[#22c55e]" /> Normal
-                  </span>
-                  <span className="flex items-center gap-1">
-                    <span className="w-1.5 h-1.5 rounded-full bg-[#f59e0b]" /> Warning
-                  </span>
-                  <span className="flex items-center gap-1">
-                    <span className="w-1.5 h-1.5 rounded-full bg-[#ef4444]" /> Critical
-                  </span>
                 </div>
               </div>
             </div>
 
             {/* ARTIFACT 2: AI Maintenance Report */}
-            <div className="rounded-2xl bg-[#1b2230] border border-[#29354a] p-4 text-xs font-sans">
-              <div className="flex items-center justify-between mb-2">
-                <div className="flex items-center gap-2.5">
-                  <div className="w-7 h-7 rounded-lg bg-[#6366f1]/20 border border-[#6366f1]/40 flex items-center justify-center text-[#818cf8]">
-                    <FileText className="w-3.5 h-3.5" />
+            <div className="rounded-2xl bg-ink-card border border-ink-border p-3.5 text-xs font-sans">
+              <div className="flex items-center justify-between gap-2 mb-2">
+                <div className="flex items-center gap-2 min-w-0">
+                  <div className="w-7 h-7 rounded-lg bg-cobalt-tint border border-cobalt-border flex items-center justify-center text-cobalt-soft shrink-0">
+                    <FileText className="w-3.5 h-3.5" aria-hidden="true" />
                   </div>
-                  <div>
-                    <h3 className="font-semibold text-white text-xs">
+                  <div className="min-w-0">
+                    <h3 className="font-semibold text-ink-text text-xs truncate">
                       AI maintenance report
                     </h3>
-                    <div className="flex items-center gap-1.5 text-[10px] text-[#22c55e] font-mono">
-                      <span className="w-1.5 h-1.5 rounded-full bg-[#22c55e]" />
-                      <span>Ready • 10:18 AM</span>
+                    <div className="text-[11px] text-signal-normalBright font-mono">
+                      Ready · 10:18 AM
                     </div>
                   </div>
                 </div>
 
                 <button
+                  type="button"
                   onClick={() => setActiveModalArtifact("report")}
-                  className="px-3 py-1 rounded-full bg-[#3b59f8] hover:bg-[#2f4bd8] text-white text-[11px] font-semibold transition-colors"
+                  className="px-3 py-1 rounded-full bg-cobalt hover:bg-cobalt-hover text-ink-onAccent text-[11px] font-semibold transition-colors shrink-0"
                 >
                   Open
                 </button>
               </div>
 
-              <p className="text-[11px] text-[#9ca3af] leading-relaxed pl-9">
+              <p className="text-[11px] text-ink-muted leading-relaxed">
                 Automated analysis of Node C thermal event and risk assessment.
               </p>
             </div>
 
             {/* ARTIFACT 3: Fault Response Workflow */}
-            <div className="rounded-2xl bg-[#1b2230] border border-[#29354a] p-4 text-xs font-sans">
-              <div className="flex items-center justify-between mb-2">
-                <div className="flex items-center gap-2.5">
-                  <div className="w-7 h-7 rounded-lg bg-[#6366f1]/20 border border-[#6366f1]/40 flex items-center justify-center text-[#818cf8]">
-                    <GitBranch className="w-3.5 h-3.5" />
+            <div className="rounded-2xl bg-ink-card border border-ink-border p-3.5 text-xs font-sans">
+              <div className="flex items-center justify-between gap-2 mb-2">
+                <div className="flex items-center gap-2 min-w-0">
+                  <div className="w-7 h-7 rounded-lg bg-cobalt-tint border border-cobalt-border flex items-center justify-center text-cobalt-soft shrink-0">
+                    <GitBranch className="w-3.5 h-3.5" aria-hidden="true" />
                   </div>
-                  <div>
-                    <h3 className="font-semibold text-white text-xs">
+                  <div className="min-w-0">
+                    <h3 className="font-semibold text-ink-text text-xs truncate">
                       Fault response workflow
                     </h3>
-                    <div className="flex items-center gap-1.5 text-[10px] text-[#f59e0b] font-mono">
-                      <span className="w-1.5 h-1.5 rounded-full bg-[#f59e0b]" />
-                      <span>Ready • 10:20 AM</span>
+                    <div className="text-[11px] text-signal-warningBright font-mono">
+                      Ready · 10:20 AM
                     </div>
                   </div>
                 </div>
 
                 <button
+                  type="button"
                   onClick={() => router.push("/workflow")}
-                  className="px-3 py-1 rounded-full bg-[#3b59f8] hover:bg-[#2f4bd8] text-white text-[11px] font-semibold transition-colors"
+                  className="px-3 py-1 rounded-full bg-cobalt hover:bg-cobalt-hover text-ink-onAccent text-[11px] font-semibold transition-colors shrink-0"
                 >
                   Open
                 </button>
               </div>
 
-              <p className="text-[11px] text-[#9ca3af] leading-relaxed pl-9">
-                Isolate, reroute, dispatch — recommended steps included.
+              <p className="text-[11px] text-ink-muted leading-relaxed">
+                Isolate, reroute, and dispatch steps pre-configured for operator review.
               </p>
             </div>
 
             {/* ARTIFACT 4: Voice Dispatch Preview */}
-            <div className="rounded-2xl bg-[#1b2230] border border-[#29354a] p-4 text-xs font-sans">
-              <div className="flex items-center justify-between mb-2">
-                <div className="flex items-center gap-2.5">
-                  <div className="w-7 h-7 rounded-lg bg-[#6366f1]/20 border border-[#6366f1]/40 flex items-center justify-center text-[#818cf8]">
-                    <Volume2 className="w-3.5 h-3.5" />
+            <div className="rounded-2xl bg-ink-card border border-ink-border p-3.5 text-xs font-sans">
+              <div className="flex items-center justify-between gap-2 mb-2">
+                <div className="flex items-center gap-2 min-w-0">
+                  <div className="w-7 h-7 rounded-lg bg-cobalt-tint border border-cobalt-border flex items-center justify-center text-cobalt-soft shrink-0">
+                    <Volume2 className="w-3.5 h-3.5" aria-hidden="true" />
                   </div>
-                  <div>
-                    <h3 className="font-semibold text-white text-xs">
+                  <div className="min-w-0">
+                    <h3 className="font-semibold text-ink-text text-xs truncate">
                       Voice dispatch preview
                     </h3>
-                    <div className="flex items-center gap-1.5 text-[10px] text-[#9ca3af] font-mono">
-                      <span className="w-1.5 h-1.5 rounded-full bg-[#9ca3af]" />
-                      <span>Generated • 10:22 AM</span>
+                    <div className="text-[11px] text-ink-muted font-mono">
+                      Generated · 10:22 AM
                     </div>
                   </div>
                 </div>
 
                 <button
+                  type="button"
                   onClick={toggleVoicePlayback}
-                  className="px-3 py-1 rounded-full bg-[#3b59f8] hover:bg-[#2f4bd8] text-white text-[11px] font-semibold transition-colors"
+                  className="px-3 py-1 rounded-full bg-cobalt hover:bg-cobalt-hover text-ink-onAccent text-[11px] font-semibold transition-colors shrink-0"
                 >
-                  Open
+                  {isPlayingVoice ? "Pause" : "Play"}
                 </button>
               </div>
 
-              {/* Working Audio Waveform Player */}
-              <div className="mt-3 p-3 rounded-xl bg-[#121620] border border-[#232d3f] flex items-center justify-between gap-3">
-                <div className="flex-1">
-                  <p className="italic text-[11px] text-[#cbd5e1] leading-tight font-serif mb-1">
+              <div className="mt-2.5 p-2.5 rounded-xl bg-ink-deep border border-ink-border flex items-center justify-between gap-2.5">
+                <div className="flex-1 min-w-0">
+                  <p className="italic text-[11px] text-ink-secondary leading-snug font-serif mb-1.5">
                     &ldquo;Dispatching field crew to Node C. Thermal fault detected. Bring standard repair kit.&rdquo;
                   </p>
-                  <div className="flex items-center gap-1 h-3 mt-1.5">
-                    {[3, 6, 9, 12, 8, 14, 10, 6, 12, 16, 9, 5, 8, 11, 6].map((h, i) => (
+                  <div className="flex items-center gap-1 h-3">
+                    {[3, 6, 9, 12, 8, 13, 10, 6, 11, 14, 9, 5].map((h, i) => (
                       <span
                         key={i}
-                        className={`w-1 rounded-full transition-all duration-200 ${
-                          isPlayingVoice ? "bg-[#3b59f8] animate-pulse" : "bg-[#374151]"
+                        className={`w-1 rounded-full transition-colors duration-200 ${
+                          isPlayingVoice ? "bg-cobalt animate-pulse" : "bg-ink-borderStrong"
                         }`}
-                        style={{ height: `${isPlayingVoice ? Math.min(16, h + (i % 3) * 2) : h}px` }}
+                        style={{ height: `${h}px` }}
                       />
                     ))}
                   </div>
                 </div>
 
-                {/* Play Button & Timer */}
-                <div className="flex items-center gap-2 shrink-0">
+                <div className="flex flex-col items-center gap-1 shrink-0">
                   <button
+                    type="button"
                     onClick={toggleVoicePlayback}
-                    className="w-8 h-8 rounded-full bg-[#3b59f8] hover:bg-[#2f4bd8] text-white flex items-center justify-center shadow-cobalt"
-                    title={isPlayingVoice ? "Pause Spoken Alert" : "Play Spoken Alert"}
+                    className="w-8 h-8 rounded-full bg-cobalt hover:bg-cobalt-hover text-ink-onAccent flex items-center justify-center shadow-cobalt transition-colors"
+                    title={isPlayingVoice ? "Pause spoken alert" : "Play spoken alert"}
+                    aria-label={isPlayingVoice ? "Pause spoken alert" : "Play spoken alert"}
                   >
                     {isPlayingVoice ? (
-                      <Pause className="w-3.5 h-3.5 fill-white" />
+                      <Pause className="w-3.5 h-3.5 fill-current" aria-hidden="true" />
                     ) : (
-                      <Play className="w-3.5 h-3.5 fill-white ml-0.5" />
+                      <Play className="w-3.5 h-3.5 fill-current ml-0.5" aria-hidden="true" />
                     )}
                   </button>
-                  <span className="text-[11px] font-mono text-[#9ca3af]">
-                    0:{voiceProgress < 10 ? `0${voiceProgress}` : voiceProgress} / 0:18
+                  <span className="text-[10px] font-mono text-ink-muted">
+                    0:{voiceProgress < 10 ? `0${voiceProgress}` : voiceProgress}
                   </span>
                 </div>
               </div>
@@ -240,49 +235,52 @@ export default function AIArtifactsPanel() {
           </div>
         </div>
 
-        {/* Bottom Values Footer matching screenshot */}
-        <div className="pt-6 border-t border-[#222a3d] mt-6 text-center">
-          <div className="flex items-center justify-center gap-6 text-[10px] font-mono tracking-widest text-[#717a8c] uppercase">
-            <span>PEOPLE</span>
-            <span>INFRASTRUCTURE</span>
-            <span>A CLEANER TOMORROW</span>
-          </div>
+        <div className="pt-4 border-t border-ink-border mt-4 text-center text-[11px] font-sans text-ink-muted">
+          People, infrastructure, cleaner tomorrow
         </div>
       </aside>
 
       {/* Artifact Modal for Detailed Report Inspection */}
       {activeModalArtifact && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md">
-          <div className="w-full max-w-2xl rounded-3xl bg-[#141824] border border-[#273247] p-6 text-[#f4f5f8] shadow-2xl">
-            <div className="flex items-start justify-between pb-3 border-b border-[#222a3d] mb-4">
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-ink-deep/80 backdrop-blur-md"
+          onClick={() => setActiveModalArtifact(null)}
+        >
+          <div
+            className="w-full max-w-2xl rounded-3xl bg-ink-surface border border-ink-borderStrong p-6 text-ink-text shadow-2xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-start justify-between pb-3 border-b border-ink-border mb-4">
               <div>
-                <h3 className="font-serif text-2xl text-white">
+                <h3 className="font-serif text-2xl text-ink-text">
                   {activeModalArtifact === "snapshot"
                     ? "Live Grid Topology Snapshot"
                     : "AI Maintenance Diagnostic Report"}
                 </h3>
-                <p className="text-xs font-mono text-[#818cf8]">
-                  IEEE 1547 & BESCOM O&M FRAMEWORK REFERENCE
+                <p className="text-xs font-sans text-cobalt-soft mt-0.5">
+                  IEEE 1547 & BESCOM O&M Framework Reference
                 </p>
               </div>
               <button
+                type="button"
                 onClick={() => setActiveModalArtifact(null)}
-                className="p-1.5 rounded-full hover:bg-[#1e2536] text-[#9ca3af] hover:text-white"
+                aria-label="Close artifact modal"
+                className="p-1.5 rounded-full hover:bg-ink-hover text-ink-muted hover:text-ink-text transition-colors"
               >
-                <X className="w-5 h-5" />
+                <X className="w-5 h-5" aria-hidden="true" />
               </button>
             </div>
 
-            <div className="space-y-3 text-xs leading-relaxed text-[#cbd5e1] font-mono">
-              <div className="p-3 rounded-xl bg-[#1a2130] border border-[#273247]">
-                <div className="text-white font-bold mb-1">INCIDENT SUMMARY</div>
+            <div className="space-y-3 text-xs leading-relaxed text-ink-secondary font-sans">
+              <div className="p-3.5 rounded-xl bg-ink-card border border-ink-border">
+                <div className="text-ink-text font-semibold mb-1">Incident Summary</div>
                 <p>
-                  Node C (Industrial Transformer) reported thermal spike to 102.0°C exceeding the 85.0°C critical threshold. Phase voltage sag observed at 194.5V with 285A current draw.
+                  Node C (Industrial Transformer) reported winding temperature at {nodeC.temperature}°C against the 85.0°C safe threshold. Phase voltage observed at {nodeC.voltage}V with {nodeC.current}A current draw.
                 </p>
               </div>
 
-              <div className="p-3 rounded-xl bg-[#1a2130] border border-[#273247]">
-                <div className="text-white font-bold mb-1">RECOMMENDED OPERATOR MITIGATION</div>
+              <div className="p-3.5 rounded-xl bg-ink-card border border-ink-border">
+                <div className="text-ink-text font-semibold mb-1">Recommended Operator Mitigation</div>
                 <p>
                   1. Execute remote breaker isolation command for Node C bay.<br />
                   2. Reroute 26MW industrial surplus to Residential Feeder A (headroom available: 98MW / 120MW limit).<br />
@@ -290,16 +288,17 @@ export default function AIArtifactsPanel() {
                 </p>
               </div>
 
-              <div className="p-3 rounded-xl bg-[#1a2130] border border-[#273247]">
-                <div className="text-white font-bold mb-1">EVIDENCE & DATA SOURCES</div>
+              <div className="p-3.5 rounded-xl bg-ink-card border border-ink-border">
+                <div className="text-ink-text font-semibold mb-1">Evidence & Data Sources</div>
                 <p>
-                  Historical benchmark: KERC Combined Tariff Order 2025 records BESCOM repair expenditure of ₹134.44 Cr for 36,035 faulty distribution transformers in FY 2023-24.
+                  Historical benchmark: KERC Combined Tariff Order 2025 records BESCOM repair expenditure of ₹134.44 Cr for 36,035 faulty distribution transformers in FY 2023 to 2024.
                 </p>
               </div>
             </div>
 
             <div className="mt-6 flex justify-end">
               <button
+                type="button"
                 onClick={() => setActiveModalArtifact(null)}
                 className="pill-button-cobalt text-xs py-2 px-5"
               >

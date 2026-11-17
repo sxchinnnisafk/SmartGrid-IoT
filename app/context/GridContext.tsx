@@ -1,6 +1,6 @@
 "use client";
 
-import React, { createContext, useContext, useState, useEffect } from "react";
+import React, { createContext, useContext, useState, useEffect, useMemo } from "react";
 import {
   GridNodeData,
   ThresholdConfig,
@@ -644,10 +644,10 @@ export function GridProvider({ children }: { children: React.ReactNode }) {
     addLog("SYSTEM", "System reset to default state.", "info");
   };
 
-  // Periodic simulated telemetry jitter
+  // Periodic simulated telemetry jitter (pauses automatically when tab is hidden)
   useEffect(() => {
     const interval = setInterval(() => {
-      if (isOffline) return;
+      if (isOffline || (typeof document !== "undefined" && document.hidden)) return;
 
       const now = new Date();
       const timeLabel = now.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" });

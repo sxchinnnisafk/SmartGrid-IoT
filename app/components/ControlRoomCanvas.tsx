@@ -4,14 +4,10 @@ import React, { useState } from "react";
 import { useGrid } from "../context/GridContext";
 import {
   Plus,
-  Minus,
-  Navigation,
   Compass,
   Wifi,
-  Zap,
-  AlertTriangle,
+  Flame,
   CheckCircle2,
-  Maximize2,
   RotateCcw,
 } from "lucide-react";
 
@@ -23,6 +19,7 @@ export default function ControlRoomCanvas() {
     rover,
     isThermalFaultActive,
     triggerThermalFault,
+    addLog,
   } = useGrid();
 
   const [zoomLevel, setZoomLevel] = useState<number>(100);
@@ -32,349 +29,469 @@ export default function ControlRoomCanvas() {
   const nodeB = nodes.find((n) => n.id === "node-b") || nodes[1];
   const nodeC = nodes.find((n) => n.id === "node-c") || nodes[2];
 
-  const handleZoomIn = () => setZoomLevel((z) => Math.min(150, z + 10));
+  const handleZoomIn = () => setZoomLevel((z) => Math.min(140, z + 10));
   const handleZoomOut = () => setZoomLevel((z) => Math.max(70, z - 10));
   const handleResetZoom = () => setZoomLevel(100);
 
+  const handleSelectAssetFromPalette = (nodeId: string, label: string) => {
+    setSelectedNodeId(nodeId);
+    addLog("SYSTEM", `Focused corridor asset: ${label} (${nodeId.toUpperCase()}).`, "info");
+    setIsAssetPaletteOpen(false);
+  };
+
   return (
-    <div className="relative w-full h-[580px] xl:h-[640px] rounded-3xl bg-[#ede4d8] border border-[#d8cdbd] text-[#1c1f28] shadow-parchment overflow-hidden flex flex-col justify-between select-none">
+    <div className="relative w-full min-h-[420px] sm:h-[470px] xl:h-[520px] rounded-3xl bg-parchment border border-parchment-border text-parchment-text shadow-parchment overflow-hidden flex flex-col justify-between select-none">
       {/* Top Banner on Canvas */}
-      <div className="relative z-20 px-6 pt-5 flex items-start justify-between">
-        {/* Left Drag Assets CTA */}
-        <div className="flex items-center gap-3">
+      <div className="relative z-20 px-5 pt-4 flex items-center justify-between gap-4">
+        <div className="flex items-center gap-3 min-w-0">
           <button
+            type="button"
             onClick={() => setIsAssetPaletteOpen(!isAssetPaletteOpen)}
-            className="w-9 h-9 rounded-full bg-[#f5eee5] hover:bg-white text-[#1c1f28] border border-[#d2c5b3] flex items-center justify-center shadow-sm transition-all hover:scale-105"
-            title="Add asset to grid"
+            className="w-9 h-9 rounded-full bg-parchment-light hover:bg-parchment-bright text-parchment-text border border-parchment-borderStrong flex items-center justify-center shadow-sm transition-transform hover:scale-105 shrink-0"
+            title="Inspect corridor assets"
+            aria-label="Toggle micro-grid asset palette"
+            aria-expanded={isAssetPaletteOpen}
           >
-            <Plus className="w-5 h-5 text-[#3b59f8]" />
+            <Plus className="w-5 h-5 text-cobalt" aria-hidden="true" />
           </button>
-          <div>
-            <h2 className="font-serif text-xl sm:text-2xl font-normal text-[#181a22] leading-tight">
-              Drag assets to add to the grid
+          <div className="min-w-0">
+            <h2 className="font-serif text-lg sm:text-xl font-normal text-parchment-text leading-tight truncate">
+              Interactive Three-Node Corridor
             </h2>
-            <p className="text-[10px] sm:text-[11px] font-mono tracking-widest text-[#717888] uppercase">
-              BUILD A CLEANER, MORE RESILIENT TOMORROW.
+            <p className="text-xs font-sans text-parchment-muted truncate">
+              Select a node to inspect live telemetry or simulate a thermal event
             </p>
           </div>
         </div>
 
-        {/* Right Slogan */}
-        <div className="hidden sm:block text-right">
-          <p className="text-[10px] font-mono tracking-widest text-[#717888] uppercase leading-tight">
-            REAL-WORLD ENERGY. <br />
-            HIGHER INTELLIGENCE.
-          </p>
+        {/* Live Thermal Fault Quick Toggle */}
+        <div className="flex items-center gap-2 shrink-0">
+          <button
+            type="button"
+            onClick={() => triggerThermalFault(!isThermalFaultActive)}
+            className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-sans font-semibold border transition-colors ${
+              isThermalFaultActive
+                ? "bg-signal-criticalBg text-signal-criticalText border-signal-criticalBorder hover:bg-parchment-bright"
+                : "bg-parchment-light text-parchment-text border-parchment-borderStrong hover:border-cobalt"
+            }`}
+          >
+            {isThermalFaultActive ? (
+              <>
+                <CheckCircle2 className="w-3.5 h-3.5" aria-hidden="true" />
+                <span>Clear Fault</span>
+              </>
+            ) : (
+              <>
+                <Flame className="w-3.5 h-3.5 text-signal-critical" aria-hidden="true" />
+                <span>Trigger Fault</span>
+              </>
+            )}
+          </button>
         </div>
       </div>
 
       {/* Asset Palette Dropdown */}
       {isAssetPaletteOpen && (
-        <div className="absolute top-16 left-6 z-30 bg-[#f7f2ea] border border-[#d6c7b3] rounded-2xl p-4 shadow-xl text-xs font-mono w-72">
-          <div className="text-[11px] font-bold text-[#181a22] mb-2 uppercase">
-            Available Micro-Grid Assets
+        <div className="absolute top-16 left-5 z-30 bg-parchment-bright border border-parchment-borderStrong rounded-2xl p-4 shadow-xl text-xs font-sans w-72">
+          <div className="text-xs font-semibold text-parchment-text mb-2.5">
+            Corridor Micro-Grid Assets
           </div>
           <div className="space-y-2">
-            <div className="p-2 bg-white rounded-lg border border-[#e2d6c6] flex items-center gap-2 cursor-pointer hover:border-[#3b59f8]">
-              <span className="w-2 h-2 rounded-full bg-[#22c55e]" />
-              <span>Solar Micro-Inverter Feeder</span>
-            </div>
-            <div className="p-2 bg-white rounded-lg border border-[#e2d6c6] flex items-center gap-2 cursor-pointer hover:border-[#3b59f8]">
-              <span className="w-2 h-2 rounded-full bg-[#f59e0b]" />
-              <span>EV DC Fast Charger Bank</span>
-            </div>
-            <div className="p-2 bg-white rounded-lg border border-[#e2d6c6] flex items-center gap-2 cursor-pointer hover:border-[#ef4444]">
-              <span className="w-2 h-2 rounded-full bg-[#ef4444]" />
-              <span>Distribution Step-Down Transformer</span>
-            </div>
+            <button
+              type="button"
+              onClick={() => handleSelectAssetFromPalette("node-a", "Solar Micro-Inverter Feeder")}
+              className="w-full p-2.5 bg-parchment-light rounded-xl border border-parchment-border flex items-center gap-2.5 hover:border-cobalt text-left transition-colors"
+            >
+              <span className="w-2 h-2 rounded-full bg-signal-normalBright shrink-0" />
+              <span className="font-medium text-parchment-text">Solar Micro-Inverter Feeder (Node A)</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => handleSelectAssetFromPalette("node-b", "EV DC Fast Charger Bank")}
+              className="w-full p-2.5 bg-parchment-light rounded-xl border border-parchment-border flex items-center gap-2.5 hover:border-cobalt text-left transition-colors"
+            >
+              <span className="w-2 h-2 rounded-full bg-signal-warningBright shrink-0" />
+              <span className="font-medium text-parchment-text">EV DC Fast Charger Bank (Node B)</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => handleSelectAssetFromPalette("node-c", "Distribution Step-Down Transformer")}
+              className="w-full p-2.5 bg-parchment-light rounded-xl border border-parchment-border flex items-center gap-2.5 hover:border-signal-critical text-left transition-colors"
+            >
+              <span className="w-2 h-2 rounded-full bg-signal-criticalBright shrink-0" />
+              <span className="font-medium text-parchment-text">Industrial Transformer (Node C)</span>
+            </button>
           </div>
-          <p className="mt-3 text-[10px] text-[#838b9c]">
-            Click to drop onto tabletop coordinate corridor.
+          <p className="mt-3 text-[11px] text-parchment-muted">
+            Click an asset to focus its live telemetry readout.
           </p>
         </div>
       )}
 
-      {/* Main Isometric Interactive Stage */}
+      {/* Mobile Dedicated Corridor Stack (Zero Overlap on < 640px) */}
+      <div className="flex sm:hidden flex-col gap-2.5 px-4 py-4">
+        {[nodeA, nodeB, nodeC].map((node) => {
+          const isSelected = selectedNodeId === node.id;
+          const statusClasses =
+            node.status === "critical"
+              ? "bg-signal-criticalBg text-signal-criticalText"
+              : node.status === "warning"
+              ? "bg-signal-warningBg text-signal-warningText"
+              : "bg-signal-normalBg text-signal-normalText";
+
+          return (
+            <button
+              key={node.id}
+              type="button"
+              onClick={() => setSelectedNodeId(node.id)}
+              className={`w-full p-3 rounded-2xl bg-parchment-bright border text-left flex items-center justify-between gap-2.5 transition-colors ${
+                isSelected ? "border-cobalt ring-2 ring-cobalt/20" : "border-parchment-borderStrong"
+              }`}
+            >
+              <div className="flex items-center gap-2.5 min-w-0">
+                <span
+                  className={`w-6 h-6 rounded-full text-ink-onAccent flex items-center justify-center text-xs font-bold shrink-0 ${
+                    node.status === "critical" ? "bg-signal-critical" : "bg-control"
+                  }`}
+                >
+                  {node.badge}
+                </span>
+                <div className="min-w-0">
+                  <div className="font-semibold text-xs text-parchment-text truncate">{node.name}</div>
+                  <div className="flex items-center gap-2 text-[11px] text-parchment-muted">
+                    <span>{node.temperature}°C</span>
+                    <span>{node.voltage} V</span>
+                    <span>{node.powerLoad} MW</span>
+                  </div>
+                </div>
+              </div>
+              <span className={`px-2 py-0.5 rounded-full text-[10px] font-semibold shrink-0 ${statusClasses}`}>
+                {node.statusLabel}
+              </span>
+            </button>
+          );
+        })}
+
+        <div className="flex items-center justify-between gap-2 px-3.5 py-2.5 rounded-2xl bg-ink-card border border-cobalt text-ink-text">
+          <div className="flex items-center gap-2">
+            <Wifi className="w-4 h-4 text-cobalt-soft shrink-0" aria-hidden="true" />
+            <span className="text-xs font-semibold">ESP32-S3 Rover</span>
+          </div>
+          <span className="text-[11px] text-ink-muted">
+            {rover.isPatrolling ? `Patrolling (${rover.batteryLevel}%)` : "Paused"}
+          </span>
+        </div>
+      </div>
+
+      {/* Desktop Main Isometric Interactive Stage */}
       <div
-        className="relative flex-1 w-full h-full overflow-hidden transition-transform duration-200"
+        className="hidden sm:block relative flex-1 w-full h-full overflow-hidden transition-transform duration-200"
         style={{ transform: `scale(${zoomLevel / 100})`, transformOrigin: "center center" }}
       >
-        {/* Stylized Isometric Landscape Background with Lake and Roads */}
+        {/* Stylized Landscape Background, Road Corridor & Aligned Transmission Arcs */}
         <svg
-          className="absolute inset-0 w-full h-full"
-          viewBox="0 0 1000 600"
+          aria-hidden="true"
+          className="absolute inset-0 w-full h-full pointer-events-none"
+          viewBox="0 0 1000 500"
           fill="none"
           xmlns="http://www.w3.org/2000/svg"
         >
           {/* Subtle contour lines */}
           <path
-            d="M 50,200 Q 250,150 450,220 T 950,180"
-            stroke="#d8cdbd"
-            strokeWidth="1.5"
+            d="M 40,140 Q 260,95 480,160 T 960,130"
+            stroke="var(--color-paper-border-strong)"
+            strokeWidth="1.2"
             strokeDasharray="4 8"
+            opacity="0.65"
           />
           <path
-            d="M 100,320 Q 300,280 600,340 T 980,310"
-            stroke="#d8cdbd"
-            strokeWidth="1.5"
+            d="M 80,270 Q 320,230 620,290 T 980,260"
+            stroke="var(--color-paper-border-strong)"
+            strokeWidth="1.2"
             strokeDasharray="4 8"
+            opacity="0.55"
           />
           <path
-            d="M 0,460 Q 400,420 800,470"
-            stroke="#d8cdbd"
-            strokeWidth="1.5"
+            d="M 0,400 Q 400,360 820,410"
+            stroke="var(--color-paper-border-strong)"
+            strokeWidth="1.2"
             strokeDasharray="4 8"
+            opacity="0.5"
           />
 
-          {/* Lake / Pond at bottom right matching the concept screenshot */}
+          {/* Isometric Road Corridor */}
           <path
-            d="M 680,480 Q 740,430 820,440 T 960,490 Q 990,560 920,590 T 720,580 Q 660,540 680,480 Z"
-            fill="#b8d4e3"
-            opacity="0.8"
-          />
-
-          {/* Isometric Road Corridor connecting nodes */}
-          <path
-            d="M 120,420 Q 320,380 440,320 T 820,240"
-            stroke="#e0d5c4"
-            strokeWidth="28"
+            d="M 90,380 Q 340,340 500,270 T 880,180"
+            stroke="var(--color-paper-dark)"
+            strokeWidth="24"
             strokeLinecap="round"
           />
 
-          {/* Energy Pulse Line (Royal Blue connecting A -> B -> C) */}
+          {/* Energy Transmission Line: Node A (185, 165) -> Node B (445, 315) */}
           <path
-            d="M 160,250 Q 280,240 370,260 T 570,270"
-            stroke="#3b59f8"
+            d="M 185,165 C 260,210 340,280 445,315"
+            stroke="var(--color-cobalt)"
             strokeWidth="3.5"
             fill="none"
           />
+          <path
+            d="M 185,165 C 260,210 340,280 445,315"
+            stroke="var(--color-paper-bright)"
+            strokeWidth="1.5"
+            strokeDasharray="6 10"
+            className="animate-dash-flow"
+            fill="none"
+          />
 
-          {/* Glowing Junction Dots */}
-          <circle cx="160" cy="250" r="5" fill="#3b59f8" />
-          <circle cx="280" cy="245" r="4" fill="#3b59f8" />
-          <circle cx="370" cy="260" r="5" fill="#3b59f8" />
-          <circle cx="470" cy="265" r="4" fill="#3b59f8" />
-          <circle cx="570" cy="270" r="5" fill="#3b59f8" />
+          {/* Energy Transmission Line: Node B (500, 315) -> Node C (795, 165) */}
+          <path
+            d="M 500,315 C 620,305 700,235 795,165"
+            stroke={isThermalFaultActive ? "var(--color-signal-critical)" : "var(--color-cobalt)"}
+            strokeWidth="3.5"
+            fill="none"
+          />
+          <path
+            d="M 500,315 C 620,305 700,235 795,165"
+            stroke="var(--color-paper-bright)"
+            strokeWidth="1.5"
+            strokeDasharray="6 10"
+            className="animate-dash-flow"
+            fill="none"
+          />
+
+          {/* Junction Anchor Dots */}
+          <circle cx="185" cy="165" r="5" fill="var(--color-cobalt)" />
+          <circle cx="445" cy="315" r="5" fill="var(--color-signal-warning)" />
+          <circle
+            cx="795"
+            cy="165"
+            r="5.5"
+            fill={isThermalFaultActive ? "var(--color-signal-critical)" : "var(--color-signal-normal)"}
+          />
 
           {/* Rover Dashed Telemetry Trail */}
           <path
-            d="M 220,380 Q 320,360 420,390 T 580,410"
-            stroke="#3b59f8"
+            d="M 190,415 Q 480,440 810,365"
+            stroke="var(--color-cobalt)"
             strokeWidth="2"
             strokeDasharray="5 7"
+            opacity="0.65"
             fill="none"
           />
         </svg>
 
-        {/* NODE A: Residential Feeder */}
-        <div
+        {/* NODE A: Residential Feeder (Top Left — Zero Overlap) */}
+        <button
+          type="button"
           onClick={() => setSelectedNodeId("node-a")}
-          className={`absolute top-[22%] left-[6%] sm:left-[10%] z-20 cursor-pointer transition-all duration-300 ${
-            selectedNodeId === "node-a" ? "scale-105" : "hover:scale-102"
+          className={`absolute top-[6%] left-[3%] sm:left-[5%] z-20 text-left transition-transform duration-200 ${
+            selectedNodeId === "node-a" ? "scale-[1.03]" : "hover:scale-[1.02]"
           }`}
         >
-          {/* Isometric House & Solar Illustration */}
-          <div className="relative w-36 h-28 sm:w-44 sm:h-32 mb-1 flex items-center justify-center">
-            {/* Visual House Model Block */}
-            <div className="w-28 h-20 rounded-2xl bg-[#f5efe6] border border-[#d4c6b2] shadow-md p-2 flex flex-col justify-between relative overflow-hidden group">
-              <div className="h-6 rounded bg-[#3b59f8]/15 border border-[#3b59f8]/30 flex items-center justify-center text-[10px] font-mono text-[#3b59f8] font-bold">
-                SOLAR ROOF
-              </div>
-              <div className="grid grid-cols-2 gap-1 text-[9px] font-mono text-[#626877]">
-                <div className="p-1 rounded bg-[#ece4d8]">1420 Homes</div>
-                <div className="p-1 rounded bg-[#ece4d8]">98.2% Bal</div>
-              </div>
+          <div className="w-36 rounded-2xl bg-parchment-light border border-parchment-borderStrong shadow-sm p-2 mb-1.5">
+            <div className="py-1 rounded-lg bg-cobalt-tint border border-cobalt-border text-center text-[10px] font-mono text-cobalt font-bold">
+              Solar Roof
+            </div>
+            <div className="grid grid-cols-2 gap-1 text-[10px] font-mono text-parchment-secondary mt-1.5 text-center">
+              <div className="py-0.5 px-1 rounded bg-parchment">{nodeA.householdCount ?? 1420} homes</div>
+              <div className="py-0.5 px-1 rounded bg-parchment">{nodeA.phaseBalance}%</div>
             </div>
           </div>
 
-          {/* Node Badge Card matching the mockup */}
           <div
-            className={`flex items-center gap-2.5 px-3 py-1.5 rounded-full bg-[#f7f2ea] border transition-all shadow-sm ${
+            className={`flex items-center gap-2 px-3 py-1.5 rounded-full bg-parchment-bright border transition-colors shadow-sm ${
               selectedNodeId === "node-a"
-                ? "border-[#3b59f8] ring-2 ring-[#3b59f8]/20"
-                : "border-[#d8ccbb] hover:border-[#3b59f8]"
+                ? "border-cobalt ring-2 ring-cobalt/20"
+                : "border-parchment-borderStrong hover:border-cobalt"
             }`}
           >
-            <span className="w-5 h-5 rounded-full bg-[#4f46e5] text-white flex items-center justify-center text-[11px] font-bold">
+            <span className="w-5 h-5 rounded-full bg-control text-ink-onAccent flex items-center justify-center text-[11px] font-bold shrink-0">
               A
             </span>
             <div className="text-left font-sans">
-              <div className="font-semibold text-xs text-[#1c1f28]">
-                Residential Feeder
+              <div className="font-semibold text-xs text-parchment-text leading-tight">
+                {nodeA.name}
               </div>
-              <div className="text-[10px] text-[#6d7486]">
-                Neighborhood supply
+              <div className="text-[10px] text-parchment-muted">
+                {nodeA.powerLoad} MW · {nodeA.temperature}°C
               </div>
             </div>
-            <div className="ml-1 flex items-center gap-1 px-2 py-0.5 rounded-full bg-[#dcfce7] text-[#166534] text-[10px] font-mono font-bold">
-              <span className="w-1.5 h-1.5 rounded-full bg-[#22c55e]" />
-              <span>Normal</span>
-            </div>
+            <span className="ml-1 inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-signal-normalBg text-signal-normalText text-[10px] font-sans font-semibold">
+              <span className="w-1.5 h-1.5 rounded-full bg-signal-normalBright" />
+              {nodeA.statusLabel}
+            </span>
           </div>
-        </div>
+        </button>
 
-        {/* NODE B: EV Charging Hub */}
-        <div
+        {/* NODE B: EV Charging Hub (Lower Center — Cleanly Separated from C) */}
+        <button
+          type="button"
           onClick={() => setSelectedNodeId("node-b")}
-          className={`absolute top-[30%] left-[34%] sm:left-[36%] z-20 cursor-pointer transition-all duration-300 ${
-            selectedNodeId === "node-b" ? "scale-105" : "hover:scale-102"
+          className={`absolute top-[46%] left-[28%] sm:left-[31%] z-20 text-left transition-transform duration-200 ${
+            selectedNodeId === "node-b" ? "scale-[1.03]" : "hover:scale-[1.02]"
           }`}
         >
-          {/* Isometric Canopy & EV Illustration */}
-          <div className="relative w-36 h-28 sm:w-44 sm:h-32 mb-1 flex items-center justify-center">
-            <div className="w-28 h-20 rounded-2xl bg-[#f5efe6] border border-[#d4c6b2] shadow-md p-2 flex flex-col justify-between relative overflow-hidden">
-              <div className="h-6 rounded bg-[#f59e0b]/15 border border-[#f59e0b]/30 flex items-center justify-center text-[10px] font-mono text-[#d97706] font-bold">
-                EV CANOPY
-              </div>
-              <div className="grid grid-cols-2 gap-1 text-[9px] font-mono text-[#626877]">
-                <div className="p-1 rounded bg-[#ece4d8]">4 Stalls</div>
-                <div className="p-1 rounded bg-[#ece4d8]">76 MW</div>
-              </div>
+          <div className="w-36 rounded-2xl bg-parchment-light border border-parchment-borderStrong shadow-sm p-2 mb-1.5">
+            <div className="py-1 rounded-lg bg-signal-warningBg border border-signal-warningBorder text-center text-[10px] font-mono text-signal-warningText font-bold">
+              EV Canopy
+            </div>
+            <div className="grid grid-cols-2 gap-1 text-[10px] font-mono text-parchment-secondary mt-1.5 text-center">
+              <div className="py-0.5 px-1 rounded bg-parchment">{nodeB.activeEVs ?? 24} EVs</div>
+              <div className="py-0.5 px-1 rounded bg-parchment">{nodeB.powerLoad} MW</div>
             </div>
           </div>
 
-          {/* Node Badge Card */}
           <div
-            className={`flex items-center gap-2.5 px-3 py-1.5 rounded-full bg-[#f7f2ea] border transition-all shadow-sm ${
+            className={`flex items-center gap-2 px-3 py-1.5 rounded-full bg-parchment-bright border transition-colors shadow-sm ${
               selectedNodeId === "node-b"
-                ? "border-[#f59e0b] ring-2 ring-[#f59e0b]/20"
-                : "border-[#d8ccbb] hover:border-[#f59e0b]"
+                ? "border-signal-warning ring-2 ring-signal-warning/25"
+                : "border-parchment-borderStrong hover:border-signal-warning"
             }`}
           >
-            <span className="w-5 h-5 rounded-full bg-[#4f46e5] text-white flex items-center justify-center text-[11px] font-bold">
+            <span className="w-5 h-5 rounded-full bg-control text-ink-onAccent flex items-center justify-center text-[11px] font-bold shrink-0">
               B
             </span>
             <div className="text-left font-sans">
-              <div className="font-semibold text-xs text-[#1c1f28]">
-                EV Charging Hub
+              <div className="font-semibold text-xs text-parchment-text leading-tight">
+                {nodeB.name}
               </div>
-              <div className="text-[10px] text-[#6d7486]">
-                4 chargers online
+              <div className="text-[10px] text-parchment-muted">
+                {nodeB.temperature}°C · {nodeB.voltage} V
               </div>
             </div>
-            <div className="ml-1 flex items-center gap-1 px-2 py-0.5 rounded-full bg-[#fef3c7] text-[#92400e] text-[10px] font-mono font-bold">
-              <span className="w-1.5 h-1.5 rounded-full bg-[#f59e0b]" />
-              <span>Warning</span>
-            </div>
+            <span className="ml-1 inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-signal-warningBg text-signal-warningText text-[10px] font-sans font-semibold">
+              <span className="w-1.5 h-1.5 rounded-full bg-signal-warningBright" />
+              {nodeB.statusLabel}
+            </span>
           </div>
-        </div>
+        </button>
 
-        {/* NODE C: Industrial Transformer */}
-        <div
+        {/* NODE C: Industrial Transformer (Top Right — Zero Overlap) */}
+        <button
+          type="button"
           onClick={() => setSelectedNodeId("node-c")}
-          className={`absolute top-[20%] right-[6%] sm:right-[12%] z-20 cursor-pointer transition-all duration-300 ${
-            selectedNodeId === "node-c" ? "scale-105" : "hover:scale-102"
+          className={`absolute top-[6%] right-[3%] sm:right-[5%] z-20 text-left transition-transform duration-200 ${
+            selectedNodeId === "node-c" ? "scale-[1.03]" : "hover:scale-[1.02]"
           }`}
         >
-          {/* Substation Tower & Transformer Illustration */}
-          <div className="relative w-40 h-32 sm:w-48 sm:h-36 mb-1 flex items-center justify-center">
-            <div className="w-32 h-24 rounded-2xl bg-[#f5efe6] border border-[#d4c6b2] shadow-md p-2 flex flex-col justify-between relative overflow-hidden">
+          <div className="w-40 rounded-2xl bg-parchment-light border border-parchment-borderStrong shadow-sm p-2 mb-1.5 ml-auto">
+            <div
+              className={`py-1 rounded-lg border text-center text-[10px] font-mono font-bold ${
+                isThermalFaultActive
+                  ? "bg-signal-criticalBg text-signal-critical border-signal-criticalBorder animate-pulse"
+                  : "bg-signal-normalBg text-signal-normalText border-signal-normalBorder"
+              }`}
+            >
+              Substation T-3
+            </div>
+            <div className="grid grid-cols-2 gap-1 text-[10px] font-mono text-parchment-secondary mt-1.5 text-center">
               <div
-                className={`h-6 rounded border flex items-center justify-center text-[10px] font-mono font-bold ${
-                  isThermalFaultActive
-                    ? "bg-[#fee2e2] text-[#dc2626] border-[#fecaca] animate-pulse"
-                    : "bg-[#22c55e]/15 text-[#16a34a] border-[#bbf7d0]"
+                className={`py-0.5 px-1 rounded font-semibold ${
+                  isThermalFaultActive ? "bg-signal-criticalBg text-signal-critical" : "bg-parchment"
                 }`}
               >
-                SUBSTATION T-3
+                {nodeC.temperature}°C
               </div>
-              <div className="grid grid-cols-2 gap-1 text-[9px] font-mono text-[#626877]">
-                <div
-                  className={`p-1 rounded font-bold ${
-                    isThermalFaultActive ? "bg-[#fee2e2] text-[#dc2626]" : "bg-[#ece4d8]"
-                  }`}
-                >
-                  {nodeC.temperature}°C
-                </div>
-                <div className="p-1 rounded bg-[#ece4d8]">194.5 V</div>
-              </div>
+              <div className="py-0.5 px-1 rounded bg-parchment">{nodeC.voltage} V</div>
             </div>
           </div>
 
-          {/* Node Badge Card */}
           <div
-            className={`flex items-center gap-2.5 px-3 py-1.5 rounded-full bg-[#f7f2ea] border transition-all shadow-sm ${
+            className={`flex items-center gap-2 px-3 py-1.5 rounded-full bg-parchment-bright border transition-colors shadow-sm ${
               selectedNodeId === "node-c"
-                ? "border-[#ef4444] ring-2 ring-[#ef4444]/20"
-                : "border-[#d8ccbb] hover:border-[#ef4444]"
+                ? isThermalFaultActive
+                  ? "border-signal-critical ring-2 ring-signal-critical/25"
+                  : "border-cobalt ring-2 ring-cobalt/20"
+                : "border-parchment-borderStrong hover:border-signal-critical"
             }`}
           >
-            <span className="w-5 h-5 rounded-full bg-[#dc2626] text-white flex items-center justify-center text-[11px] font-bold">
+            <span
+              className={`w-5 h-5 rounded-full text-ink-onAccent flex items-center justify-center text-[11px] font-bold shrink-0 ${
+                isThermalFaultActive ? "bg-signal-critical" : "bg-signal-normal"
+              }`}
+            >
               C
             </span>
             <div className="text-left font-sans">
-              <div className="font-semibold text-xs text-[#1c1f28]">
-                Industrial Transformer
+              <div className="font-semibold text-xs text-parchment-text leading-tight">
+                {nodeC.name}
               </div>
-              <div className="text-[10px] text-[#6d7486]">
-                High load detected
+              <div className="text-[10px] text-parchment-muted">
+                {isThermalFaultActive ? "High load detected" : "Nominal thermal state"}
               </div>
             </div>
-            <div className="ml-1 flex items-center gap-1 px-2 py-0.5 rounded-full bg-[#fee2e2] text-[#991b1b] text-[10px] font-mono font-bold">
-              <span className="w-1.5 h-1.5 rounded-full bg-[#ef4444] animate-ping" />
-              <span>Critical</span>
-            </div>
+            <span
+              className={`ml-1 inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-sans font-semibold ${
+                isThermalFaultActive
+                  ? "bg-signal-criticalBg text-signal-criticalText"
+                  : "bg-signal-normalBg text-signal-normalText"
+              }`}
+            >
+              <span
+                className={`w-1.5 h-1.5 rounded-full ${
+                  isThermalFaultActive ? "bg-signal-criticalBright animate-ping" : "bg-signal-normalBright"
+                }`}
+              />
+              {nodeC.statusLabel}
+            </span>
           </div>
-        </div>
+        </button>
 
         {/* ESP32-S3 ROVER PATROL ON CANVAS */}
         <div
-          className="absolute z-20 transition-all duration-1000"
+          className="absolute z-20 transition-transform duration-700"
           style={{
-            bottom: "22%",
-            left: `${rover.xPercent}%`,
+            bottom: "10%",
+            left: `${Math.min(76, Math.max(12, rover.xPercent))}%`,
           }}
         >
-          {/* Rover Model Inset */}
-          <div className="flex flex-col items-center">
-            {/* Wi-Fi Waves Icon */}
-            <div className="mb-1 text-[#3b59f8] animate-bounce">
-              <Wifi className="w-5 h-5" />
-            </div>
-
-            {/* Rover Chassis */}
-            <div className="w-16 h-10 rounded-xl bg-[#1e2330] border-2 border-[#3b59f8] shadow-lg flex items-center justify-center text-[9px] font-mono text-white font-bold rover-pulse">
-              ROVER R-1
-            </div>
-
-            {/* Label below */}
-            <div className="mt-1.5 text-center font-mono">
-              <div className="text-xs font-bold text-[#181a24]">
-                ESP32-S3 Rover
-              </div>
-              <div className="text-[9px] tracking-wider text-[#636a7b] uppercase">
-                AUTONOMOUS INSPECTION
+          <div className="flex items-center gap-2 px-3 py-1.5 rounded-2xl bg-ink-card border border-cobalt text-ink-text shadow-cobalt rover-pulse">
+            <Wifi className="w-4 h-4 text-cobalt-soft shrink-0" aria-hidden="true" />
+            <div className="text-left">
+              <div className="text-[11px] font-mono font-bold leading-tight">ESP32-S3 Rover</div>
+              <div className="text-[10px] font-sans text-ink-muted leading-tight">
+                {rover.isPatrolling ? `Patrolling (${rover.batteryLevel}%)` : "Paused"}
               </div>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Canvas Bottom Controls (Compass left, Zoom controls right) */}
-      <div className="relative z-20 px-6 pb-5 flex items-center justify-between">
-        {/* North Compass Indicator at bottom-left */}
-        <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#f5eee5] border border-[#d8ccbc] shadow-sm text-xs font-mono font-bold text-[#181a24]">
-          <Compass className="w-4 h-4 text-[#3b59f8]" />
+      {/* Canvas Bottom Controls */}
+      <div className="relative z-20 px-5 pb-4 flex items-center justify-between">
+        <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-parchment-light border border-parchment-borderStrong shadow-sm text-xs font-mono font-semibold text-parchment-text">
+          <Compass className="w-4 h-4 text-cobalt" aria-hidden="true" />
           <span>N</span>
-          <span>▲</span>
         </div>
 
-        {/* Zoom Controls Pill at bottom-right */}
-        <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-[#f5eee5] border border-[#d8ccbc] shadow-sm text-xs font-mono text-[#181a24]">
+        <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-parchment-light border border-parchment-borderStrong shadow-sm text-xs font-mono text-parchment-text">
           <button
+            type="button"
             onClick={handleZoomOut}
-            className="w-5 h-5 rounded hover:bg-white flex items-center justify-center transition-colors font-bold"
-            title="Zoom Out"
+            className="w-6 h-6 rounded-full hover:bg-parchment-bright flex items-center justify-center transition-colors font-bold"
+            title="Zoom out"
+            aria-label="Zoom out"
           >
             -
           </button>
           <span className="px-1 text-[11px] font-semibold">{zoomLevel}%</span>
           <button
+            type="button"
             onClick={handleZoomIn}
-            className="w-5 h-5 rounded hover:bg-white flex items-center justify-center transition-colors font-bold"
-            title="Zoom In"
+            className="w-6 h-6 rounded-full hover:bg-parchment-bright flex items-center justify-center transition-colors font-bold"
+            title="Zoom in"
+            aria-label="Zoom in"
           >
             +
+          </button>
+          <button
+            type="button"
+            onClick={handleResetZoom}
+            className="w-6 h-6 rounded-full hover:bg-parchment-bright flex items-center justify-center transition-colors text-parchment-muted"
+            title="Reset zoom"
+            aria-label="Reset zoom"
+          >
+            <RotateCcw className="w-3 h-3" aria-hidden="true" />
           </button>
         </div>
       </div>

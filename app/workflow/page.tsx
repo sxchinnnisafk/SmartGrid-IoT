@@ -13,29 +13,23 @@ export default function WorkflowPage() {
   const { isEvidenceModalOpen, isDemoModalOpen } = useGrid();
 
   return (
-    <div className="min-h-screen bg-[#11141b] text-[#f4f5f8] flex flex-col justify-between selection:bg-[#3b59f8] selection:text-white">
-      {/* 1. Header */}
+    <div className="min-h-screen bg-ink text-ink-text flex flex-col justify-between selection:bg-cobalt selection:text-ink-onAccent">
       <BrandHeader currentViewTitle="Workflow Canvas" variant="assistant" />
 
-      {/* 2. Main 3-Column Stage matching ai_workflow_design_concept.png */}
-      <main className="flex-1 max-w-[1700px] w-full mx-auto px-4 lg:px-8 py-6 flex flex-col lg:flex-row gap-6 items-stretch">
-        {/* Left: History Sidebar */}
-        <div className="flex lg:flex-none">
+      <main className="flex-1 max-w-[1600px] w-full mx-auto px-4 lg:px-6 py-5 flex flex-col lg:flex-row gap-5 items-stretch">
+        <div className="flex lg:flex-none min-w-0">
           <AIHistorySidebar />
         </div>
 
-        {/* Center: Interactive Free-Form Workflow Canvas */}
-        <div className="flex-1 flex flex-col">
+        <div className="flex-1 flex flex-col min-w-0">
           <WorkflowCanvas />
         </div>
 
-        {/* Right: Current Artifacts Sidebar */}
-        <div className="flex lg:flex-none">
+        <div className="flex lg:flex-none min-w-0">
           <AIArtifactsPanel />
         </div>
       </main>
 
-      {/* Modals */}
       {isEvidenceModalOpen && <HardwareEvidenceModal />}
       {isDemoModalOpen && <EndToEndDemoModal />}
     </div>

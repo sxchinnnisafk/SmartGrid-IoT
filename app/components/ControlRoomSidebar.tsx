@@ -2,150 +2,133 @@
 
 import React from "react";
 import { useGrid } from "../context/GridContext";
-import { ChevronRight, Layers, Activity, Zap } from "lucide-react";
+import { ChevronRight, Layers } from "lucide-react";
 
 export default function ControlRoomSidebar() {
   const { nodes, selectedNodeId, setSelectedNodeId } = useGrid();
+  const activeNode = nodes.find((n) => n.id === selectedNodeId) || nodes[0];
 
   return (
-    <aside className="w-full lg:w-80 xl:w-96 rounded-3xl bg-[#ede4d8] border border-[#d8cdbd] text-[#1c1f28] shadow-parchment p-6 flex flex-col justify-between select-none">
+    <aside className="w-full lg:w-80 xl:w-[340px] rounded-3xl bg-parchment border border-parchment-border text-parchment-text shadow-parchment p-5 flex flex-col justify-between select-none shrink-0">
       <div>
         {/* Header */}
         <div className="flex items-center justify-between mb-1">
-          <h2 className="font-serif text-3xl font-normal text-[#181a24] tracking-tight">
+          <h2 className="font-serif text-2xl sm:text-3xl font-normal text-parchment-text tracking-tight">
             Grid status
           </h2>
-          <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-[#3b59f8]/10 text-[#3b59f8] text-xs font-mono font-bold">
-            <span className="w-2 h-2 rounded-full bg-[#3b59f8] animate-pulse" />
+          <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-cobalt-tint text-cobalt text-xs font-sans font-semibold">
+            <span className="w-2 h-2 rounded-full bg-cobalt animate-pulse" />
             <span>Live</span>
           </div>
         </div>
 
-        {/* Subtitle */}
-        <p className="text-[10px] font-mono tracking-widest text-[#717888] uppercase mb-6">
-          3 ASSETS • REAL-TIME MONITORING
+        <p className="text-xs font-sans text-parchment-muted mb-5">
+          3 corridor assets under real-time monitoring
         </p>
 
-        {/* Asset Cards List */}
-        <div className="space-y-3">
+        {/* Asset Cards List (Semantic buttons for keyboard access) */}
+        <div className="space-y-2.5">
           {nodes.map((node) => {
             const isSelected = selectedNodeId === node.id;
-            let badgeBg = "bg-[#dcfce7] text-[#166534] border-[#bbf7d0]";
-            let dotColor = "bg-[#22c55e]";
-            let badgeText = "Normal";
+            let badgeBg = "bg-signal-normalBg text-signal-normalText border-signal-normalBorder";
+            let dotColor = "bg-signal-normalBright";
 
             if (node.status === "warning") {
-              badgeBg = "bg-[#fef3c7] text-[#92400e] border-[#fde68a]";
-              dotColor = "bg-[#f59e0b]";
-              badgeText = "Warning";
+              badgeBg = "bg-signal-warningBg text-signal-warningText border-signal-warningBorder";
+              dotColor = "bg-signal-warningBright";
             } else if (node.status === "critical") {
-              badgeBg = "bg-[#fee2e2] text-[#991b1b] border-[#fecaca]";
-              dotColor = "bg-[#ef4444]";
-              badgeText = "Critical";
+              badgeBg = "bg-signal-criticalBg text-signal-criticalText border-signal-criticalBorder";
+              dotColor = "bg-signal-criticalBright";
             }
 
             return (
-              <div
+              <button
                 key={node.id}
+                type="button"
                 onClick={() => setSelectedNodeId(node.id)}
-                className={`p-3.5 rounded-2xl border transition-all cursor-pointer flex items-center justify-between gap-3 ${
+                className={`w-full p-3 rounded-2xl border transition-colors text-left flex items-center justify-between gap-2.5 ${
                   isSelected
-                    ? "bg-[#fdfaf5] border-[#3b59f8] shadow-md ring-2 ring-[#3b59f8]/20"
-                    : "bg-[#f6efe6] border-[#d8cdbd] hover:bg-white hover:border-[#3b59f8]"
+                    ? "bg-parchment-bright border-cobalt shadow-sm ring-2 ring-cobalt/20"
+                    : "bg-parchment-light border-parchment-border hover:bg-parchment-bright hover:border-cobalt"
                 }`}
               >
-                {/* Left Badge + Title */}
-                <div className="flex items-center gap-3">
+                <div className="flex items-center gap-2.5 min-w-0">
                   <span
-                    className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-xs text-white shrink-0 shadow-sm ${
-                      node.badge === "C" ? "bg-[#dc2626]" : "bg-[#4f46e5]"
+                    className={`w-7 h-7 rounded-full flex items-center justify-center font-bold text-xs text-ink-onAccent shrink-0 ${
+                      node.status === "critical" ? "bg-signal-critical" : "bg-control"
                     }`}
                   >
                     {node.badge}
                   </span>
 
-                  <div className="text-left font-sans">
-                    <h3 className="font-semibold text-xs sm:text-sm text-[#181a24] leading-snug">
+                  <div className="min-w-0">
+                    <div className="font-semibold text-xs sm:text-sm text-parchment-text leading-snug truncate">
                       {node.name}
-                    </h3>
-                    <p className="text-[11px] text-[#636a7b] line-clamp-1 leading-tight">
+                    </div>
+                    <p className="text-[11px] text-parchment-muted truncate leading-tight">
                       {node.description}
                     </p>
                   </div>
                 </div>
 
-                {/* Right Status Badge + Chevron */}
-                <div className="flex items-center gap-2 shrink-0">
+                <div className="flex items-center gap-1.5 shrink-0">
                   <span
-                    className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-mono font-bold border ${badgeBg}`}
+                    className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-sans font-semibold border ${badgeBg}`}
                   >
                     <span className={`w-1.5 h-1.5 rounded-full ${dotColor}`} />
-                    <span>{badgeText}</span>
+                    <span>{node.statusLabel}</span>
                   </span>
-                  <ChevronRight className="w-4 h-4 text-[#8a91a2]" />
+                  <ChevronRight className="w-4 h-4 text-parchment-subtle" aria-hidden="true" />
                 </div>
-              </div>
+              </button>
             );
           })}
         </div>
       </div>
 
-      {/* Selected Node Real-Time Telemetry Expanded Drawer */}
-      <div className="my-6 p-4 rounded-2xl bg-[#f7f1e7] border border-[#d6c7b3] font-mono text-xs">
-        <div className="flex items-center justify-between mb-2 pb-2 border-b border-[#ded2c1]">
-          <span className="text-[10px] text-[#636a7b] uppercase">Live Telemetry</span>
-          <span className="text-[#3b59f8] font-bold">{selectedNodeId.toUpperCase()}</span>
+      {/* Selected Node Real-Time Telemetry Readout */}
+      <div className="my-4 p-4 rounded-2xl bg-parchment-light border border-parchment-borderStrong text-xs">
+        <div className="flex items-center justify-between mb-2.5 pb-2 border-b border-parchment-border">
+          <span className="font-sans font-medium text-parchment-muted">Live telemetry</span>
+          <span className="font-mono text-cobalt font-semibold">{activeNode.id.toUpperCase()}</span>
         </div>
-        <div className="grid grid-cols-3 gap-2 text-center">
-          <div className="bg-[#ede4d8] p-2 rounded-xl">
-            <div className="text-[9px] text-[#636a7b]">TEMP</div>
-            <div className="text-xs font-bold text-[#181a24]">
-              {nodes.find((n) => n.id === selectedNodeId)?.temperature}°C
+        <div className="grid grid-cols-3 gap-2 text-center font-mono">
+          <div className="bg-parchment p-2 rounded-xl">
+            <div className="text-[11px] font-sans text-parchment-muted">Temp</div>
+            <div className="text-xs font-bold text-parchment-text mt-0.5">
+              {activeNode.temperature}°C
             </div>
           </div>
-          <div className="bg-[#ede4d8] p-2 rounded-xl">
-            <div className="text-[9px] text-[#636a7b]">VOLT</div>
-            <div className="text-xs font-bold text-[#3b59f8]">
-              {nodes.find((n) => n.id === selectedNodeId)?.voltage}V
+          <div className="bg-parchment p-2 rounded-xl">
+            <div className="text-[11px] font-sans text-parchment-muted">Volt</div>
+            <div className="text-xs font-bold text-cobalt mt-0.5">
+              {activeNode.voltage}V
             </div>
           </div>
-          <div className="bg-[#ede4d8] p-2 rounded-xl">
-            <div className="text-[9px] text-[#636a7b]">LOAD</div>
-            <div className="text-xs font-bold text-[#181a24]">
-              {nodes.find((n) => n.id === selectedNodeId)?.powerLoad}MW
+          <div className="bg-parchment p-2 rounded-xl">
+            <div className="text-[11px] font-sans text-parchment-muted">Load</div>
+            <div className="text-xs font-bold text-parchment-text mt-0.5">
+              {activeNode.powerLoad}MW
             </div>
           </div>
         </div>
       </div>
 
-      {/* Bottom Values & Topography Section matching concept photo */}
-      <div className="pt-4 border-t border-[#d8cdbd] flex flex-col gap-3">
-        <div className="flex items-center gap-2 text-[#4f5667] text-xs font-mono">
-          <Layers className="w-4 h-4 text-[#3b59f8]" />
-          <span className="tracking-wider uppercase text-[10px]">
-            PEOPLE • INFRASTRUCTURE
+      {/* Bottom Principles Footer */}
+      <div className="pt-3 border-t border-parchment-border flex flex-col gap-2">
+        <div className="flex items-center justify-between text-parchment-secondary text-xs font-sans">
+          <span className="inline-flex items-center gap-1.5 font-medium">
+            <Layers className="w-3.5 h-3.5 text-cobalt" aria-hidden="true" />
+            People and infrastructure
           </span>
+          <span className="text-parchment-muted">Human-centered</span>
         </div>
 
-        <div className="text-[10px] tracking-widest uppercase text-[#717888] font-mono">
-          A CLEANER TOMORROW
-        </div>
-
-        {/* Contour lines decoration */}
-        <div className="h-10 w-full overflow-hidden opacity-30">
-          <svg className="w-full h-full" viewBox="0 0 300 40">
-            <path d="M 0,10 Q 75,25 150,10 T 300,15" stroke="#717888" fill="none" strokeWidth="1" />
-            <path d="M 0,20 Q 75,35 150,20 T 300,25" stroke="#717888" fill="none" strokeWidth="1" />
-            <path d="M 0,30 Q 75,45 150,30 T 300,35" stroke="#717888" fill="none" strokeWidth="1" />
+        <div className="h-6 w-full overflow-hidden opacity-35">
+          <svg aria-hidden="true" className="w-full h-full" viewBox="0 0 300 32">
+            <path d="M 0,8 Q 75,20 150,8 T 300,12" stroke="var(--color-paper-muted)" fill="none" strokeWidth="1" />
+            <path d="M 0,18 Q 75,30 150,18 T 300,22" stroke="var(--color-paper-muted)" fill="none" strokeWidth="1" />
           </svg>
-        </div>
-
-        <div className="flex items-center justify-between text-[10px] font-mono tracking-wider text-[#636a7b] uppercase">
-          <span>SMART</span>
-          <span>•</span>
-          <span>RESILIENT</span>
-          <span>•</span>
-          <span>HUMAN-CENTERED</span>
         </div>
       </div>
     </aside>

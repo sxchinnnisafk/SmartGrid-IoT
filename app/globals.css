@@ -1,3 +1,5 @@
+/* Hallmark · v2.0.0 · genre: modern-minimal · theme: brand (Warm Paper, Deep Ink, Live Signal) · redesign: full · scope: site · signature: layered three-node digital twin hero with live telemetry */
+/* Hallmark · critique: replaced flat hero card & overlapping quote with dimensional layered twin, fixed 1280px nav/workflow clipping, lifted all colors to tokens, fixed MutationObserver leak */
 @import "@xyflow/react/dist/style.css";
 
 @tailwind base;
@@ -5,7 +7,7 @@
 @tailwind utilities;
 
 /* ==========================================================================
-   SMARTGRID AIoT DESIGN SYSTEM — Brand & UI Theme
+   SMARTGRID AIoT DESIGN SYSTEM — Tokenized Brand & UI Theme
    Visual Language: Warm paper. Deep ink. Live signal.
    ========================================================================== */
 
@@ -16,119 +18,159 @@
 
   /* Ink surfaces (Dark chassis) */
   --color-ink-bg: #11141b;
-  --color-ink-surface: #171b24;
-  --color-ink-card: #1d222e;
-  --color-ink-border: #282f3f;
+  --color-ink-deep: #0c0f15;
+  --color-ink-surface: #151923;
+  --color-ink-card: #1b202d;
+  --color-ink-hover: #232a3b;
+  --color-ink-border: #262e40;
+  --color-ink-border-strong: #344059;
   --color-ink-text: #f4f5f8;
-  --color-ink-muted: #9aa1b0;
+  --color-ink-secondary: #cbd2df;
+  --color-ink-muted: #8f98aa;
+  --color-ink-on-accent: #f8f9fc;
 
   /* Parchment surfaces (Warm paper) */
   --color-paper-bg: #ece4d8;
-  --color-paper-light: #f5eee5;
+  --color-paper-light: #f6f0e7;
+  --color-paper-bright: #fbf8f3;
   --color-paper-card: #efe8dc;
-  --color-paper-border: #dcd1c0;
-  --color-paper-border-strong: #c8bcab;
-  --color-paper-text: #1b1e27;
-  --color-paper-muted: #616676;
-  --color-paper-subtle: #898f9f;
+  --color-paper-dark: #e2d6c5;
+  --color-paper-border: #d9cebd;
+  --color-paper-border-strong: #c6b8a4;
+  --color-paper-text: #191c25;
+  --color-paper-secondary: #4c5263;
+  --color-paper-muted: #616778;
+  --color-paper-subtle: #7c8395;
 
-  /* Cobalt / Action */
+  /* Cobalt / Primary Action */
   --color-cobalt: #3b59f8;
   --color-cobalt-hover: #2f4bd8;
-  --color-cobalt-glow: 0 4px 24px rgba(59, 89, 248, 0.4);
+  --color-cobalt-soft: #8196ff;
+  --color-cobalt-tint: rgba(59, 89, 248, 0.14);
+  --color-cobalt-tint-strong: rgba(59, 89, 248, 0.24);
+  --color-cobalt-border: rgba(59, 89, 248, 0.36);
+  --color-cobalt-shadow: 0 4px 16px rgba(59, 89, 248, 0.32);
+  --color-cobalt-shadow-hover: 0 8px 24px rgba(59, 89, 248, 0.42);
+  --color-cobalt-glow: 0 4px 24px rgba(59, 89, 248, 0.38);
 
   /* Live Signal Statuses */
   --color-signal-normal: #16a34a;
+  --color-signal-normal-bright: #22c55e;
   --color-signal-normal-bg: #dcfce7;
   --color-signal-normal-text: #14532d;
   --color-signal-normal-border: #bbf7d0;
 
   --color-signal-warning: #d97706;
+  --color-signal-warning-bright: #f59e0b;
   --color-signal-warning-bg: #fef3c7;
   --color-signal-warning-text: #78350f;
   --color-signal-warning-border: #fde68a;
 
   --color-signal-critical: #dc2626;
+  --color-signal-critical-bright: #ef4444;
   --color-signal-critical-bg: #fee2e2;
   --color-signal-critical-text: #7f1d1d;
   --color-signal-critical-border: #fecaca;
 
-  /* Lavender / Control */
-  --color-control-lavender: #6366f1;
-  --color-control-bg: #e0e7ff;
-  --color-control-text: #3730a3;
+  /* Control Accent (Mixed OKLCH Slate-Indigo) */
+  --color-control-accent: #5258d4;
+  --color-control-bg: #e4e7fb;
+  --color-control-text: #31348b;
 
-  /* Easing & Transition timing */
+  /* Atmospheric & Texture Tints */
+  --color-backdrop-radial-top: rgba(59, 89, 248, 0.11);
+  --color-backdrop-radial-bottom: rgba(27, 36, 56, 0.42);
+  --color-horizon-deep: rgba(10, 12, 18, 0.94);
+  --color-horizon-mid: rgba(34, 42, 60, 0.65);
+  --color-topo-line-a: rgba(176, 161, 141, 0.16);
+  --color-topo-line-b: rgba(176, 161, 141, 0.11);
+  --color-highlight-hairline: rgba(244, 245, 248, 0.14);
+  --color-paper-shadow: 0 12px 32px -6px rgba(17, 20, 27, 0.16), 0 4px 10px -2px rgba(17, 20, 27, 0.06);
+  --color-paper-shadow-hover: 0 6px 16px rgba(17, 20, 27, 0.08);
+  --color-scroll-track: rgba(17, 20, 27, 0.14);
+  --color-scroll-thumb: rgba(143, 152, 170, 0.32);
+  --color-scroll-thumb-hover: rgba(143, 152, 170, 0.52);
+  --color-rover-glow-low: rgba(59, 89, 248, 0.5);
+  --color-rover-glow-high: rgba(59, 89, 248, 0.85);
+
+  /* Easing & Transition Timing */
   --ease-classy: cubic-bezier(0.16, 1, 0.3, 1);
-  --duration-fast: 180ms;
-  --duration-normal: 280ms;
-  --duration-reveal: 600ms;
+  --duration-fast: 160ms;
+  --duration-normal: 260ms;
+  --duration-reveal: 520ms;
 }
 
 /* ==========================================================================
-   Smooth Scroll & Base Focus Styles
+   Base Layout, Overflow Clip & Instant Keyboard Focus
    ========================================================================== */
+html,
+body {
+  overflow-x: clip;
+}
+
 html {
   scroll-behavior: smooth;
   -webkit-text-size-adjust: 100%;
+  background-color: var(--color-ink-bg);
+  color: var(--color-ink-text);
 }
 
 :focus-visible {
   outline: 2px solid var(--color-cobalt);
-  outline-offset: 3px;
+  outline-offset: 2px;
   border-radius: 6px;
 }
 
 .skip-link {
   position: absolute;
-  top: -100px;
+  transform: translateY(-140%);
+  top: 0.75rem;
   left: 1rem;
   padding: 0.5rem 1rem;
   background: var(--color-cobalt);
-  color: #fff;
+  color: var(--color-ink-on-accent);
   font-size: 0.8125rem;
   font-weight: 600;
   border-radius: 9999px;
   z-index: 1000;
   text-decoration: none;
-  transition: top var(--duration-fast) var(--ease-classy);
+  transition: transform var(--duration-fast) var(--ease-classy);
 }
 
 .skip-link:focus {
-  top: 1rem;
+  transform: translateY(0);
 }
 
 /* ==========================================================================
-   Background Chalk & Landscape Texture
+   Background Atmosphere & Parchment Surfaces
    ========================================================================== */
 .bg-ink-backdrop {
-  background-color: #12151c;
-  background-image: 
-    radial-gradient(circle at 50% 0%, rgba(59, 89, 248, 0.08) 0%, transparent 60%),
-    radial-gradient(circle at 100% 100%, rgba(30, 41, 59, 0.4) 0%, transparent 50%);
+  background-color: var(--color-ink-bg);
+  background-image:
+    radial-gradient(circle at 50% 0%, var(--color-backdrop-radial-top) 0%, transparent 58%),
+    radial-gradient(circle at 100% 100%, var(--color-backdrop-radial-bottom) 0%, transparent 50%);
 }
 
 .mountain-silhouette {
-  background-image: linear-gradient(to top, rgba(10, 12, 18, 0.95), transparent 70%),
-    radial-gradient(ellipse at 50% 100%, rgba(35, 42, 58, 0.7) 0%, transparent 70%);
+  background-image:
+    linear-gradient(to top, var(--color-horizon-deep), transparent 72%),
+    radial-gradient(ellipse at 50% 100%, var(--color-horizon-mid) 0%, transparent 70%);
 }
 
-/* Parchment Paper Texture & Topographic lines */
 .bg-parchment-canvas {
   background-color: var(--color-paper-bg);
-  background-image: 
-    radial-gradient(var(--color-paper-border-strong) 1px, transparent 1px);
+  background-image: radial-gradient(var(--color-paper-border-strong) 1px, transparent 1px);
   background-size: 24px 24px;
 }
 
 .topographic-lines {
-  background-image: 
-    repeating-radial-gradient(circle at 80% 20%, transparent 0, transparent 40px, rgba(180, 165, 145, 0.15) 41px, transparent 43px),
-    repeating-radial-gradient(circle at 20% 80%, transparent 0, transparent 60px, rgba(180, 165, 145, 0.12) 61px, transparent 63px);
+  background-image:
+    repeating-radial-gradient(circle at 80% 20%, transparent 0, transparent 40px, var(--color-topo-line-a) 41px, transparent 43px),
+    repeating-radial-gradient(circle at 20% 80%, transparent 0, transparent 60px, var(--color-topo-line-b) 61px, transparent 63px);
 }
 
 /* ==========================================================================
-   Button & Pill Components
+   Primary & Secondary Action Pills (Explicit Property Transitions Only)
    ========================================================================== */
 .pill-button-cobalt {
   display: inline-flex;
@@ -136,21 +178,25 @@ html {
   justify-content: center;
   gap: 0.5rem;
   background-color: var(--color-cobalt);
-  color: #ffffff;
+  color: var(--color-ink-on-accent);
   font-weight: 600;
   border-radius: 9999px;
   padding: 0.625rem 1.375rem;
   font-size: 0.875rem;
-  transition: all var(--duration-fast) var(--ease-classy);
-  box-shadow: 0 4px 14px rgba(59, 89, 248, 0.35);
+  transition:
+    background-color var(--duration-fast) var(--ease-classy),
+    transform var(--duration-fast) var(--ease-classy),
+    box-shadow var(--duration-fast) var(--ease-classy),
+    border-color var(--duration-fast) var(--ease-classy);
+  box-shadow: var(--color-cobalt-shadow);
   cursor: pointer;
-  border: 1px solid rgba(255, 255, 255, 0.15);
+  border: 1px solid var(--color-highlight-hairline);
 }
 
 .pill-button-cobalt:hover {
   background-color: var(--color-cobalt-hover);
   transform: translateY(-1px);
-  box-shadow: 0 6px 20px rgba(59, 89, 248, 0.45);
+  box-shadow: var(--color-cobalt-shadow-hover);
 }
 
 .pill-button-cobalt:active {
@@ -169,74 +215,100 @@ html {
   padding: 0.625rem 1.375rem;
   font-size: 0.875rem;
   border: 1px solid var(--color-paper-border);
-  transition: all var(--duration-fast) var(--ease-classy);
+  transition:
+    background-color var(--duration-fast) var(--ease-classy),
+    border-color var(--duration-fast) var(--ease-classy),
+    transform var(--duration-fast) var(--ease-classy),
+    box-shadow var(--duration-fast) var(--ease-classy);
   cursor: pointer;
 }
 
 .pill-button-parchment:hover {
-  background-color: #ffffff;
+  background-color: var(--color-paper-bright);
   border-color: var(--color-paper-border-strong);
   transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+  box-shadow: var(--color-paper-shadow-hover);
+}
+
+.pill-button-parchment:active {
+  transform: translateY(0);
 }
 
 /* ==========================================================================
-   Scrollbar styling
+   Scrollbar Styling
    ========================================================================== */
 ::-webkit-scrollbar {
   width: 6px;
   height: 6px;
 }
 ::-webkit-scrollbar-track {
-  background: rgba(0, 0, 0, 0.1);
+  background: var(--color-scroll-track);
 }
 ::-webkit-scrollbar-thumb {
-  background: rgba(140, 150, 170, 0.3);
+  background: var(--color-scroll-thumb);
   border-radius: 3px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(140, 150, 170, 0.5);
+  background: var(--color-scroll-thumb-hover);
 }
 
 /* ==========================================================================
-   Subtle Micro-Animations
+   Scroll-Craft & Telemetry Motion Primitives (GPU-Only)
    ========================================================================== */
 @keyframes signal-ping {
-  0% { transform: scale(0.95); opacity: 0.8; }
-  50% { transform: scale(1.15); opacity: 0.4; }
-  100% { transform: scale(0.95); opacity: 0.8; }
+  0% { transform: scale(0.95); opacity: 0.82; }
+  50% { transform: scale(1.14); opacity: 0.42; }
+  100% { transform: scale(0.95); opacity: 0.82; }
 }
 
 .animate-signal-pulse {
-  animation: signal-ping 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  animation: signal-ping 2.2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+@keyframes dash-flow {
+  from { stroke-dashoffset: 40; }
+  to { stroke-dashoffset: 0; }
+}
+
+.animate-dash-flow {
+  animation: dash-flow 2.4s linear infinite;
 }
 
 @keyframes rover-glow {
-  0%, 100% { filter: drop-shadow(0 0 6px rgba(59, 89, 248, 0.6)); }
-  50% { filter: drop-shadow(0 0 16px rgba(59, 89, 248, 0.9)); }
+  0%, 100% { filter: drop-shadow(0 0 6px var(--color-rover-glow-low)); }
+  50% { filter: drop-shadow(0 0 14px var(--color-rover-glow-high)); }
 }
 
 .rover-pulse {
-  animation: rover-glow 2s ease-in-out infinite;
+  animation: rover-glow 2.4s ease-in-out infinite;
+}
+
+.sc-plane {
+  will-change: transform;
+  transition: transform 220ms var(--ease-classy);
 }
 
 /* ==========================================================================
-   Scroll-Driven Reveal Animation System (IntersectionObserver)
+   Script-Safe Scroll Reveal System (Visible by Default Without JS)
    ========================================================================== */
 .reveal {
+  opacity: 1;
+  transform: translateY(0);
+  transition:
+    opacity var(--duration-reveal) var(--ease-classy),
+    transform var(--duration-reveal) var(--ease-classy);
+}
+
+html.js-ready .reveal:not(.is-revealed) {
   opacity: 0;
-  transform: translateY(18px);
-  transition: opacity var(--duration-reveal) var(--ease-classy),
-              transform var(--duration-reveal) var(--ease-classy);
-  will-change: opacity, transform;
+  transform: translateY(16px);
 }
 
-.reveal.is-revealed {
-  opacity: 1 !important;
-  transform: translateY(0) !important;
+html.js-ready .reveal.is-revealed {
+  opacity: 1;
+  transform: translateY(0);
 }
 
-/* Stagger delay helpers */
 .reveal[data-delay="50"] { transition-delay: 50ms; }
 .reveal[data-delay="100"] { transition-delay: 100ms; }
 .reveal[data-delay="150"] { transition-delay: 150ms; }
@@ -245,7 +317,7 @@ html {
 .reveal[data-delay="300"] { transition-delay: 300ms; }
 
 /* ==========================================================================
-   Page Transitions (Smooth & Safe CSS Fade)
+   Page Enter Transition
    ========================================================================== */
 .page-enter {
   animation: page-fade-in 240ms var(--ease-classy) forwards;
@@ -267,7 +339,7 @@ html {
    ========================================================================== */
 @media (prefers-reduced-motion: reduce) {
   html {
-    scroll-behavior: auto !important;
+    scroll-behavior: auto;
   }
 
   *, *::before, *::after {
@@ -276,15 +348,21 @@ html {
     transition-duration: 0.001ms !important;
   }
 
+  html.js-ready .reveal,
   .reveal {
-    opacity: 1 !important;
+    opacity: 1;
+    transform: none;
+    transition: none;
+  }
+
+  .sc-plane {
     transform: none !important;
-    transition: none !important;
+    transition: none;
   }
 
   .page-enter {
-    animation: none !important;
-    opacity: 1 !important;
-    transform: none !important;
+    animation: none;
+    opacity: 1;
+    transform: none;
   }
 }

@@ -1,41 +1,88 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import Link from "next/link";
-import Image from "next/image";
+import { useGrid } from "../context/GridContext";
 import {
-  ShieldAlert,
-  Cpu,
-  Activity,
-  Bot,
-  GitBranch,
-  Layers,
   ArrowRight,
-  ExternalLink,
   ChevronRight,
-  Sparkles,
-  CheckCircle2,
-  AlertTriangle,
+  ChevronLeft,
+  Volume2,
+  Play,
+  Pause,
+  ShieldCheck,
+  Cpu,
+  Radio,
+  Camera,
+  PlayCircle,
+  Zap,
+  Globe,
+  Layers,
 } from "lucide-react";
 
 export default function LandingStoryChapters() {
-  const [activeChapter, setActiveChapter] = useState<number>(1);
+  const {
+    nodes,
+    rover,
+    isThermalFaultActive,
+    isBreakerIsolated,
+    toggleBreakerIsolation,
+    isPlayingVoice,
+    toggleVoicePlayback,
+    voiceProgress,
+    setIsEvidenceModalOpen,
+    startEndToEndDemo,
+  } = useGrid();
 
-  // Guarantee story chapters and chapter switches are always revealed
+  const [activeChapter, setActiveChapter] = useState<number>(1);
+  const [scrollProgress, setScrollProgress] = useState<number>(0);
+  const sectionRef = useRef<HTMLElement | null>(null);
+
+  // Scroll-linked progress indicator within the editorial story section
   useEffect(() => {
-    const revealChapters = () => {
-      const chapterEls = document.querySelectorAll<HTMLElement>("#story-chapters .reveal");
-      chapterEls.forEach((el) => {
-        const rect = el.getBoundingClientRect();
-        if (rect.top < window.innerHeight) {
-          el.classList.add("is-revealed");
-        }
-      });
+    let rafId: number | null = null;
+
+    const updateProgress = () => {
+      rafId = null;
+      const el = sectionRef.current;
+      if (!el) return;
+      const rect = el.getBoundingClientRect();
+      const total = Math.max(1, el.offsetHeight - window.innerHeight * 0.5);
+      const passed = Math.max(0, window.innerHeight * 0.65 - rect.top);
+      setScrollProgress(Math.min(1, Math.max(0, passed / total)));
     };
-    revealChapters();
-    const t = setTimeout(revealChapters, 50);
-    return () => clearTimeout(t);
+
+    const onScroll = () => {
+      if (rafId !== null) return;
+      rafId = requestAnimationFrame(updateProgress);
+    };
+
+    updateProgress();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => {
+      if (rafId !== null) cancelAnimationFrame(rafId);
+      window.removeEventListener("scroll", onScroll);
+    };
+  }, []);
+
+  // Ensure elements inside the switched chapter are revealed immediately
+  useEffect(() => {
+    const chapterEls = document.querySelectorAll<HTMLElement>("#story-chapters .reveal");
+    chapterEls.forEach((el) => el.classList.add("is-revealed"));
   }, [activeChapter]);
+
+  // Listen for anchor hash changes so header links jump cleanly to matching chapters
+  useEffect(() => {
+    const syncHash = () => {
+      const hash = window.location.hash;
+      if (hash === "#solutions") setActiveChapter(1);
+      else if (hash === "#technology") setActiveChapter(2);
+      else if (hash === "#impact") setActiveChapter(6);
+    };
+    syncHash();
+    window.addEventListener("hashchange", syncHash);
+    return () => window.removeEventListener("hashchange", syncHash);
+  }, []);
 
   const chapters = [
     {
@@ -67,7 +114,7 @@ export default function LandingStoryChapters() {
       content:
         "The digital twin models three illustrative corridor nodes: Node A Residential Feeder (stable baseline), Node B EV Charging Hub (peak-load surge), and Node C Industrial Transformer (simulated thermal fault at 102°C). Every node state stays strictly aligned across the rover, digital twin, AI assistant, and workflow.",
       highlight:
-        "One consistent three-node model: Node A (Baseline) -> Node B (Peak Load) -> Node C (Critical Fault).",
+        "One consistent three-node model: Node A (Baseline) to Node B (Peak Load) to Node C (Critical Fault).",
       tag: "Digital Twin",
       citation: "Central Electricity Authority (CEA) Distribution Guidelines & Best Practices",
     },
@@ -106,131 +153,479 @@ export default function LandingStoryChapters() {
     },
   ];
 
-  return (
-    <section id="story-chapters" className="py-24 bg-[#0d1017] text-[#f4f5f8] border-t border-[#1e2638]">
-      <div className="max-w-[1700px] mx-auto px-6 sm:px-12">
-        {/* Section Header */}
-        <div className="max-w-3xl mb-16 reveal" data-delay="50">
-          <div className="text-xs font-mono tracking-widest text-[#818cf8] uppercase mb-3 flex items-center gap-2">
-            <Sparkles className="w-4 h-4" />
-            <span>01 / DISCOVER • EDITORIAL LANDING STORY</span>
+  const currentChapter = chapters[activeChapter - 1] || chapters[0];
+
+  // Bespoke per-chapter visual companion (Scroll-Craft Rule 1: Variety is the product)
+  const renderChapterVisual = (chapterNum: number) => {
+    switch (chapterNum) {
+      case 1:
+        return (
+          <div className="space-y-4">
+            <div className="flex items-center justify-between border-b border-ink-border pb-3">
+              <span className="text-xs font-sans font-medium text-ink-secondary">
+                BESCOM FY 2023 to 2024 Reliability Benchmark
+              </span>
+              <span className="text-xs font-mono px-2 py-0.5 rounded bg-signal-warningBg text-signal-warningText font-semibold">
+                KERC 2025
+              </span>
+            </div>
+
+            <div className="grid grid-cols-2 gap-3">
+              <div className="p-4 rounded-2xl bg-parchment text-parchment-text border border-parchment-border">
+                <div className="text-xs text-parchment-muted font-sans">Annual Repair Spend</div>
+                <div className="font-serif text-2xl sm:text-3xl font-normal mt-1">₹134.44 Cr</div>
+                <div className="text-[11px] text-parchment-muted mt-1">Reported expenditure</div>
+              </div>
+              <div className="p-4 rounded-2xl bg-ink-card border border-ink-border">
+                <div className="text-xs text-ink-muted font-sans">Faulty Transformers</div>
+                <div className="font-serif text-2xl sm:text-3xl text-ink-text font-normal mt-1">36,035</div>
+                <div className="text-[11px] text-signal-criticalBright mt-1">Single fiscal year</div>
+              </div>
+            </div>
+
+            <div className="p-4 rounded-2xl bg-ink-card border border-ink-border space-y-3 text-xs">
+              <div className="font-sans font-medium text-ink-text">Reactive vs Preventative Detection</div>
+              <div className="space-y-2">
+                <div>
+                  <div className="flex justify-between text-ink-muted mb-1">
+                    <span>Reactive outage dispatch</span>
+                    <span className="font-mono text-signal-criticalBright">Post-failure</span>
+                  </div>
+                  <div className="h-2 rounded-full bg-ink-deep overflow-hidden">
+                    <div className="h-full w-[88%] rounded-full bg-signal-criticalBright" />
+                  </div>
+                </div>
+                <div>
+                  <div className="flex justify-between text-ink-muted mb-1">
+                    <span>Continuous edge thermal telemetry</span>
+                    <span className="font-mono text-signal-normalBright">Early warning</span>
+                  </div>
+                  <div className="h-2 rounded-full bg-ink-deep overflow-hidden">
+                    <div className="h-full w-[32%] rounded-full bg-signal-normalBright" />
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
-          <h2 className="font-serif text-4xl sm:text-5xl lg:text-6xl font-normal tracking-tight text-white leading-tight">
-            A grid story, <br />
-            <span className="italic font-serif">made visible.</span>
-          </h2>
-          <p className="mt-4 text-base sm:text-lg text-[#9ca3af] leading-relaxed">
-            Follow the prototype journey across six editorial chapters: from edge sensing to network visibility and operator-approved response.
-          </p>
+        );
+
+      case 2:
+        return (
+          <div className="space-y-4">
+            <div className="flex items-center justify-between border-b border-ink-border pb-3">
+              <span className="text-xs font-sans font-medium text-ink-secondary flex items-center gap-2">
+                <Cpu className="w-4 h-4 text-cobalt-soft" aria-hidden="true" />
+                ESP32-S3 Rover Edge Unit
+              </span>
+              <span className="text-xs font-mono px-2 py-0.5 rounded bg-cobalt-tint text-cobalt-soft font-semibold">
+                {rover.isPatrolling ? "Patrolling" : "Standby"}
+              </span>
+            </div>
+
+            {/* Simulated SPI TFT Animated Eyes Display */}
+            <div className="rounded-2xl bg-ink-deep border-2 border-ink-borderStrong p-5 flex flex-col items-center justify-center gap-3">
+              <div className="flex items-center gap-6">
+                <div
+                  className={`w-12 h-8 rounded-2xl transition-colors ${
+                    isThermalFaultActive ? "bg-signal-criticalBright" : "bg-cobalt"
+                  } shadow-cobalt`}
+                />
+                <div
+                  className={`w-12 h-8 rounded-2xl transition-colors ${
+                    isThermalFaultActive ? "bg-signal-criticalBright" : "bg-cobalt"
+                  } shadow-cobalt`}
+                />
+              </div>
+              <div className="text-xs font-mono text-ink-muted">
+                SPI TFT Status Eyes: {isThermalFaultActive ? "ALERT_HOTSPOT" : "NOMINAL_SCAN"}
+              </div>
+            </div>
+
+            <div className="grid grid-cols-3 gap-2.5 text-center font-mono text-xs">
+              <div className="p-3 rounded-xl bg-ink-card border border-ink-border">
+                <div className="text-[11px] text-ink-muted font-sans">Battery</div>
+                <div className="text-sm font-semibold text-signal-normalBright mt-0.5">
+                  {rover.batteryLevel}%
+                </div>
+              </div>
+              <div className="p-3 rounded-xl bg-ink-card border border-ink-border">
+                <div className="text-[11px] text-ink-muted font-sans">Target</div>
+                <div className="text-sm font-semibold text-ink-text mt-0.5">
+                  {rover.targetNodeId.toUpperCase()}
+                </div>
+              </div>
+              <div className="p-3 rounded-xl bg-ink-card border border-ink-border">
+                <div className="text-[11px] text-ink-muted font-sans">Link</div>
+                <div className="text-sm font-semibold text-cobalt-soft mt-0.5">Wi-Fi</div>
+              </div>
+            </div>
+          </div>
+        );
+
+      case 3:
+        return (
+          <div className="space-y-3">
+            <div className="flex items-center justify-between border-b border-ink-border pb-3">
+              <span className="text-xs font-sans font-medium text-ink-secondary flex items-center gap-2">
+                <Layers className="w-4 h-4 text-cobalt-soft" aria-hidden="true" />
+                Live Three-Node State Sync
+              </span>
+              <span className="text-xs font-mono text-signal-normalBright">Synced</span>
+            </div>
+
+            {nodes.map((node) => {
+              const statusTone =
+                node.status === "critical"
+                  ? "bg-signal-criticalBg text-signal-criticalText"
+                  : node.status === "warning"
+                  ? "bg-signal-warningBg text-signal-warningText"
+                  : "bg-signal-normalBg text-signal-normalText";
+
+              return (
+                <div
+                  key={node.id}
+                  className="p-3.5 rounded-2xl bg-parchment text-parchment-text border border-parchment-border flex items-center justify-between gap-3"
+                >
+                  <div className="flex items-center gap-3 min-w-0">
+                    <span
+                      className={`w-7 h-7 rounded-full text-ink-onAccent font-bold text-xs flex items-center justify-center shrink-0 ${
+                        node.status === "critical" ? "bg-signal-critical" : "bg-control"
+                      }`}
+                    >
+                      {node.badge}
+                    </span>
+                    <div className="min-w-0">
+                      <div className="font-semibold text-xs sm:text-sm truncate">{node.name}</div>
+                      <div className="flex items-center gap-2.5 text-[11px] font-sans text-parchment-muted tabular-nums">
+                        <span>{node.temperature}°C</span>
+                        <span>{node.voltage}V</span>
+                        <span>{node.powerLoad}MW</span>
+                      </div>
+                    </div>
+                  </div>
+                  <span className={`px-2.5 py-0.5 rounded-full text-[11px] font-semibold shrink-0 ${statusTone}`}>
+                    {node.statusLabel}
+                  </span>
+                </div>
+              );
+            })}
+          </div>
+        );
+
+      case 4:
+        return (
+          <div className="space-y-4">
+            <div className="flex items-center justify-between border-b border-ink-border pb-3">
+              <span className="text-xs font-sans font-medium text-ink-secondary flex items-center gap-2">
+                <Radio className="w-4 h-4 text-cobalt-soft" aria-hidden="true" />
+                Voice Dispatch & AI Summary
+              </span>
+              <span className="text-xs font-mono text-cobalt-soft">Gemini + Audio</span>
+            </div>
+
+            <div className="p-4 rounded-2xl bg-ink-card border border-ink-border space-y-3">
+              <p className="text-xs sm:text-sm text-ink-secondary italic font-serif leading-relaxed">
+                &ldquo;Dispatching field crew to Node C. Thermal fault confirmed at 102°C on Industrial Transformer. Isolate breaker SC-12 and verify low-voltage corridor.&rdquo;
+              </p>
+
+              <div className="flex items-center gap-3 pt-2">
+                <button
+                  type="button"
+                  onClick={toggleVoicePlayback}
+                  className="w-9 h-9 rounded-full bg-cobalt hover:bg-cobalt-hover text-ink-onAccent flex items-center justify-center shrink-0 transition-colors"
+                  aria-label={isPlayingVoice ? "Pause voice dispatch" : "Play voice dispatch"}
+                >
+                  {isPlayingVoice ? (
+                    <Pause className="w-4 h-4" aria-hidden="true" />
+                  ) : (
+                    <Play className="w-4 h-4 ml-0.5" aria-hidden="true" />
+                  )}
+                </button>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center justify-between text-[11px] font-mono text-ink-muted mb-1">
+                    <span>{isPlayingVoice ? "Playing dispatch brief" : "Preview spoken alert"}</span>
+                    <span>{Math.round(voiceProgress)}%</span>
+                  </div>
+                  <div className="h-2 rounded-full bg-ink-deep overflow-hidden">
+                    <div
+                      className="h-full bg-cobalt rounded-full transition-transform duration-150 origin-left"
+                      style={{ transform: `scaleX(${Math.max(0.06, voiceProgress / 100)})` }}
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="flex items-center justify-between text-xs text-ink-muted px-1">
+              <span className="inline-flex items-center gap-1.5">
+                <Volume2 className="w-3.5 h-3.5 text-cobalt-soft" aria-hidden="true" />
+                Operator confirmation mandatory
+              </span>
+              <Link href="/ai-assistant" className="text-cobalt-soft hover:underline font-medium">
+                Open AI Assistant
+              </Link>
+            </div>
+          </div>
+        );
+
+      case 5:
+        return (
+          <div className="space-y-4">
+            <div className="flex items-center justify-between border-b border-ink-border pb-3">
+              <span className="text-xs font-sans font-medium text-ink-secondary flex items-center gap-2">
+                <ShieldCheck className="w-4 h-4 text-signal-normalBright" aria-hidden="true" />
+                Human-in-the-Loop Interlock
+              </span>
+              <span className="text-xs font-mono text-signal-normalBright">Low-Voltage Sim</span>
+            </div>
+
+            <div className="p-4 rounded-2xl bg-parchment text-parchment-text border border-parchment-border space-y-3">
+              <div className="flex items-center justify-between">
+                <div>
+                  <div className="font-semibold text-sm">Breaker SC-12 Isolation</div>
+                  <div className="text-xs text-parchment-muted">Node C simulated contactor</div>
+                </div>
+                <button
+                  type="button"
+                  onClick={toggleBreakerIsolation}
+                  className={`px-3 py-1.5 rounded-full text-xs font-semibold transition-colors ${
+                    isBreakerIsolated
+                      ? "bg-cobalt text-ink-onAccent"
+                      : "bg-parchment-dark text-parchment-text border border-parchment-borderStrong"
+                  }`}
+                >
+                  {isBreakerIsolated ? "Armed" : "Standby"}
+                </button>
+              </div>
+              <p className="text-xs text-parchment-secondary leading-relaxed">
+                AI recommends switching steps, while the operator reviews and explicitly publishes every circuit action.
+              </p>
+            </div>
+
+            <div className="flex items-center justify-between text-xs px-1">
+              <span className="text-ink-muted">No live utility mains connection</span>
+              <Link href="/workflow" className="text-cobalt-soft hover:underline font-medium">
+                Open Workflow Canvas
+              </Link>
+            </div>
+          </div>
+        );
+
+      default:
+        return (
+          <div className="space-y-4">
+            <div className="flex items-center justify-between border-b border-ink-border pb-3">
+              <span className="text-xs font-sans font-medium text-ink-secondary flex items-center gap-2">
+                <Globe className="w-4 h-4 text-signal-normalBright" aria-hidden="true" />
+                Phased Scalability & UN SDGs
+              </span>
+              <span className="text-xs font-mono text-cobalt-soft">SDGs 7, 9, 11</span>
+            </div>
+
+            <div className="space-y-2.5 text-xs">
+              <div className="p-3 rounded-xl bg-ink-card border border-cobalt-border flex items-center justify-between">
+                <div>
+                  <div className="font-semibold text-ink-text">Stage 1: Tabletop Twin</div>
+                  <div className="text-ink-muted">3-node corridor + ESP32-S3 rover</div>
+                </div>
+                <span className="px-2 py-0.5 rounded bg-signal-normalBg text-signal-normalText font-semibold">
+                  Active
+                </span>
+              </div>
+              <div className="p-3 rounded-xl bg-ink-card border border-ink-border flex items-center justify-between">
+                <div>
+                  <div className="font-semibold text-ink-text">Stage 2: Instrumented Test Rig</div>
+                  <div className="text-ink-muted">Isolated lab switchgear sensors</div>
+                </div>
+                <span className="text-ink-muted font-mono">Next</span>
+              </div>
+              <div className="p-3 rounded-xl bg-ink-card border border-ink-border flex items-center justify-between">
+                <div>
+                  <div className="font-semibold text-ink-text">Stage 3: Utility Field Pilot</div>
+                  <div className="text-ink-muted">Reviewed feeder deployment</div>
+                </div>
+                <span className="text-ink-muted font-mono">Planned</span>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-3 gap-2 text-center text-xs">
+              <div className="p-2 rounded-xl bg-parchment text-parchment-text font-semibold">
+                <Zap className="w-3.5 h-3.5 mx-auto mb-1 text-cobalt" aria-hidden="true" />
+                SDG 7
+              </div>
+              <div className="p-2 rounded-xl bg-parchment text-parchment-text font-semibold">
+                <Cpu className="w-3.5 h-3.5 mx-auto mb-1 text-cobalt" aria-hidden="true" />
+                SDG 9
+              </div>
+              <div className="p-2 rounded-xl bg-parchment text-parchment-text font-semibold">
+                <Globe className="w-3.5 h-3.5 mx-auto mb-1 text-cobalt" aria-hidden="true" />
+                SDG 11
+              </div>
+            </div>
+          </div>
+        );
+    }
+  };
+
+  return (
+    <section
+      ref={sectionRef}
+      id="story-chapters"
+      className="relative py-20 bg-ink-deep text-ink-text border-t border-ink-border"
+    >
+      {/* Real Anchor Targets for Landing Hero Nav Links */}
+      <span id="solutions" className="block -mt-16 pt-16 pointer-events-none" aria-hidden="true" />
+      <span id="technology" className="block pointer-events-none" aria-hidden="true" />
+      <span id="impact" className="block pointer-events-none" aria-hidden="true" />
+
+      {/* Scroll-Driven Reading Progress Hairline */}
+      <div
+        aria-hidden="true"
+        className="sticky top-0 z-30 h-0.5 w-full bg-ink-border/60 overflow-hidden"
+      >
+        <div
+          className="h-full bg-cobalt origin-left transition-transform duration-100"
+          style={{ transform: `scaleX(${scrollProgress})` }}
+        />
+      </div>
+
+      <div className="max-w-[1440px] mx-auto px-6 sm:px-10 pt-8">
+        {/* Section Header */}
+        <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-6 mb-12 reveal" data-delay="50">
+          <div className="max-w-2xl">
+            <p className="text-sm font-sans font-medium text-cobalt-soft mb-2">
+              Six-chapter architecture story
+            </p>
+            <h2 className="font-serif text-4xl sm:text-5xl font-normal tracking-tight text-ink-text leading-tight break-words min-w-0">
+              A grid story, made visible.
+            </h2>
+            <p className="mt-3 text-base text-ink-muted leading-relaxed">
+              Follow the prototype journey from edge sensing to network visibility and operator-approved response.
+            </p>
+          </div>
+
+          {/* Quick Prototype Proof & Demo Triggers */}
+          <div id="resources" className="flex flex-wrap items-center gap-3 shrink-0">
+            <button
+              type="button"
+              onClick={() => setIsEvidenceModalOpen(true)}
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-ink-card hover:bg-ink-hover text-xs sm:text-sm font-sans font-medium text-ink-secondary border border-ink-border transition-colors"
+            >
+              <Camera className="w-4 h-4 text-cobalt-soft" aria-hidden="true" />
+              <span>Inspect Hardware Evidence</span>
+            </button>
+            <button
+              type="button"
+              onClick={startEndToEndDemo}
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-ink-card hover:bg-ink-hover text-xs sm:text-sm font-sans font-medium text-ink-secondary border border-ink-border transition-colors"
+            >
+              <PlayCircle className="w-4 h-4 text-signal-normalBright" aria-hidden="true" />
+              <span>Run 5-Step Demo</span>
+            </button>
+          </div>
         </div>
 
         {/* Chapter Navigation Tabs */}
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 mb-12 reveal" data-delay="100">
-          {chapters.map((ch, idx) => (
-            <button
-              key={ch.num}
-              onClick={() => setActiveChapter(idx + 1)}
-              className={`p-4 rounded-2xl border text-left transition-all ${
-                activeChapter === idx + 1
-                  ? "bg-[#1f2638] border-[#3b59f8] shadow-cobalt"
-                  : "bg-[#141822] border-[#222b3d] hover:border-[#334155] text-[#9ca3af]"
-              }`}
-            >
-              <div className="text-xs font-mono font-bold text-[#818cf8] mb-1">
-                CHAPTER {ch.num}
-              </div>
-              <div className="text-xs font-semibold text-white truncate">
-                {ch.title}
-              </div>
-            </button>
-          ))}
+        <div
+          role="tablist"
+          aria-label="Editorial chapters"
+          className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 mb-10 reveal"
+          data-delay="100"
+        >
+          {chapters.map((ch, idx) => {
+            const isActive = activeChapter === idx + 1;
+            return (
+              <button
+                key={ch.num}
+                type="button"
+                role="tab"
+                aria-selected={isActive}
+                onClick={() => setActiveChapter(idx + 1)}
+                className={`p-3.5 rounded-2xl border text-left transition-colors ${
+                  isActive
+                    ? "bg-ink-hover border-cobalt shadow-cobalt"
+                    : "bg-ink-surface border-ink-border hover:border-ink-borderStrong text-ink-muted"
+                }`}
+              >
+                <div className="text-xs font-mono font-semibold text-cobalt-soft mb-1">
+                  Chapter {ch.num}
+                </div>
+                <div className="text-xs sm:text-sm font-sans font-semibold text-ink-text truncate">
+                  {ch.title}
+                </div>
+              </button>
+            );
+          })}
         </div>
 
         {/* Active Chapter Showcase Card */}
-        {chapters.map(
-          (ch, idx) =>
-            activeChapter === idx + 1 && (
-              <div
-                key={ch.num}
-                className="rounded-3xl bg-[#161a25] border border-[#273247] p-8 sm:p-12 shadow-2xl grid grid-cols-1 lg:grid-cols-12 gap-8 items-center reveal"
-                data-delay="150"
-              >
-                {/* Left Text */}
-                <div className="lg:col-span-7 space-y-6">
-                  <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#3b59f8]/15 border border-[#3b59f8]/30 text-xs font-mono text-[#93c5fd]">
-                    <span>Chapter {ch.num}</span>
-                    <span>•</span>
-                    <span>{ch.tag}</span>
-                  </div>
-
-                  <h3 className="font-serif text-3xl sm:text-4xl text-white font-normal leading-snug">
-                    {ch.subtitle}
-                  </h3>
-
-                  <p className="text-base sm:text-lg text-[#cbd5e1] leading-relaxed">
-                    {ch.content}
-                  </p>
-
-                  {/* Highlight Callout */}
-                  <div className="p-4 rounded-xl bg-[#1a2130] border-l-4 border-[#3b59f8] text-sm text-[#e2e8f0] font-mono leading-relaxed">
-                    {ch.highlight}
-                  </div>
-
-                  {/* Citation Footer */}
-                  <div className="text-xs font-mono text-[#818cf8]/80 flex items-center gap-2">
-                    <span>Source: {ch.citation}</span>
-                  </div>
-                </div>
-
-                {/* Right Interactive / Visual Graphic */}
-                <div className="lg:col-span-5 flex flex-col justify-between h-full bg-[#11141c] rounded-2xl border border-[#232b3c] p-6 text-left">
-                  <div className="flex items-center justify-between border-b border-[#222a3b] pb-4 mb-4">
-                    <span className="text-xs font-mono text-[#9ca3af] uppercase">
-                      Interactive Architecture Link
-                    </span>
-                    <span className="text-xs font-mono px-2 py-0.5 rounded bg-[#22c55e]/20 text-[#22c55e]">
-                      Verified Spec
-                    </span>
-                  </div>
-
-                  <div className="space-y-4 py-2 font-mono text-xs">
-                    <div className="p-3 rounded-xl bg-[#181d28] border border-[#263145]">
-                      <div className="text-[#9ca3af] text-[10px]">CORRIDOR POSITION</div>
-                      <div className="text-white font-bold mt-0.5">Node A (Homes) → Node B (EV) → Node C (Transformer)</div>
-                    </div>
-
-                    <div className="p-3 rounded-xl bg-[#181d28] border border-[#263145]">
-                      <div className="text-[#9ca3af] text-[10px]">MICROCONTROLLER TELEMETRY</div>
-                      <div className="text-[#38bdf8] font-bold mt-0.5">ESP32-S3 Wi-Fi Stream • Low-Voltage Tabletop Demo</div>
-                    </div>
-
-                    <div className="p-3 rounded-xl bg-[#181d28] border border-[#263145]">
-                      <div className="text-[#9ca3af] text-[10px]">OPERATOR SAFETY POLICY</div>
-                      <div className="text-[#22c55e] font-bold mt-0.5">Human-in-the-Loop • Explicit Operator Approval Required</div>
-                    </div>
-                  </div>
-
-                  <div className="pt-6 border-t border-[#222a3b] mt-4 flex items-center justify-between">
-                    <Link
-                      href="/control-room"
-                      className="pill-button-cobalt text-xs py-2 px-4"
-                    >
-                      <span>Open in Control Room</span>
-                      <ArrowRight className="w-3.5 h-3.5" />
-                    </Link>
-
-                    <button
-                      onClick={() => setActiveChapter((prev) => (prev < 6 ? prev + 1 : 1))}
-                      className="text-xs font-mono text-[#93c5fd] hover:text-white flex items-center gap-1 transition-colors"
-                    >
-                      <span>Next Chapter</span>
-                      <ChevronRight className="w-4 h-4" />
-                    </button>
-                  </div>
-                </div>
+        <div
+          key={currentChapter.num}
+          role="tabpanel"
+          className="rounded-3xl bg-ink-surface border border-ink-border p-7 sm:p-10 shadow-2xl grid grid-cols-1 lg:grid-cols-12 gap-8 items-stretch reveal is-revealed"
+        >
+          {/* Left Narrative Column */}
+          <div className="lg:col-span-7 flex flex-col justify-between space-y-5 min-w-0">
+            <div className="space-y-5">
+              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-cobalt-tint border border-cobalt-border text-xs font-sans font-medium text-cobalt-soft">
+                <span>Chapter {currentChapter.num}</span>
+                <span>{currentChapter.tag}</span>
               </div>
-            )
-        )}
+
+              <h3 className="font-serif text-2xl sm:text-4xl text-ink-text font-normal leading-snug break-words min-w-0">
+                {currentChapter.subtitle}
+              </h3>
+
+              <p className="text-base text-ink-secondary leading-relaxed">
+                {currentChapter.content}
+              </p>
+
+              <div className="p-4 rounded-xl bg-ink-card border-l-4 border-cobalt text-sm text-ink-text font-sans leading-relaxed">
+                {currentChapter.highlight}
+              </div>
+            </div>
+
+            <div className="pt-4 border-t border-ink-border flex flex-wrap items-center justify-between gap-4">
+              <div className="text-xs font-sans text-ink-muted">
+                Source: {currentChapter.citation}
+              </div>
+            </div>
+          </div>
+
+          {/* Right Bespoke Per-Chapter Interactive Visual Column */}
+          <div className="lg:col-span-5 flex flex-col justify-between bg-ink rounded-2xl border border-ink-border p-6 min-w-0">
+            <div>{renderChapterVisual(activeChapter)}</div>
+
+            <div className="pt-5 border-t border-ink-border mt-6 flex flex-wrap items-center justify-between gap-3">
+              <Link
+                href="/control-room"
+                className="pill-button-cobalt text-xs py-2 px-4"
+              >
+                <span>Open in Control Room</span>
+                <ArrowRight className="w-3.5 h-3.5" aria-hidden="true" />
+              </Link>
+
+              <div className="flex items-center gap-3">
+                <button
+                  type="button"
+                  onClick={() => setActiveChapter((prev) => (prev > 1 ? prev - 1 : 6))}
+                  className="p-1.5 rounded-full bg-ink-card hover:bg-ink-hover text-ink-secondary border border-ink-border transition-colors"
+                  aria-label="Previous chapter"
+                >
+                  <ChevronLeft className="w-4 h-4" aria-hidden="true" />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setActiveChapter((prev) => (prev < 6 ? prev + 1 : 1))}
+                  className="text-xs font-sans font-medium text-cobalt-soft hover:text-ink-text inline-flex items-center gap-1 transition-colors"
+                >
+                  <span>Next Chapter</span>
+                  <ChevronRight className="w-4 h-4" aria-hidden="true" />
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
     </section>
   );

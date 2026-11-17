@@ -1,408 +1,602 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { useGrid } from "../context/GridContext";
 import {
   ArrowUpRight,
   Wifi,
   AlertTriangle,
   Play,
-  RotateCcw,
+  Pause,
   Zap,
-  Layers,
   ChevronRight,
-  Sparkles,
+  Flame,
+  CheckCircle2,
 } from "lucide-react";
 
 export default function LandingHero() {
-  const router = useRouter();
-  const { isThermalFaultActive, triggerThermalFault, rover, startPatrol, stopPatrol, logout } = useGrid();
-  const [activeHoverNode, setActiveHoverNode] = useState<string | null>(null);
+  const {
+    nodes,
+    isThermalFaultActive,
+    triggerThermalFault,
+    rover,
+    startPatrol,
+    stopPatrol,
+    logout,
+  } = useGrid();
 
-  // Guarantee all above-the-fold hero elements are immediately revealed on mount
+  const [focusedNodeId, setFocusedNodeId] = useState<string>("node-c");
+  const [depthOffset, setDepthOffset] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
+  const stageRef = useRef<HTMLDivElement | null>(null);
+  const rafRef = useRef<number | null>(null);
+
+  const nodeA = nodes.find((n) => n.id === "node-a") || nodes[0];
+  const nodeB = nodes.find((n) => n.id === "node-b") || nodes[1];
+  const nodeC = nodes.find((n) => n.id === "node-c") || nodes[2];
+  const focusedNode = nodes.find((n) => n.id === focusedNodeId) || nodeC;
+
+  // Reveal hero elements immediately on mount
   useEffect(() => {
-    const revealHero = () => {
-      const heroEls = document.querySelectorAll<HTMLElement>("#hero-root .reveal");
-      heroEls.forEach((el) => el.classList.add("is-revealed"));
+    const heroEls = document.querySelectorAll<HTMLElement>("#hero-root .reveal");
+    heroEls.forEach((el) => el.classList.add("is-revealed"));
+  }, []);
+
+  // Restrained pointer-driven depth separation across visual planes (GPU transform only)
+  const handleStagePointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (typeof window !== "undefined" && window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      return;
+    }
+    const el = stageRef.current;
+    if (!el) return;
+    const rect = el.getBoundingClientRect();
+    const nx = ((e.clientX - rect.left) / rect.width - 0.5) * 2; // -1 to 1
+    const ny = ((e.clientY - rect.top) / rect.height - 0.5) * 2;
+    if (rafRef.current) cancelAnimationFrame(rafRef.current);
+    rafRef.current = requestAnimationFrame(() => {
+      setDepthOffset({ x: nx, y: ny });
+    });
+  };
+
+  const handleStagePointerLeave = () => {
+    if (rafRef.current) cancelAnimationFrame(rafRef.current);
+    setDepthOffset({ x: 0, y: 0 });
+  };
+
+  useEffect(() => {
+    return () => {
+      if (rafRef.current) cancelAnimationFrame(rafRef.current);
     };
-    revealHero();
-    const t = setTimeout(revealHero, 40);
-    return () => clearTimeout(t);
   }, []);
 
   return (
-    <div id="hero-root" className="relative min-h-screen bg-[#11141b] text-[#f4f5f8] overflow-hidden flex flex-col justify-between selection:bg-[#3b59f8] selection:text-white">
-      {/* Background Chalk & Mountain Horizon Silhouettes */}
-      <div className="absolute inset-0 pointer-events-none z-0">
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_80%_60%_at_50%_-20%,rgba(59,89,248,0.15),transparent)]" />
-        <div className="absolute bottom-0 left-0 right-0 h-96 mountain-silhouette opacity-80" />
-        {/* Subtle grid line curves */}
+    <div
+      id="hero-root"
+      className="relative min-h-screen bg-ink text-ink-text overflow-x-clip flex flex-col justify-between selection:bg-cobalt selection:text-ink-onAccent"
+    >
+      {/* Plane 0: Deep Atmospheric Horizon & Topographic Field */}
+      <div className="absolute inset-0 pointer-events-none z-0 overflow-hidden">
+        <div
+          className="absolute inset-0 bg-ink-backdrop sc-plane"
+          style={{
+            transform: `translate3d(${depthOffset.x * -6}px, ${depthOffset.y * -4}px, 0)`,
+          }}
+        />
+        <div className="absolute bottom-0 left-0 right-0 h-80 mountain-silhouette opacity-80" />
         <svg
-          className="absolute inset-0 w-full h-full opacity-15"
+          aria-hidden="true"
+          className="absolute inset-0 w-full h-full opacity-15 sc-plane"
+          style={{
+            transform: `translate3d(${depthOffset.x * -10}px, ${depthOffset.y * -6}px, 0)`,
+          }}
           xmlns="http://www.w3.org/2000/svg"
         >
           <path
-            d="M -100,500 Q 400,350 900,480 T 1900,380"
+            d="M -100,480 Q 400,330 900,460 T 1900,360"
             fill="none"
-            stroke="rgba(255,255,255,0.4)"
+            stroke="currentColor"
             strokeWidth="1"
             strokeDasharray="4 8"
           />
           <path
-            d="M -100,600 Q 500,450 1100,580 T 2100,460"
+            d="M -100,580 Q 500,430 1100,560 T 2100,440"
             fill="none"
-            stroke="rgba(255,255,255,0.3)"
+            stroke="currentColor"
             strokeWidth="1"
             strokeDasharray="6 12"
           />
         </svg>
       </div>
 
-      {/* Top Navbar matching landing_page_design_concept.png */}
-      <header className="relative z-20 px-6 sm:px-12 py-6 max-w-[1700px] w-full mx-auto flex items-center justify-between">
-        {/* Logo Left */}
-        <Link href="/" className="flex items-center gap-3">
-          <div className="grid grid-cols-3 gap-1 p-1.5 rounded-lg bg-[#1a1f2c] border border-[#2b3347]">
-            <span className="w-1.5 h-1.5 rounded-full bg-[#3b59f8]" />
-            <span className="w-1.5 h-1.5 rounded-full bg-[#3b59f8]" />
-            <span className="w-1.5 h-1.5 rounded-full bg-[#3b59f8]" />
-            <span className="w-1.5 h-1.5 rounded-full bg-[#3b59f8]" />
-            <span className="w-1.5 h-1.5 rounded-full bg-[#3b59f8]" />
-            <span className="w-1.5 h-1.5 rounded-full bg-[#3b59f8]" />
+      {/* Top Navbar */}
+      <header className="relative z-20 px-6 sm:px-10 py-4 max-w-[1440px] w-full mx-auto flex items-center justify-between gap-4">
+        <Link href="/" className="flex items-center gap-3 shrink-0 group">
+          <div className="grid grid-cols-3 gap-1 p-1.5 rounded-lg bg-ink-card border border-ink-border group-hover:border-cobalt transition-colors">
+            <span className="w-1.5 h-1.5 rounded-full bg-cobalt" />
+            <span className="w-1.5 h-1.5 rounded-full bg-cobalt" />
+            <span className="w-1.5 h-1.5 rounded-full bg-cobalt" />
+            <span className="w-1.5 h-1.5 rounded-full bg-cobalt" />
+            <span className="w-1.5 h-1.5 rounded-full bg-cobalt" />
+            <span className="w-1.5 h-1.5 rounded-full bg-cobalt" />
           </div>
-          <span className="font-bold tracking-wider text-base sm:text-lg uppercase text-white font-sans">
-            SMARTGRID <span className="text-[#3b59f8]">AIoT</span>
+          <span className="font-bold text-base sm:text-lg text-ink-text font-sans whitespace-nowrap">
+            SmartGrid <span className="text-cobalt">AIoT</span>
           </span>
         </Link>
 
-        {/* Center Links: SOLUTIONS, TECHNOLOGY, IMPACT, RESOURCES */}
-        <nav className="hidden md:flex items-center gap-8 text-xs font-mono tracking-widest text-[#9ca3af]">
-          <a href="#solutions" className="hover:text-white transition-colors uppercase">
+        {/* Anchor Navigation wired to actual page sections */}
+        <nav aria-label="Primary sections" className="hidden md:flex items-center gap-7 text-sm font-sans text-ink-muted">
+          <a href="#solutions" className="hover:text-ink-text transition-colors whitespace-nowrap">
             Solutions
           </a>
-          <a href="#technology" className="hover:text-white transition-colors uppercase">
+          <a href="#technology" className="hover:text-ink-text transition-colors whitespace-nowrap">
             Technology
           </a>
-          <a href="#impact" className="hover:text-white transition-colors uppercase">
+          <a href="#impact" className="hover:text-ink-text transition-colors whitespace-nowrap">
             Impact
           </a>
-          <a href="#resources" className="hover:text-white transition-colors uppercase">
+          <a href="#resources" className="hover:text-ink-text transition-colors whitespace-nowrap">
             Resources
           </a>
         </nav>
 
         {/* Right CTA Buttons */}
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2.5 shrink-0">
           <button
-            onClick={() => {
-              logout();
-            }}
-            className="hidden sm:inline-flex items-center gap-1.5 px-3.5 py-2 rounded-full bg-[#181c26] hover:bg-[#252c3d] text-xs font-mono text-[#cbd5e1] border border-[#2b3347] transition-all"
+            type="button"
+            onClick={() => logout()}
+            className="hidden sm:inline-flex items-center gap-1.5 px-3.5 py-2 rounded-full bg-ink-surface hover:bg-ink-hover text-xs font-sans font-medium text-ink-secondary border border-ink-border transition-colors whitespace-nowrap"
             title="Lock Gateway / Return to Operator Sign In"
           >
             <span>Operator Sign In</span>
           </button>
           <Link
             href="/control-room"
-            className="pill-button-cobalt text-xs sm:text-sm font-semibold tracking-wide"
+            className="pill-button-cobalt text-xs sm:text-sm font-semibold px-3.5 sm:px-5 py-2 whitespace-nowrap"
           >
             <span>Open Control Room</span>
-            <ArrowUpRight className="w-4 h-4" />
+            <ArrowUpRight className="w-4 h-4" aria-hidden="true" />
           </Link>
         </div>
       </header>
 
-      {/* Main Hero Body */}
-      <main className="relative z-10 max-w-[1700px] w-full mx-auto px-6 sm:px-12 py-10 lg:py-16 grid grid-cols-1 lg:grid-cols-12 gap-12 items-center flex-1">
-        {/* Left Editorial Copy */}
-        <div className="lg:col-span-5 space-y-8 text-left">
-          {/* Kicker */}
-          <div className="text-xs sm:text-sm font-mono tracking-[0.2em] text-[#9ca3af] uppercase reveal" data-delay="50">
-            SENSING TODAY. A SAFER TOMORROW.
-          </div>
-
-          {/* Big Editorial Serif Headline */}
-          <h1 className="font-serif text-5xl sm:text-6xl xl:text-7xl font-normal leading-[1.08] tracking-tight text-[#f4f5f8] reveal" data-delay="100">
-            See the grid <br />
-            before it becomes <br />
-            <span className="italic font-serif">a problem.</span>
-          </h1>
-
-          {/* Subhead */}
-          <p className="text-base sm:text-lg text-[#9ca3af] font-sans max-w-lg leading-relaxed reveal" data-delay="150">
-            From edge sensor to operator action.
+      {/* Main Hero Body: Tuned so headline, subhead, CTAs, and proof strip fit cleanly above 1280x800 */}
+      <main className="relative z-10 max-w-[1440px] w-full mx-auto px-6 sm:px-10 py-6 lg:py-8 grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-10 items-center flex-1">
+        {/* Left Editorial Column */}
+        <div className="lg:col-span-5 space-y-5 text-left min-w-0">
+          <p className="text-sm font-sans font-medium text-cobalt-soft reveal" data-delay="50">
+            Sensing today for a safer tomorrow
           </p>
 
-          {/* CTA Pill Button */}
-          <div className="pt-2 flex flex-wrap items-center gap-4 reveal" data-delay="200">
+          <h1
+            className="font-serif text-4xl sm:text-5xl xl:text-[3.75rem] font-normal leading-[1.06] tracking-tight text-ink-text break-words min-w-0 reveal"
+            data-delay="100"
+          >
+            See the grid before it becomes a problem.
+          </h1>
+
+          <p
+            className="text-base sm:text-lg text-ink-muted font-sans max-w-md leading-relaxed reveal"
+            data-delay="150"
+          >
+            From edge sensor to operator action across a live three-node digital twin.
+          </p>
+
+          {/* Primary & Secondary Actions */}
+          <div className="pt-1 flex flex-wrap items-center gap-3 reveal" data-delay="200">
             <Link
               href="/control-room"
-              className="pill-button-cobalt text-base py-3 px-8 shadow-cobalt"
+              className="pill-button-cobalt text-sm sm:text-base py-2.5 px-7 shadow-cobalt"
             >
               <span>Open Control Room</span>
-              <ArrowUpRight className="w-5 h-5" />
+              <ArrowUpRight className="w-4 h-4" aria-hidden="true" />
             </Link>
 
             <a
               href="#story-chapters"
-              className="inline-flex items-center gap-2 px-6 py-3 rounded-full bg-[#1b202c] hover:bg-[#252c3d] text-sm text-[#cbd5e1] font-mono border border-[#2d3748] transition-all"
+              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-ink-card hover:bg-ink-hover text-sm text-ink-secondary font-sans font-medium border border-ink-border transition-colors"
             >
               <span>Explore 6-Chapter Story</span>
-              <ChevronRight className="w-4 h-4 text-[#818cf8]" />
+              <ChevronRight className="w-4 h-4 text-cobalt-soft" aria-hidden="true" />
             </a>
           </div>
 
-          {/* Quick Stats / Credibility Callout */}
-          <div className="pt-6 border-t border-[#232a3b] grid grid-cols-3 gap-4 max-w-md font-mono text-xs reveal" data-delay="250">
-            <div>
-              <div className="text-[#818cf8] font-bold text-base">3 Nodes</div>
-              <div className="text-[#9ca3af] text-[11px]">Physical Twin Corridor</div>
+          {/* Grounded Prototype Architecture Facts */}
+          <div
+            className="pt-5 border-t border-ink-border grid grid-cols-3 gap-4 max-w-md font-sans text-xs reveal"
+            data-delay="250"
+          >
+            <div className="min-w-0">
+              <div className="text-cobalt-soft font-semibold text-sm sm:text-base">3 Nodes</div>
+              <div className="text-ink-muted text-xs mt-0.5">Physical Twin Corridor</div>
             </div>
-            <div>
-              <div className="text-[#22c55e] font-bold text-base">ESP32-S3</div>
-              <div className="text-[#9ca3af] text-[11px]">Edge Telemetry Rover</div>
+            <div className="min-w-0">
+              <div className="text-signal-normalBright font-semibold text-sm sm:text-base">ESP32-S3</div>
+              <div className="text-ink-muted text-xs mt-0.5">Edge Telemetry Rover</div>
             </div>
-            <div>
-              <div className="text-[#f59e0b] font-bold text-base">AI + Voice</div>
-              <div className="text-[#9ca3af] text-[11px]">Human-in-the-Loop</div>
+            <div className="min-w-0">
+              <div className="text-signal-warningBright font-semibold text-sm sm:text-base">AI + Voice</div>
+              <div className="text-ink-muted text-xs mt-0.5">Human-in-the-Loop</div>
             </div>
           </div>
         </div>
 
-        {/* Right Hero Visual: Isometric Grid Scene mirroring landing_page_design_concept.png */}
-        <div className="lg:col-span-7 relative flex items-center justify-center min-h-[460px] sm:min-h-[580px] reveal" data-delay="200">
-          {/* Top-Right Italic Serif Quote */}
-          <div className="absolute top-0 right-4 hidden sm:block text-right">
-            <p className="font-serif italic text-base sm:text-lg text-[#d1d5db] tracking-wide">
-              From data to a <br />
-              brighter tomorrow.
-            </p>
-          </div>
-
-          {/* Interactive SVG Diagram Backdrop & Power Lines */}
-          <div className="relative w-full max-w-2xl aspect-[1.3/1] rounded-3xl bg-[#141822]/60 border border-[#283144] p-6 shadow-2xl backdrop-blur-sm overflow-hidden">
-            {/* Topographic subtle background lines */}
-            <div className="absolute inset-0 topographic-lines opacity-20 pointer-events-none" />
-
-            {/* Power Grid Transmission Path (Glowing Curves) */}
-            <svg
-              className="absolute inset-0 w-full h-full pointer-events-none"
-              viewBox="0 0 700 500"
-              fill="none"
-              xmlns="http://www.w3.org/2000/svg"
-            >
-              <defs>
-                <linearGradient id="powerLineGrad" x1="0%" y1="0%" x2="100%" y2="0%">
-                  <stop offset="0%" stopColor="#3b59f8" />
-                  <stop offset="50%" stopColor="#818cf8" />
-                  <stop offset="100%" stopColor="#ef4444" />
-                </linearGradient>
-                <filter id="lineGlow" x="-20%" y="-20%" width="140%" height="140%">
-                  <feGaussianBlur stdDeviation="3" result="blur" />
-                  <feComposite in="SourceGraphic" in2="blur" operator="over" />
-                </filter>
-              </defs>
-
-              {/* Connected high-voltage power lines between nodes */}
-              <path
-                d="M 220,170 Q 340,190 420,290"
-                stroke="#3b59f8"
-                strokeWidth="2.5"
-                strokeDasharray="6 4"
-                className="animate-dash-flow"
-              />
-              <path
-                d="M 440,310 Q 520,310 590,240"
-                stroke={isThermalFaultActive ? "#ef4444" : "#3b59f8"}
-                strokeWidth="3"
-                filter="url(#lineGlow)"
-              />
-
-              {/* Rover dashed telemetry route from Node B to Node C */}
-              <path
-                d="M 370,410 Q 460,400 540,350"
-                stroke="#60a5fa"
-                strokeWidth="2"
-                strokeDasharray="4 6"
-              />
-            </svg>
-
-            {/* NODE A: Residential Feeder */}
-            <div
-              className={`absolute top-[16%] left-[8%] sm:left-[14%] z-10 transition-transform duration-300 ${
-                activeHoverNode === "node-a" ? "scale-105" : ""
-              }`}
-              onMouseEnter={() => setActiveHoverNode("node-a")}
-              onMouseLeave={() => setActiveHoverNode(null)}
-            >
-              {/* Node Card badge on warm parchment */}
-              <div className="flex items-center gap-3 bg-[#ede4d8] text-[#1c1f28] px-3.5 py-2 rounded-xl shadow-parchment border border-[#d8ccbc] hover:border-[#3b59f8] transition-all cursor-pointer">
-                <span className="w-7 h-7 rounded-full bg-[#4f46e5] text-white flex items-center justify-center font-bold text-xs shadow">
-                  A
+        {/* Right Hero Visual: Dimensional Layered Live Digital Twin Stage */}
+        <div className="lg:col-span-7 relative flex items-center justify-center min-w-0 reveal" data-delay="150">
+          <div
+            ref={stageRef}
+            onPointerMove={handleStagePointerMove}
+            onPointerLeave={handleStagePointerLeave}
+            className="relative w-full max-w-[680px] rounded-3xl bg-ink-surface border border-ink-border shadow-2xl overflow-hidden flex flex-col"
+          >
+            {/* Clean Stage Top Bar (Replaces overlapping quote) */}
+            <div className="relative z-20 px-5 py-3 border-b border-ink-border bg-ink-deep/70 flex flex-wrap items-center justify-between gap-2 text-xs">
+              <div className="flex items-center gap-2">
+                <span
+                  className={`w-2 h-2 rounded-full ${
+                    isThermalFaultActive ? "bg-signal-criticalBright animate-pulse" : "bg-signal-normalBright"
+                  }`}
+                />
+                <span className="font-sans font-medium text-ink-text">
+                  Live Corridor Preview
                 </span>
-                <div className="text-left">
-                  <div className="font-semibold text-xs sm:text-sm font-sans text-[#181a20]">
-                    Residential Feeder
-                  </div>
-                  <div className="text-[10px] text-[#555a68] font-mono">
-                    Homes • Smart Meters
-                  </div>
-                </div>
+                <span className="text-ink-muted hidden sm:inline">
+                  From data to a brighter tomorrow
+                </span>
               </div>
 
-              {/* Isometric 3D Node Graphic Representation */}
-              <div className="mt-2 ml-4 p-2.5 rounded-2xl bg-[#1b2230]/90 border border-[#2b354a] inline-flex items-center gap-2 shadow-lg">
-                <div className="w-8 h-8 rounded-lg bg-[#22c55e]/15 border border-[#22c55e]/30 flex items-center justify-center text-[#22c55e]">
-                  <Zap className="w-4 h-4" />
-                </div>
-                <div className="text-[11px] font-mono text-left">
-                  <div className="text-[#cbd5e1] font-semibold">98 MW Baseline</div>
-                  <div className="text-[#22c55e] text-[10px] flex items-center gap-1">
-                    <span className="w-1.5 h-1.5 rounded-full bg-[#22c55e] animate-pulse" />
-                    Normal Operation
-                  </div>
-                </div>
+              {/* Interactive Live Controls right in Hero */}
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => triggerThermalFault(!isThermalFaultActive)}
+                  className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium border transition-colors ${
+                    isThermalFaultActive
+                      ? "bg-signal-criticalBg text-signal-criticalText border-signal-criticalBorder"
+                      : "bg-ink-card text-ink-secondary border-ink-border hover:border-cobalt"
+                  }`}
+                >
+                  {isThermalFaultActive ? (
+                    <>
+                      <CheckCircle2 className="w-3.5 h-3.5" aria-hidden="true" />
+                      <span>Clear Fault</span>
+                    </>
+                  ) : (
+                    <>
+                      <Flame className="w-3.5 h-3.5 text-signal-criticalBright" aria-hidden="true" />
+                      <span>Simulate Fault</span>
+                    </>
+                  )}
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => (rover.isPatrolling ? stopPatrol() : startPatrol())}
+                  className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-ink-card text-ink-secondary border border-ink-border hover:border-cobalt transition-colors"
+                >
+                  {rover.isPatrolling ? (
+                    <>
+                      <Pause className="w-3 h-3 text-cobalt-soft" aria-hidden="true" />
+                      <span>Pause Rover</span>
+                    </>
+                  ) : (
+                    <>
+                      <Play className="w-3 h-3 text-signal-normalBright" aria-hidden="true" />
+                      <span>Start Rover</span>
+                    </>
+                  )}
+                </button>
               </div>
             </div>
 
-            {/* NODE B: EV Charging Hub */}
-            <div
-              className={`absolute bottom-[28%] left-[18%] sm:left-[24%] z-10 transition-transform duration-300 ${
-                activeHoverNode === "node-b" ? "scale-105" : ""
-              }`}
-              onMouseEnter={() => setActiveHoverNode("node-b")}
-              onMouseLeave={() => setActiveHoverNode(null)}
-            >
-              {/* Node Card badge on warm parchment */}
-              <div className="flex items-center gap-3 bg-[#ede4d8] text-[#1c1f28] px-3.5 py-2 rounded-xl shadow-parchment border border-[#d8ccbc] hover:border-[#f59e0b] transition-all cursor-pointer">
-                <span className="w-7 h-7 rounded-full bg-[#4f46e5] text-white flex items-center justify-center font-bold text-xs shadow">
-                  B
-                </span>
-                <div className="text-left">
-                  <div className="font-semibold text-xs sm:text-sm font-sans text-[#181a20]">
-                    EV Charging Hub
-                  </div>
-                  <div className="text-[10px] text-[#555a68] font-mono">
-                    Fast Chargers • Energy Storage
-                  </div>
-                </div>
-              </div>
+            {/* Mobile Dedicated Art Direction: Clean Stacked Corridor (Zero Overlap on < 640px) */}
+            <div className="flex sm:hidden flex-col gap-3 p-4">
+              {[nodeA, nodeB, nodeC].map((node) => {
+                const isSelected = focusedNodeId === node.id;
+                const badgeTone =
+                  node.status === "critical"
+                    ? "bg-signal-critical"
+                    : "bg-control";
+                const statusTextTone =
+                  node.status === "critical"
+                    ? "text-signal-criticalBright"
+                    : node.status === "warning"
+                    ? "text-signal-warningBright"
+                    : "text-signal-normalBright";
 
-              {/* Isometric Station Sub-Card */}
-              <div className="mt-2 ml-4 p-2.5 rounded-2xl bg-[#1b2230]/90 border border-[#2b354a] inline-flex items-center gap-2 shadow-lg">
-                <div className="w-8 h-8 rounded-lg bg-[#f59e0b]/15 border border-[#f59e0b]/30 flex items-center justify-center text-[#f59e0b]">
-                  <Zap className="w-4 h-4" />
-                </div>
-                <div className="text-[11px] font-mono text-left">
-                  <div className="text-[#cbd5e1] font-semibold">76 MW Load</div>
-                  <div className="text-[#f59e0b] text-[10px] flex items-center gap-1">
-                    <span className="w-1.5 h-1.5 rounded-full bg-[#f59e0b]" />
-                    Warning • Peak Load
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* NODE C: Industrial Transformer (with glowing alert icon) */}
-            <div
-              className={`absolute top-[24%] right-[4%] sm:right-[10%] z-10 transition-transform duration-300 ${
-                activeHoverNode === "node-c" ? "scale-105" : ""
-              }`}
-              onMouseEnter={() => setActiveHoverNode("node-c")}
-              onMouseLeave={() => setActiveHoverNode(null)}
-            >
-              {/* Glowing Alert Indicator ! */}
-              {isThermalFaultActive && (
-                <div className="absolute -top-7 left-1/2 -translate-x-1/2 flex items-center justify-center">
-                  <div className="w-8 h-8 rounded-full bg-[#ef4444] text-white flex items-center justify-center font-bold text-sm shadow-[0_0_20px_#ef4444] animate-bounce">
-                    !
-                  </div>
-                </div>
-              )}
-
-              {/* Node Card badge on warm parchment */}
-              <div className="flex items-center gap-3 bg-[#ede4d8] text-[#1c1f28] px-3.5 py-2 rounded-xl shadow-parchment border border-[#d8ccbc] hover:border-[#ef4444] transition-all cursor-pointer">
-                <span className="w-7 h-7 rounded-full bg-[#dc2626] text-white flex items-center justify-center font-bold text-xs shadow">
-                  C
-                </span>
-                <div className="text-left">
-                  <div className="font-semibold text-xs sm:text-sm font-sans text-[#181a20]">
-                    Industrial Transformer
-                  </div>
-                  <div className="text-[10px] text-[#555a68] font-mono">
-                    Substation • High Load
-                  </div>
-                </div>
-              </div>
-
-              {/* Substation Sub-Card */}
-              <div className="mt-2 ml-4 p-2.5 rounded-2xl bg-[#1b2230]/90 border border-[#2b354a] inline-flex items-center gap-2 shadow-lg">
-                <div className="w-8 h-8 rounded-lg bg-[#ef4444]/15 border border-[#ef4444]/30 flex items-center justify-center text-[#ef4444]">
-                  <AlertTriangle className="w-4 h-4" />
-                </div>
-                <div className="text-[11px] font-mono text-left">
-                  <div className="text-[#cbd5e1] font-semibold">102°C Winding</div>
-                  <div className="text-[#ef4444] text-[10px] flex items-center gap-1 font-bold">
-                    <span className="w-1.5 h-1.5 rounded-full bg-[#ef4444] animate-ping" />
-                    Critical Thermal Fault
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* ESP32-S3 ROVER PATROLLING ALONG ROUTE */}
-            <div className="absolute bottom-[14%] right-[24%] sm:right-[30%] z-20">
-              <div className="flex items-center gap-2 bg-[#1b2230] border border-[#3b59f8] p-2.5 rounded-2xl shadow-cobalt rover-pulse">
-                <div className="w-8 h-8 rounded-xl bg-[#3b59f8]/20 border border-[#3b59f8]/40 flex items-center justify-center text-[#3b59f8]">
-                  <Wifi className="w-4 h-4 animate-pulse" />
-                </div>
-                <div className="text-left font-mono">
-                  <div className="text-xs font-bold text-white flex items-center gap-1">
-                    <span>ESP32-S3 Rover</span>
-                    <span className="text-[9px] px-1 py-0.2 rounded bg-[#3b59f8]/30 text-[#60a5fa]">
-                      LIVE
+                return (
+                  <button
+                    key={node.id}
+                    type="button"
+                    onClick={() => setFocusedNodeId(node.id)}
+                    className={`w-full flex items-center justify-between gap-3 bg-parchment text-parchment-text px-3.5 py-2.5 rounded-2xl border text-left transition-colors ${
+                      isSelected ? "border-cobalt ring-2 ring-cobalt/30" : "border-parchment-border"
+                    }`}
+                  >
+                    <div className="flex items-center gap-2.5 min-w-0">
+                      <span className={`w-6 h-6 rounded-full ${badgeTone} text-ink-onAccent flex items-center justify-center font-bold text-xs shrink-0`}>
+                        {node.badge}
+                      </span>
+                      <div className="min-w-0">
+                        <div className="font-semibold text-xs text-parchment-text truncate">{node.name}</div>
+                        <div className="flex items-center gap-2 text-[11px] text-parchment-muted">
+                          <span>{node.temperature}°C</span>
+                          <span>{node.voltage} V</span>
+                          <span>{node.powerLoad} MW</span>
+                        </div>
+                      </div>
+                    </div>
+                    <span className={`text-[11px] font-semibold shrink-0 px-2 py-0.5 rounded-full bg-ink-card ${statusTextTone}`}>
+                      {node.statusLabel}
                     </span>
+                  </button>
+                );
+              })}
+
+              <div className="flex items-center justify-between gap-2 bg-ink-card border border-cobalt px-3.5 py-2.5 rounded-2xl">
+                <div className="flex items-center gap-2">
+                  <Wifi className="w-4 h-4 text-cobalt-soft shrink-0" aria-hidden="true" />
+                  <span className="text-xs font-semibold text-ink-text">ESP32-S3 Rover</span>
+                </div>
+                <span className="text-[11px] text-cobalt-soft">
+                  {rover.isPatrolling ? `Patrolling (${rover.batteryLevel}%)` : "Standby"}
+                </span>
+              </div>
+            </div>
+
+            {/* Desktop Layered 3-Plane Interactive Corridor Stage */}
+            <div className="hidden sm:block relative w-full h-[380px] sm:h-[400px] overflow-hidden">
+              {/* Plane 0: Topographic contour background */}
+              <div
+                className="absolute inset-0 topographic-lines opacity-20 pointer-events-none sc-plane"
+                style={{
+                  transform: `translate3d(${depthOffset.x * -8}px, ${depthOffset.y * -6}px, 0) scale(1.04)`,
+                }}
+              />
+
+              {/* Plane 1: Connected SVG Power Transmission Conduit & Rover Route */}
+              <svg
+                aria-hidden="true"
+                className="absolute inset-0 w-full h-full pointer-events-none sc-plane"
+                style={{
+                  transform: `translate3d(${depthOffset.x * -3}px, ${depthOffset.y * -2}px, 0)`,
+                }}
+                viewBox="0 0 680 400"
+                fill="none"
+                xmlns="http://www.w3.org/2000/svg"
+              >
+                <defs>
+                  <filter id="heroLineGlow" x="-20%" y="-20%" width="140%" height="140%">
+                    <feGaussianBlur stdDeviation="2.5" result="blur" />
+                    <feComposite in="SourceGraphic" in2="blur" operator="over" />
+                  </filter>
+                </defs>
+
+                {/* Node A (140, 128) -> Node B (238, 224) */}
+                <path
+                  d="M 140,132 C 165,178 195,204 238,224"
+                  stroke="var(--color-cobalt)"
+                  strokeWidth="2.5"
+                  strokeDasharray="6 5"
+                  className="animate-dash-flow"
+                />
+                {/* Node B (345, 240) -> Node C left edge (438, 102) */}
+                <path
+                  d="M 345,240 C 400,235 408,142 438,102"
+                  stroke={isThermalFaultActive ? "var(--color-signal-critical-bright)" : "var(--color-cobalt)"}
+                  strokeWidth="3"
+                  filter="url(#heroLineGlow)"
+                />
+                {/* Animated energy pulses along B -> C */}
+                <path
+                  d="M 345,240 C 400,235 408,142 438,102"
+                  stroke={isThermalFaultActive ? "var(--color-signal-critical-bg)" : "var(--color-cobalt-soft)"}
+                  strokeWidth="1.5"
+                  strokeDasharray="5 9"
+                  className="animate-dash-flow"
+                />
+                {/* Rover telemetry patrol path along lower corridor */}
+                <path
+                  d="M 140,330 Q 340,355 545,280"
+                  stroke="var(--color-cobalt-soft)"
+                  strokeWidth="1.5"
+                  strokeDasharray="4 6"
+                  opacity="0.55"
+                />
+
+                {/* Junction Anchor Dots */}
+                <circle cx="140" cy="132" r="4" fill="var(--color-signal-normal-bright)" />
+                <circle cx="238" cy="224" r="4" fill="var(--color-signal-warning-bright)" />
+                <circle
+                  cx="438"
+                  cy="102"
+                  r="4.5"
+                  fill={isThermalFaultActive ? "var(--color-signal-critical-bright)" : "var(--color-signal-normal-bright)"}
+                />
+              </svg>
+
+              {/* Plane 2: Foreground Interactive Nodes */}
+              <div
+                className="absolute inset-0 sc-plane"
+                style={{
+                  transform: `translate3d(${depthOffset.x * 5}px, ${depthOffset.y * 4}px, 0)`,
+                }}
+              >
+                {/* NODE A: Residential Feeder */}
+                <button
+                  type="button"
+                  onClick={() => setFocusedNodeId("node-a")}
+                  className={`absolute top-[9%] left-[4%] sm:left-[6%] z-10 text-left transition-transform duration-200 ${
+                    focusedNodeId === "node-a" ? "scale-[1.03]" : "hover:scale-[1.02]"
+                  }`}
+                >
+                  <div
+                    className={`flex items-center gap-2.5 bg-parchment text-parchment-text px-3 py-2 rounded-xl shadow-parchment border transition-colors ${
+                      focusedNodeId === "node-a" ? "border-cobalt ring-2 ring-cobalt/30" : "border-parchment-border"
+                    }`}
+                  >
+                    <span className="w-6 h-6 rounded-full bg-control text-ink-onAccent flex items-center justify-center font-bold text-xs shrink-0">
+                      A
+                    </span>
+                    <div>
+                      <div className="font-semibold text-xs sm:text-sm font-sans text-parchment-text leading-tight">
+                        {nodeA.name}
+                      </div>
+                      <div className="text-[11px] text-parchment-muted font-sans">
+                        {nodeA.powerLoad} {nodeA.powerLoadUnit} · {nodeA.temperature}°C
+                      </div>
+                    </div>
                   </div>
-                  <div className="text-[10px] text-[#9ca3af]">
-                    Inspect • Detect • Report
+                  <div className="mt-1.5 ml-3 px-2.5 py-1 rounded-lg bg-ink-card/95 border border-ink-border inline-flex items-center gap-1.5 text-[11px] font-sans text-signal-normalBright">
+                    <Zap className="w-3 h-3" aria-hidden="true" />
+                    <span>Normal operation</span>
+                  </div>
+                </button>
+
+                {/* NODE B: EV Charging Hub */}
+                <button
+                  type="button"
+                  onClick={() => setFocusedNodeId("node-b")}
+                  className={`absolute top-[52%] left-[12%] sm:left-[18%] z-10 text-left transition-transform duration-200 ${
+                    focusedNodeId === "node-b" ? "scale-[1.03]" : "hover:scale-[1.02]"
+                  }`}
+                >
+                  <div
+                    className={`flex items-center gap-2.5 bg-parchment text-parchment-text px-3 py-2 rounded-xl shadow-parchment border transition-colors ${
+                      focusedNodeId === "node-b"
+                        ? "border-signal-warningBright ring-2 ring-signal-warningBright/30"
+                        : "border-parchment-border"
+                    }`}
+                  >
+                    <span className="w-6 h-6 rounded-full bg-control text-ink-onAccent flex items-center justify-center font-bold text-xs shrink-0">
+                      B
+                    </span>
+                    <div>
+                      <div className="font-semibold text-xs sm:text-sm font-sans text-parchment-text leading-tight">
+                        {nodeB.name}
+                      </div>
+                      <div className="text-[11px] text-parchment-muted font-sans">
+                        {nodeB.powerLoad} {nodeB.powerLoadUnit} · {nodeB.temperature}°C
+                      </div>
+                    </div>
+                  </div>
+                  <div className="mt-1.5 ml-3 px-2.5 py-1 rounded-lg bg-ink-card/95 border border-ink-border inline-flex items-center gap-1.5 text-[11px] font-sans text-signal-warningBright">
+                    <Zap className="w-3 h-3" aria-hidden="true" />
+                    <span>Peak load warning</span>
+                  </div>
+                </button>
+
+                {/* NODE C: Industrial Transformer */}
+                <button
+                  type="button"
+                  onClick={() => setFocusedNodeId("node-c")}
+                  className={`absolute top-[16%] right-[4%] sm:right-[6%] z-10 text-left transition-transform duration-200 ${
+                    focusedNodeId === "node-c" ? "scale-[1.03]" : "hover:scale-[1.02]"
+                  }`}
+                >
+                  {isThermalFaultActive && (
+                    <span
+                      aria-hidden="true"
+                      className="absolute -top-3.5 right-3 w-6 h-6 rounded-full bg-signal-criticalBright text-ink-onAccent flex items-center justify-center font-bold text-xs shadow-lg animate-signal-pulse"
+                    >
+                      !
+                    </span>
+                  )}
+                  <div
+                    className={`flex items-center gap-2.5 bg-parchment text-parchment-text px-3 py-2 rounded-xl shadow-parchment border transition-colors ${
+                      focusedNodeId === "node-c"
+                        ? isThermalFaultActive
+                          ? "border-signal-criticalBright ring-2 ring-signal-criticalBright/30"
+                          : "border-cobalt ring-2 ring-cobalt/30"
+                        : "border-parchment-border"
+                    }`}
+                  >
+                    <span
+                      className={`w-6 h-6 rounded-full text-ink-onAccent flex items-center justify-center font-bold text-xs shrink-0 ${
+                        isThermalFaultActive ? "bg-signal-critical" : "bg-signal-normal"
+                      }`}
+                    >
+                      C
+                    </span>
+                    <div>
+                      <div className="font-semibold text-xs sm:text-sm font-sans text-parchment-text leading-tight">
+                        {nodeC.name}
+                      </div>
+                      <div className="text-[11px] text-parchment-muted font-sans">
+                        {nodeC.temperature}°C · {nodeC.voltage} V
+                      </div>
+                    </div>
+                  </div>
+                  <div
+                    className={`mt-1.5 ml-3 px-2.5 py-1 rounded-lg bg-ink-card/95 border border-ink-border inline-flex items-center gap-1.5 text-[11px] font-sans font-medium ${
+                      isThermalFaultActive ? "text-signal-criticalBright" : "text-signal-normalBright"
+                    }`}
+                  >
+                    <AlertTriangle className="w-3 h-3" aria-hidden="true" />
+                    <span>{isThermalFaultActive ? "Critical thermal fault" : "Nominal thermal state"}</span>
+                  </div>
+                </button>
+
+                {/* ESP32-S3 Rover Pill (Live Patrol Status) */}
+                <div className="absolute bottom-[10%] right-[6%] sm:right-[10%] z-20">
+                  <div className="flex items-center gap-2.5 bg-ink-card border border-cobalt px-3 py-2 rounded-2xl shadow-cobalt rover-pulse">
+                    <div className="w-7 h-7 rounded-lg bg-cobalt-tint border border-cobalt-border flex items-center justify-center text-cobalt-soft">
+                      <Wifi className="w-4 h-4" aria-hidden="true" />
+                    </div>
+                    <div className="text-left">
+                      <div className="text-xs font-semibold text-ink-text flex items-center gap-1.5">
+                        <span>ESP32-S3 Rover</span>
+                        <span className="text-[10px] px-1.5 py-0.5 rounded bg-cobalt-tintStrong text-cobalt-soft font-mono">
+                          {rover.isPatrolling ? "Patrolling" : "Standby"}
+                        </span>
+                      </div>
+                      <div className="text-[11px] text-ink-muted font-mono">
+                        Battery {rover.batteryLevel}% · Target {rover.targetNodeId.toUpperCase()}
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>
             </div>
 
-            {/* Bottom Legend Pill matching the concept photo */}
-            <div className="absolute bottom-4 right-4 z-20 flex items-center gap-4 bg-[#1b2230]/90 border border-[#2c374d] px-4 py-2 rounded-full text-[11px] font-mono shadow-lg">
-              <div className="flex items-center gap-1.5">
-                <span className="w-2.5 h-2.5 rounded-full bg-[#22c55e]" />
-                <span className="text-[#d1d5db]">NORMAL</span>
+            {/* Bottom Live Telemetry Readout & Legend Footer */}
+            <div className="relative z-20 px-5 py-3 border-t border-ink-border bg-ink-deep/80 flex flex-wrap items-center justify-between gap-3 text-xs">
+              <div className="flex items-center gap-3 font-mono text-ink-secondary">
+                <span className="font-sans font-semibold text-ink-text">
+                  Node {focusedNode.badge}:
+                </span>
+                <span>{focusedNode.temperature}°C</span>
+                <span>{focusedNode.voltage} V</span>
+                <span>{focusedNode.powerLoad} MW</span>
               </div>
-              <div className="flex items-center gap-1.5">
-                <span className="w-2.5 h-2.5 rounded-full bg-[#f59e0b]" />
-                <span className="text-[#d1d5db]">WARNING</span>
-              </div>
-              <div className="flex items-center gap-1.5">
-                <span className="w-2.5 h-2.5 rounded-full bg-[#ef4444]" />
-                <span className="text-[#d1d5db]">CRITICAL</span>
+
+              <div className="flex items-center gap-4 text-xs font-sans text-ink-muted">
+                <span className="inline-flex items-center gap-1.5">
+                  <span className="w-2 h-2 rounded-full bg-signal-normalBright" />
+                  Normal
+                </span>
+                <span className="inline-flex items-center gap-1.5">
+                  <span className="w-2 h-2 rounded-full bg-signal-warningBright" />
+                  Warning
+                </span>
+                <span className="inline-flex items-center gap-1.5">
+                  <span className="w-2 h-2 rounded-full bg-signal-criticalBright" />
+                  Critical
+                </span>
               </div>
             </div>
           </div>
         </div>
       </main>
 
-      {/* Bottom Footer Bar matching landing_page_design_concept.png */}
-      <footer className="relative z-20 px-6 sm:px-12 py-6 border-t border-[#1e2638] max-w-[1700px] w-full mx-auto flex flex-col sm:flex-row items-center justify-between gap-4 text-xs font-mono text-[#9ca3af]">
-        <div className="flex items-center gap-6 tracking-widest uppercase">
-          <span>CLEANER GRIDS</span>
-          <span className="text-[#3b4760]">•</span>
-          <span>STRONGER COMMUNITIES</span>
-          <span className="text-[#3b4760]">•</span>
-          <span>BRIGHTER TOMORROWS</span>
+      {/* Bottom Footer Bar */}
+      <footer className="relative z-20 px-6 sm:px-10 py-4 border-t border-ink-border max-w-[1440px] w-full mx-auto flex flex-col sm:flex-row items-center justify-between gap-3 text-xs font-sans text-ink-muted">
+        <div className="flex flex-wrap items-center gap-5">
+          <span>Cleaner grids</span>
+          <span>Stronger communities</span>
+          <span>Brighter tomorrows</span>
         </div>
-        <div className="font-semibold text-[#cbd5e1] tracking-wider uppercase">
-          SMARTGRID AIoT
-        </div>
+        <div className="font-semibold text-ink-secondary">SmartGrid AIoT</div>
       </footer>
     </div>
   );
