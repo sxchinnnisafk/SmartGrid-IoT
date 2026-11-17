@@ -5,16 +5,14 @@ import Link from "next/link";
 import { useGrid } from "../context/GridContext";
 import {
   ArrowRight,
-  ChevronRight,
-  ChevronLeft,
+  ArrowUp,
+  ChevronDown,
   Volume2,
   Play,
   Pause,
   ShieldCheck,
   Cpu,
   Radio,
-  Camera,
-  PlayCircle,
   Zap,
   Globe,
   Layers,
@@ -30,15 +28,13 @@ export default function LandingStoryChapters() {
     isPlayingVoice,
     toggleVoicePlayback,
     voiceProgress,
-    setIsEvidenceModalOpen,
-    startEndToEndDemo,
   } = useGrid();
 
   const [activeChapter, setActiveChapter] = useState<number>(1);
   const [scrollProgress, setScrollProgress] = useState<number>(0);
   const sectionRef = useRef<HTMLElement | null>(null);
 
-  // Scroll-linked progress indicator within the editorial story section
+  // Scroll-linked reading progress hairline across the 6-chapter story
   useEffect(() => {
     let rafId: number | null = null;
 
@@ -47,8 +43,8 @@ export default function LandingStoryChapters() {
       const el = sectionRef.current;
       if (!el) return;
       const rect = el.getBoundingClientRect();
-      const total = Math.max(1, el.offsetHeight - window.innerHeight * 0.5);
-      const passed = Math.max(0, window.innerHeight * 0.65 - rect.top);
+      const total = Math.max(1, el.offsetHeight - window.innerHeight * 0.65);
+      const passed = Math.max(0, window.innerHeight * 0.35 - rect.top);
       setScrollProgress(Math.min(1, Math.max(0, passed / total)));
     };
 
@@ -65,28 +61,54 @@ export default function LandingStoryChapters() {
     };
   }, []);
 
-  // Ensure elements inside the switched chapter are revealed immediately
+  // Scroll-spy: automatically highlight whichever chapter is centered in the viewport
   useEffect(() => {
-    const chapterEls = document.querySelectorAll<HTMLElement>("#story-chapters .reveal");
-    chapterEls.forEach((el) => el.classList.add("is-revealed"));
-  }, [activeChapter]);
+    if (typeof window === "undefined" || !("IntersectionObserver" in window)) return;
 
-  // Listen for anchor hash changes so header links jump cleanly to matching chapters
-  useEffect(() => {
-    const syncHash = () => {
-      const hash = window.location.hash;
-      if (hash === "#solutions") setActiveChapter(1);
-      else if (hash === "#technology") setActiveChapter(2);
-      else if (hash === "#impact") setActiveChapter(6);
-    };
-    syncHash();
-    window.addEventListener("hashchange", syncHash);
-    return () => window.removeEventListener("hashchange", syncHash);
+    const chapterElements = Array.from(
+      document.querySelectorAll<HTMLElement>("[data-chapter-band]")
+    );
+    if (chapterElements.length === 0) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        for (const entry of entries) {
+          if (entry.isIntersecting) {
+            const num = Number((entry.target as HTMLElement).dataset.chapterBand);
+            if (!Number.isNaN(num)) {
+              setActiveChapter(num);
+            }
+          }
+        }
+      },
+      {
+        root: null,
+        rootMargin: "-35% 0px -45% 0px",
+        threshold: 0.05,
+      }
+    );
+
+    chapterElements.forEach((el) => observer.observe(el));
+    return () => observer.disconnect();
   }, []);
+
+  const scrollToElement = (id: string) => {
+    const target = document.getElementById(id);
+    if (!target) return;
+    const prefersReduced =
+      typeof window !== "undefined" &&
+      window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    target.scrollIntoView({
+      behavior: prefersReduced ? "auto" : "smooth",
+      block: "center",
+    });
+  };
 
   const chapters = [
     {
       num: "01",
+      id: "chapter-01",
+      shortTitle: "The Invisible Risk",
       title: "The Invisible Risk",
       subtitle: "Distribution asset failures create a costly reliability challenge",
       content:
@@ -98,6 +120,8 @@ export default function LandingStoryChapters() {
     },
     {
       num: "02",
+      id: "chapter-02",
+      shortTitle: "Physical Edge",
       title: "The Physical Edge",
       subtitle: "A mobile ESP32-S3 rover patrols the physical corridor",
       content:
@@ -109,6 +133,8 @@ export default function LandingStoryChapters() {
     },
     {
       num: "03",
+      id: "chapter-03",
+      shortTitle: "Digital Twin",
       title: "Three-Node Digital Twin",
       subtitle: "Live network visibility connecting edge to control room",
       content:
@@ -120,6 +146,8 @@ export default function LandingStoryChapters() {
     },
     {
       num: "04",
+      id: "chapter-04",
+      shortTitle: "AI & Voice",
       title: "Intelligent Diagnostics & Voice",
       subtitle: "AI incident explanation without black-box automation",
       content:
@@ -131,6 +159,8 @@ export default function LandingStoryChapters() {
     },
     {
       num: "05",
+      id: "chapter-05",
+      shortTitle: "Operator Flow",
       title: "Human-Approved Response",
       subtitle: "Free-form visual workflow canvas for safe execution",
       content:
@@ -142,6 +172,8 @@ export default function LandingStoryChapters() {
     },
     {
       num: "06",
+      id: "chapter-06",
+      shortTitle: "Tabletop to Utility",
       title: "Tabletop to Utility",
       subtitle: "Staged scalability supporting UN Sustainable Development Goals",
       content:
@@ -153,9 +185,7 @@ export default function LandingStoryChapters() {
     },
   ];
 
-  const currentChapter = chapters[activeChapter - 1] || chapters[0];
-
-  // Bespoke per-chapter visual companion (Scroll-Craft Rule 1: Variety is the product)
+  // Bespoke per-chapter visual companion
   const renderChapterVisual = (chapterNum: number) => {
     switch (chapterNum) {
       case 1:
@@ -189,7 +219,7 @@ export default function LandingStoryChapters() {
                 <div>
                   <div className="flex justify-between text-ink-muted mb-1">
                     <span>Reactive outage dispatch</span>
-                    <span className="font-mono text-signal-criticalBright">Post-failure</span>
+                    <span className="font-sans text-signal-criticalBright font-medium">Post-failure</span>
                   </div>
                   <div className="h-2 rounded-full bg-ink-deep overflow-hidden">
                     <div className="h-full w-[88%] rounded-full bg-signal-criticalBright" />
@@ -198,7 +228,7 @@ export default function LandingStoryChapters() {
                 <div>
                   <div className="flex justify-between text-ink-muted mb-1">
                     <span>Continuous edge thermal telemetry</span>
-                    <span className="font-mono text-signal-normalBright">Early warning</span>
+                    <span className="font-sans text-signal-normalBright font-medium">Early warning</span>
                   </div>
                   <div className="h-2 rounded-full bg-ink-deep overflow-hidden">
                     <div className="h-full w-[32%] rounded-full bg-signal-normalBright" />
@@ -217,7 +247,7 @@ export default function LandingStoryChapters() {
                 <Cpu className="w-4 h-4 text-cobalt-soft" aria-hidden="true" />
                 ESP32-S3 Rover Edge Unit
               </span>
-              <span className="text-xs font-mono px-2 py-0.5 rounded bg-cobalt-tint text-cobalt-soft font-semibold">
+              <span className="text-xs font-sans px-2 py-0.5 rounded bg-cobalt-tint text-cobalt-soft font-semibold">
                 {rover.isPatrolling ? "Patrolling" : "Standby"}
               </span>
             </div>
@@ -236,27 +266,30 @@ export default function LandingStoryChapters() {
                   } shadow-cobalt`}
                 />
               </div>
-              <div className="text-xs font-mono text-ink-muted">
-                SPI TFT Status Eyes: {isThermalFaultActive ? "ALERT_HOTSPOT" : "NOMINAL_SCAN"}
+              <div className="text-xs font-sans text-ink-muted">
+                SPI TFT Status Eyes:{" "}
+                <span className="font-mono text-ink-secondary">
+                  {isThermalFaultActive ? "ALERT_HOTSPOT" : "NOMINAL_SCAN"}
+                </span>
               </div>
             </div>
 
-            <div className="grid grid-cols-3 gap-2.5 text-center font-mono text-xs">
+            <div className="grid grid-cols-3 gap-2.5 text-center text-xs">
               <div className="p-3 rounded-xl bg-ink-card border border-ink-border">
                 <div className="text-[11px] text-ink-muted font-sans">Battery</div>
-                <div className="text-sm font-semibold text-signal-normalBright mt-0.5">
+                <div className="text-sm font-mono font-semibold text-signal-normalBright mt-0.5">
                   {rover.batteryLevel}%
                 </div>
               </div>
               <div className="p-3 rounded-xl bg-ink-card border border-ink-border">
                 <div className="text-[11px] text-ink-muted font-sans">Target</div>
-                <div className="text-sm font-semibold text-ink-text mt-0.5">
+                <div className="text-sm font-mono font-semibold text-ink-text mt-0.5">
                   {rover.targetNodeId.toUpperCase()}
                 </div>
               </div>
               <div className="p-3 rounded-xl bg-ink-card border border-ink-border">
                 <div className="text-[11px] text-ink-muted font-sans">Link</div>
-                <div className="text-sm font-semibold text-cobalt-soft mt-0.5">Wi-Fi</div>
+                <div className="text-sm font-sans font-semibold text-cobalt-soft mt-0.5">Wi-Fi</div>
               </div>
             </div>
           </div>
@@ -270,7 +303,7 @@ export default function LandingStoryChapters() {
                 <Layers className="w-4 h-4 text-cobalt-soft" aria-hidden="true" />
                 Live Three-Node State Sync
               </span>
-              <span className="text-xs font-mono text-signal-normalBright">Synced</span>
+              <span className="text-xs font-sans font-medium text-signal-normalBright">Synced</span>
             </div>
 
             {nodes.map((node) => {
@@ -320,7 +353,7 @@ export default function LandingStoryChapters() {
                 <Radio className="w-4 h-4 text-cobalt-soft" aria-hidden="true" />
                 Voice Dispatch & AI Summary
               </span>
-              <span className="text-xs font-mono text-cobalt-soft">Gemini + Audio</span>
+              <span className="text-xs font-sans font-medium text-cobalt-soft">Gemini + Audio</span>
             </div>
 
             <div className="p-4 rounded-2xl bg-ink-card border border-ink-border space-y-3">
@@ -342,9 +375,9 @@ export default function LandingStoryChapters() {
                   )}
                 </button>
                 <div className="flex-1 min-w-0">
-                  <div className="flex items-center justify-between text-[11px] font-mono text-ink-muted mb-1">
+                  <div className="flex items-center justify-between text-[11px] font-sans text-ink-muted mb-1">
                     <span>{isPlayingVoice ? "Playing dispatch brief" : "Preview spoken alert"}</span>
-                    <span>{Math.round(voiceProgress)}%</span>
+                    <span className="font-mono">{Math.round(voiceProgress)}%</span>
                   </div>
                   <div className="h-2 rounded-full bg-ink-deep overflow-hidden">
                     <div
@@ -376,7 +409,7 @@ export default function LandingStoryChapters() {
                 <ShieldCheck className="w-4 h-4 text-signal-normalBright" aria-hidden="true" />
                 Human-in-the-Loop Interlock
               </span>
-              <span className="text-xs font-mono text-signal-normalBright">Low-Voltage Sim</span>
+              <span className="text-xs font-sans font-medium text-signal-normalBright">Low-Voltage Sim</span>
             </div>
 
             <div className="p-4 rounded-2xl bg-parchment text-parchment-text border border-parchment-border space-y-3">
@@ -419,7 +452,7 @@ export default function LandingStoryChapters() {
                 <Globe className="w-4 h-4 text-signal-normalBright" aria-hidden="true" />
                 Phased Scalability & UN SDGs
               </span>
-              <span className="text-xs font-mono text-cobalt-soft">SDGs 7, 9, 11</span>
+              <span className="text-xs font-sans font-medium text-cobalt-soft">SDGs 7, 9, 11</span>
             </div>
 
             <div className="space-y-2.5 text-xs">
@@ -437,14 +470,14 @@ export default function LandingStoryChapters() {
                   <div className="font-semibold text-ink-text">Stage 2: Instrumented Test Rig</div>
                   <div className="text-ink-muted">Isolated lab switchgear sensors</div>
                 </div>
-                <span className="text-ink-muted font-mono">Next</span>
+                <span className="text-ink-muted font-sans">Next</span>
               </div>
               <div className="p-3 rounded-xl bg-ink-card border border-ink-border flex items-center justify-between">
                 <div>
                   <div className="font-semibold text-ink-text">Stage 3: Utility Field Pilot</div>
                   <div className="text-ink-muted">Reviewed feeder deployment</div>
                 </div>
-                <span className="text-ink-muted font-mono">Planned</span>
+                <span className="text-ink-muted font-sans">Planned</span>
               </div>
             </div>
 
@@ -471,161 +504,165 @@ export default function LandingStoryChapters() {
     <section
       ref={sectionRef}
       id="story-chapters"
-      className="relative py-20 bg-ink-deep text-ink-text border-t border-ink-border"
+      className="relative bg-ink-deep text-ink-text border-t border-ink-border"
     >
-      {/* Real Anchor Targets for Landing Hero Nav Links */}
-      <span id="solutions" className="block -mt-16 pt-16 pointer-events-none" aria-hidden="true" />
-      <span id="technology" className="block pointer-events-none" aria-hidden="true" />
-      <span id="impact" className="block pointer-events-none" aria-hidden="true" />
-
-      {/* Scroll-Driven Reading Progress Hairline */}
-      <div
-        aria-hidden="true"
-        className="sticky top-0 z-30 h-0.5 w-full bg-ink-border/60 overflow-hidden"
-      >
+      {/* Sticky Scroll-Spy Chapter Rail & Progress Bar */}
+      <div className="sticky top-0 z-30 bg-ink-deep/95 backdrop-blur-md border-b border-ink-border">
         <div
-          className="h-full bg-cobalt origin-left transition-transform duration-100"
-          style={{ transform: `scaleX(${scrollProgress})` }}
-        />
+          aria-hidden="true"
+          className="h-0.5 w-full bg-ink-border/60 overflow-hidden"
+        >
+          <div
+            className="h-full bg-cobalt origin-left transition-transform duration-100"
+            style={{ transform: `scaleX(${scrollProgress})` }}
+          />
+        </div>
+
+        <div className="max-w-[1440px] mx-auto px-6 sm:px-10 py-3 flex items-center justify-between gap-4">
+          <div
+            role="navigation"
+            aria-label="Scroll chapter navigation"
+            className="flex items-center gap-2 overflow-x-auto no-scrollbar py-0.5"
+          >
+            {chapters.map((ch, idx) => {
+              const isCurrent = activeChapter === idx + 1;
+              return (
+                <button
+                  key={ch.num}
+                  type="button"
+                  onClick={() => scrollToElement(ch.id)}
+                  aria-current={isCurrent ? "step" : undefined}
+                  className={`px-3 py-1.5 rounded-full text-xs font-sans font-medium whitespace-nowrap border transition-colors ${
+                    isCurrent
+                      ? "bg-cobalt text-ink-onAccent border-cobalt shadow-cobalt"
+                      : "bg-ink-surface text-ink-muted border-ink-border hover:text-ink-text hover:border-ink-borderStrong"
+                  }`}
+                >
+                  <span className="font-mono mr-1.5 opacity-80">{ch.num}</span>
+                  <span>{ch.shortTitle}</span>
+                </button>
+              );
+            })}
+          </div>
+
+          <Link
+            href="/control-room"
+            className="hidden md:inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-ink-card hover:bg-ink-hover text-xs font-sans font-medium text-ink-secondary border border-ink-border transition-colors whitespace-nowrap shrink-0"
+          >
+            <span>Open Control Room</span>
+            <ArrowRight className="w-3.5 h-3.5 text-cobalt-soft" aria-hidden="true" />
+          </Link>
+        </div>
       </div>
 
-      <div className="max-w-[1440px] mx-auto px-6 sm:px-10 pt-8">
-        {/* Section Header */}
-        <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-6 mb-12 reveal" data-delay="50">
-          <div className="max-w-2xl">
-            <p className="text-sm font-sans font-medium text-cobalt-soft mb-2">
-              Six-chapter architecture story
-            </p>
-            <h2 className="font-serif text-4xl sm:text-5xl font-normal tracking-tight text-ink-text leading-tight break-words min-w-0">
-              A grid story, made visible.
-            </h2>
-            <p className="mt-3 text-base text-ink-muted leading-relaxed">
-              Follow the prototype journey from edge sensing to network visibility and operator-approved response.
-            </p>
-          </div>
-
-          {/* Quick Prototype Proof & Demo Triggers */}
-          <div id="resources" className="flex flex-wrap items-center gap-3 shrink-0">
-            <button
-              type="button"
-              onClick={() => setIsEvidenceModalOpen(true)}
-              className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-ink-card hover:bg-ink-hover text-xs sm:text-sm font-sans font-medium text-ink-secondary border border-ink-border transition-colors"
-            >
-              <Camera className="w-4 h-4 text-cobalt-soft" aria-hidden="true" />
-              <span>Inspect Hardware Evidence</span>
-            </button>
-            <button
-              type="button"
-              onClick={startEndToEndDemo}
-              className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-ink-card hover:bg-ink-hover text-xs sm:text-sm font-sans font-medium text-ink-secondary border border-ink-border transition-colors"
-            >
-              <PlayCircle className="w-4 h-4 text-signal-normalBright" aria-hidden="true" />
-              <span>Run 5-Step Demo</span>
-            </button>
-          </div>
+      {/* Smooth Scroll Editorial Header (Solutions Section Anchor) */}
+      <div id="solutions" className="scroll-mt-20 max-w-[1440px] mx-auto px-6 sm:px-10 pt-16 pb-10">
+        <div className="max-w-2xl reveal" data-delay="50">
+          <p className="text-sm font-sans font-medium text-cobalt-soft mb-2">
+            Six-chapter scroll story
+          </p>
+          <h2 className="font-serif text-4xl sm:text-5xl font-normal tracking-tight text-ink-text leading-tight break-words min-w-0">
+            A grid story, made visible.
+          </h2>
+          <p className="mt-3 text-base text-ink-muted leading-relaxed">
+            Scroll smoothly through the prototype journey from edge sensing to network visibility and operator-approved response.
+          </p>
         </div>
+      </div>
 
-        {/* Chapter Navigation Tabs */}
-        <div
-          role="tablist"
-          aria-label="Editorial chapters"
-          className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 mb-10 reveal"
-          data-delay="100"
-        >
-          {chapters.map((ch, idx) => {
-            const isActive = activeChapter === idx + 1;
-            return (
-              <button
-                key={ch.num}
-                type="button"
-                role="tab"
-                aria-selected={isActive}
-                onClick={() => setActiveChapter(idx + 1)}
-                className={`p-3.5 rounded-2xl border text-left transition-colors ${
-                  isActive
-                    ? "bg-ink-hover border-cobalt shadow-cobalt"
-                    : "bg-ink-surface border-ink-border hover:border-ink-borderStrong text-ink-muted"
+      {/* Sequential Scroll-Driven Editorial Chapters */}
+      <div className="max-w-[1440px] mx-auto px-6 sm:px-10 pb-24 space-y-12 sm:space-y-16">
+        {chapters.map((ch, idx) => {
+          const chapterNum = idx + 1;
+          const isEven = chapterNum % 2 === 0;
+          const isImpact = chapterNum === 6;
+          const nextChapter = chapters[idx + 1];
+
+          return (
+            <article
+              key={ch.num}
+              id={isImpact ? "impact" : ch.id}
+              data-chapter-band={chapterNum}
+              className="scroll-mt-24 rounded-3xl bg-ink-surface border border-ink-border p-7 sm:p-10 shadow-xl grid grid-cols-1 lg:grid-cols-12 gap-8 items-stretch reveal"
+            >
+              {/* Anchor alias for chapter-06 when id="impact" is on the article */}
+              {isImpact && (
+                <span id={ch.id} className="sr-only" aria-hidden="true" />
+              )}
+
+              {/* Narrative Column */}
+              <div
+                className={`lg:col-span-7 flex flex-col justify-between space-y-5 min-w-0 ${
+                  isEven ? "lg:order-2" : "lg:order-1"
                 }`}
               >
-                <div className="text-xs font-mono font-semibold text-cobalt-soft mb-1">
-                  Chapter {ch.num}
+                <div className="space-y-4">
+                  <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-cobalt-tint border border-cobalt-border text-xs font-sans font-medium text-cobalt-soft">
+                    <span>Chapter {ch.num}</span>
+                    <span>{ch.tag}</span>
+                  </div>
+
+                  <h3 className="font-serif text-2xl sm:text-4xl text-ink-text font-normal leading-snug break-words min-w-0">
+                    {ch.subtitle}
+                  </h3>
+
+                  <p className="text-base text-ink-secondary leading-relaxed">
+                    {ch.content}
+                  </p>
+
+                  <div className="p-4 rounded-xl bg-ink-card border-l-4 border-cobalt text-sm text-ink-text font-sans leading-relaxed">
+                    {ch.highlight}
+                  </div>
                 </div>
-                <div className="text-xs sm:text-sm font-sans font-semibold text-ink-text truncate">
-                  {ch.title}
+
+                <div className="pt-4 border-t border-ink-border flex flex-wrap items-center justify-between gap-4">
+                  <div className="text-xs font-sans text-ink-muted">
+                    Source: {ch.citation}
+                  </div>
                 </div>
-              </button>
-            );
-          })}
-        </div>
-
-        {/* Active Chapter Showcase Card */}
-        <div
-          key={currentChapter.num}
-          role="tabpanel"
-          className="rounded-3xl bg-ink-surface border border-ink-border p-7 sm:p-10 shadow-2xl grid grid-cols-1 lg:grid-cols-12 gap-8 items-stretch reveal is-revealed"
-        >
-          {/* Left Narrative Column */}
-          <div className="lg:col-span-7 flex flex-col justify-between space-y-5 min-w-0">
-            <div className="space-y-5">
-              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-cobalt-tint border border-cobalt-border text-xs font-sans font-medium text-cobalt-soft">
-                <span>Chapter {currentChapter.num}</span>
-                <span>{currentChapter.tag}</span>
               </div>
 
-              <h3 className="font-serif text-2xl sm:text-4xl text-ink-text font-normal leading-snug break-words min-w-0">
-                {currentChapter.subtitle}
-              </h3>
-
-              <p className="text-base text-ink-secondary leading-relaxed">
-                {currentChapter.content}
-              </p>
-
-              <div className="p-4 rounded-xl bg-ink-card border-l-4 border-cobalt text-sm text-ink-text font-sans leading-relaxed">
-                {currentChapter.highlight}
-              </div>
-            </div>
-
-            <div className="pt-4 border-t border-ink-border flex flex-wrap items-center justify-between gap-4">
-              <div className="text-xs font-sans text-ink-muted">
-                Source: {currentChapter.citation}
-              </div>
-            </div>
-          </div>
-
-          {/* Right Bespoke Per-Chapter Interactive Visual Column */}
-          <div className="lg:col-span-5 flex flex-col justify-between bg-ink rounded-2xl border border-ink-border p-6 min-w-0">
-            <div>{renderChapterVisual(activeChapter)}</div>
-
-            <div className="pt-5 border-t border-ink-border mt-6 flex flex-wrap items-center justify-between gap-3">
-              <Link
-                href="/control-room"
-                className="pill-button-cobalt text-xs py-2 px-4"
+              {/* Bespoke Per-Chapter Interactive Visual Column */}
+              <div
+                className={`lg:col-span-5 flex flex-col justify-between bg-ink rounded-2xl border border-ink-border p-6 min-w-0 ${
+                  isEven ? "lg:order-1" : "lg:order-2"
+                }`}
               >
-                <span>Open in Control Room</span>
-                <ArrowRight className="w-3.5 h-3.5" aria-hidden="true" />
-              </Link>
+                <div>{renderChapterVisual(chapterNum)}</div>
 
-              <div className="flex items-center gap-3">
-                <button
-                  type="button"
-                  onClick={() => setActiveChapter((prev) => (prev > 1 ? prev - 1 : 6))}
-                  className="p-1.5 rounded-full bg-ink-card hover:bg-ink-hover text-ink-secondary border border-ink-border transition-colors"
-                  aria-label="Previous chapter"
-                >
-                  <ChevronLeft className="w-4 h-4" aria-hidden="true" />
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setActiveChapter((prev) => (prev < 6 ? prev + 1 : 1))}
-                  className="text-xs font-sans font-medium text-cobalt-soft hover:text-ink-text inline-flex items-center gap-1 transition-colors"
-                >
-                  <span>Next Chapter</span>
-                  <ChevronRight className="w-4 h-4" aria-hidden="true" />
-                </button>
+                <div className="pt-5 border-t border-ink-border mt-6 flex flex-wrap items-center justify-between gap-3">
+                  <Link
+                    href="/control-room"
+                    className="pill-button-cobalt text-xs py-2 px-4"
+                  >
+                    <span>Open in Control Room</span>
+                    <ArrowRight className="w-3.5 h-3.5" aria-hidden="true" />
+                  </Link>
+
+                  {nextChapter ? (
+                    <button
+                      type="button"
+                      onClick={() => scrollToElement(nextChapter.id)}
+                      className="text-xs font-sans font-medium text-cobalt-soft hover:text-ink-text inline-flex items-center gap-1 transition-colors"
+                    >
+                      <span>Chapter {nextChapter.num}</span>
+                      <ChevronDown className="w-4 h-4" aria-hidden="true" />
+                    </button>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => scrollToElement("hero-root")}
+                      className="text-xs font-sans font-medium text-cobalt-soft hover:text-ink-text inline-flex items-center gap-1 transition-colors"
+                    >
+                      <span>Back to top</span>
+                      <ArrowUp className="w-3.5 h-3.5" aria-hidden="true" />
+                    </button>
+                  )}
+                </div>
               </div>
-            </div>
-          </div>
-        </div>
+            </article>
+          );
+        })}
       </div>
     </section>
   );

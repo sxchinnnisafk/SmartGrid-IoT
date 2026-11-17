@@ -28,6 +28,7 @@ export default function LandingHero() {
 
   const [focusedNodeId, setFocusedNodeId] = useState<string>("node-c");
   const [depthOffset, setDepthOffset] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
+  const [heroScrollY, setHeroScrollY] = useState<number>(0);
   const stageRef = useRef<HTMLDivElement | null>(null);
   const rafRef = useRef<number | null>(null);
 
@@ -40,6 +41,27 @@ export default function LandingHero() {
   useEffect(() => {
     const heroEls = document.querySelectorAll<HTMLElement>("#hero-root .reveal");
     heroEls.forEach((el) => el.classList.add("is-revealed"));
+  }, []);
+
+  // Subtle GPU-only scroll depth parallax as the visitor scrolls out of the hero
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+
+    let scrollRaf: number | null = null;
+    const onScroll = () => {
+      if (scrollRaf !== null) return;
+      scrollRaf = requestAnimationFrame(() => {
+        scrollRaf = null;
+        setHeroScrollY(Math.min(240, window.scrollY));
+      });
+    };
+
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => {
+      if (scrollRaf !== null) cancelAnimationFrame(scrollRaf);
+      window.removeEventListener("scroll", onScroll);
+    };
   }, []);
 
   // Restrained pointer-driven depth separation across visual planes (GPU transform only)
@@ -87,7 +109,7 @@ export default function LandingHero() {
           aria-hidden="true"
           className="absolute inset-0 w-full h-full opacity-15 sc-plane"
           style={{
-            transform: `translate3d(${depthOffset.x * -10}px, ${depthOffset.y * -6}px, 0)`,
+            transform: `translate3d(${depthOffset.x * -10}px, ${depthOffset.y * -6 - heroScrollY * 0.14}px, 0)`,
           }}
           xmlns="http://www.w3.org/2000/svg"
         >
@@ -124,19 +146,13 @@ export default function LandingHero() {
           </span>
         </Link>
 
-        {/* Anchor Navigation wired to actual page sections */}
+        {/* Anchor Navigation: Solutions & Impact */}
         <nav aria-label="Primary sections" className="hidden md:flex items-center gap-7 text-sm font-sans text-ink-muted">
           <a href="#solutions" className="hover:text-ink-text transition-colors whitespace-nowrap">
             Solutions
           </a>
-          <a href="#technology" className="hover:text-ink-text transition-colors whitespace-nowrap">
-            Technology
-          </a>
           <a href="#impact" className="hover:text-ink-text transition-colors whitespace-nowrap">
             Impact
-          </a>
-          <a href="#resources" className="hover:text-ink-text transition-colors whitespace-nowrap">
-            Resources
           </a>
         </nav>
 
