@@ -2,9 +2,7 @@
 
 import React, { createContext, useContext, useState, useEffect, useMemo, useRef } from "react";
 import {
-  GridNodeData,
-  ThresholdConfig,
-  TelemetryPoint,
+  PatrolCheckpoint,
   AlertTicket,
   RoverState,
   LogMessage,
@@ -13,21 +11,19 @@ import {
   UserProfile,
 } from "../types/grid";
 
-interface GridContextType {
-  nodes: GridNodeData[];
-  selectedNodeId: string;
-  setSelectedNodeId: (id: string) => void;
-  selectedNode: GridNodeData;
-  thresholds: ThresholdConfig;
-  setThresholds: React.Dispatch<React.SetStateAction<ThresholdConfig>>;
+interface RoverContextType {
+  checkpoints: PatrolCheckpoint[];
+  selectedCheckpointId: string;
+  setSelectedCheckpointId: (id: string) => void;
+  selectedCheckpoint: PatrolCheckpoint;
   isOffline: boolean;
   setIsOffline: (offline: boolean) => void;
-  isFaultActive: boolean;
-  triggerFault: (active?: boolean) => void;
+  isObstacleAlertActive: boolean;
+  triggerObstacleAlert: (active?: boolean) => void;
   rover: RoverState;
   startPatrol: () => void;
   stopPatrol: () => void;
-  telemetryHistory: TelemetryPoint[];
+  routeRoverTo: (checkpointId: string) => void;
   alerts: AlertTicket[];
   acknowledgeAlert: (id: string) => void;
   logs: LogMessage[];
@@ -70,97 +66,87 @@ interface GridContextType {
   skipAuth: () => void;
   logout: () => void;
 
-  // Active view tab (for unified navigation)
+  // Active view tab
   activeTab: "control-room" | "chat" | "artifacts";
   setActiveTab: (tab: "control-room" | "chat" | "artifacts") => void;
 }
 
-const initialNodes: GridNodeData[] = [
+const CHECKPOINT_X: Record<string, number> = {
+  "cp-a": 18,
+  "cp-b": 46,
+  "cp-c": 74,
+};
+
+const initialCheckpoints: PatrolCheckpoint[] = [
   {
-    id: "node-a",
+    id: "cp-a",
     badge: "A",
-    name: "Residential Feeder",
-    type: "Residential Feeder",
-    status: "normal",
-    statusLabel: "Normal",
-    voltage: 230.2,
-    current: 48.4,
-    powerLoad: 98,
-    powerLoadUnit: "MW",
-    phaseBalance: 98.2,
-    householdCount: 1420,
-    location: "Sector 7 - Suburban Feeder Corridor",
-    lastUpdated: "10:24 AM",
-    description: "Neighborhood supply stable.",
-    subDescription: "Homes • Smart Meters",
+    name: "North Gate Entry",
+    zone: "Entry Perimeter",
+    status: "clear",
+    statusLabel: "Clear",
+    irSensor: "CLEAR",
+    signalRssi: -54,
+    patrolPasses: 14,
+    lastVisited: "10:21 AM",
+    location: "Sector 1 — Main Gate Approach",
+    description: "Entry path unobstructed. Clear IR sweep.",
+    subDescription: "Gate Corridor • Clear Path",
   },
   {
-    id: "node-b",
+    id: "cp-b",
     badge: "B",
-    name: "EV Charging Hub",
-    type: "EV Charging Hub",
-    status: "warning",
-    statusLabel: "Warning",
-    voltage: 218.7,
-    current: 142.6,
-    powerLoad: 76,
-    powerLoadUnit: "MW",
-    phaseBalance: 91.5,
-    activeEVs: 24,
-    location: "Highway Corridor 4 - Rapid Charging Station",
-    lastUpdated: "10:24 AM",
-    description: "Elevated load detected. Monitoring closely.",
-    subDescription: "Fast Chargers • Energy Storage • 4 chargers online",
+    name: "Central Corridor",
+    zone: "Main Walkway",
+    status: "watch",
+    statusLabel: "Watch",
+    irSensor: "CLEAR",
+    signalRssi: -61,
+    patrolPasses: 12,
+    lastVisited: "10:23 AM",
+    location: "Sector 2 — High-Footfall Passage",
+    description: "Active walkway watch. Monitoring closely.",
+    subDescription: "Mid-Path • Active Watch",
   },
   {
-    id: "node-c",
+    id: "cp-c",
     badge: "C",
-    name: "Industrial Transformer",
-    type: "Industrial Transformer",
-    status: "critical",
-    statusLabel: "Critical",
-    voltage: 194.5,
-    current: 285.0,
-    powerLoad: 102,
-    powerLoadUnit: "MW",
-    phaseBalance: 82.4,
-    oilLevel: 41.0,
-    location: "Substation Bay 3 - Heavy Industrial Feeder",
-    lastUpdated: "10:24 AM",
-    description: "High load detected. Immediate attention.",
-    subDescription: "Substation • High Load",
+    name: "Perimeter Bay",
+    zone: "Rear Sector",
+    status: "alert",
+    statusLabel: "Alert",
+    irSensor: "OBSTACLE",
+    signalRssi: -67,
+    patrolPasses: 9,
+    lastVisited: "10:24 AM",
+    location: "Sector 3 — Rear Perimeter Turnaround",
+    description: "IR obstacle detected on patrol path.",
+    subDescription: "Rear Bay • Obstacle Detected",
   },
 ];
 
-const initialThresholds: ThresholdConfig = {
-  voltageMin: 205,
-  voltageMax: 245,
-  currentMax: 250,
-};
-
 const initialAlerts: AlertTicket[] = [
   {
-    id: "ALT-8902",
-    nodeId: "node-c",
-    nodeName: "Node C: Industrial Transformer",
+    id: "ALT-4102",
+    checkpointId: "cp-c",
+    checkpointName: "Checkpoint C: Perimeter Bay",
     severity: "CRITICAL",
-    title: "Critical Voltage Sag & Overload (194.5V / 285A)",
+    title: "IR Obstacle Detected Along Perimeter Bay Path",
     timestamp: "10:24 AM",
-    voltage: 194.5,
-    current: 285.0,
-    rootCause: "Line sensors show severe voltage sag (194.5V) and overcurrent draw (285A), exceeding safe corridor limits.",
-    aiMitigation: [
-      "Inspect Node C voltage sag and load readings closely in the Control Room.",
-      "Pause or position the inspection rover near Node C for monitoring.",
-      "Review available capacity on Node A (98 MW) and Node B (76 MW) before manual load adjustments.",
-      "Notify the on-duty operator for manual substation inspection.",
+    irSensor: "OBSTACLE",
+    signalRssi: -67,
+    details: "ESP32-S3 IR obstacle module detected a reflected obstruction at Checkpoint C and engaged local obstacle hold.",
+    recommendations: [
+      "Verify the Perimeter Bay corridor visually before resuming rover travel past Checkpoint C.",
+      "Keep ESP32-S3 Rover R-1 in local obstacle hold or route it to Checkpoint A or B.",
+      "Clear the physical obstruction along the path and reset the obstacle alert once verified.",
     ],
     status: "ACTIVE",
   },
 ];
 
-const CHAT_STORAGE_KEY = "smartgrid_chat_sessions_v1";
-const ACTIVE_CHAT_STORAGE_KEY = "smartgrid_active_chat_id_v1";
+const CHAT_STORAGE_KEY = "celestia_rover_chat_sessions_v1";
+const ACTIVE_CHAT_STORAGE_KEY = "celestia_rover_active_chat_id_v1";
 
 function formatSessionTitle(text: string): string {
   const cleaned = text.replace(/\s+/g, " ").trim();
@@ -168,63 +154,44 @@ function formatSessionTitle(text: string): string {
   return cleaned.length > 42 ? `${cleaned.slice(0, 42).trimEnd()}…` : cleaned;
 }
 
-const generateTelemetryHistory = (): TelemetryPoint[] => {
-  const points: TelemetryPoint[] = [];
-  const now = Date.now();
-  for (let i = 12; i >= 0; i--) {
-    const d = new Date(now - i * 4000);
-    points.push({
-      timestamp: d.toISOString(),
-      timeLabel: d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" }),
-      nodeAVoltage: 230 + Math.cos(i * 0.3) * 1.2,
-      nodeACurrent: 48 + Math.sin(i * 0.4) * 2,
-      nodeBVoltage: 218 + Math.cos(i * 0.5) * 1.8,
-      nodeBCurrent: 142 + Math.sin(i * 0.2) * 4,
-      nodeCVoltage: 194.5 - (12 - i) * 0.1,
-      nodeCCurrent: 285 + Math.sin(i * 0.7) * 3,
-    });
-  }
-  return points;
-};
-
-const GridContext = createContext<GridContextType | undefined>(undefined);
+const GridContext = createContext<RoverContextType | undefined>(undefined);
 
 export function GridProvider({ children }: { children: React.ReactNode }) {
-  const [nodes, setNodes] = useState<GridNodeData[]>(initialNodes);
-  const [selectedNodeId, setSelectedNodeId] = useState<string>("node-c");
-  const [thresholds, setThresholds] = useState<ThresholdConfig>(initialThresholds);
+  const [checkpoints, setCheckpoints] = useState<PatrolCheckpoint[]>(initialCheckpoints);
+  const [selectedCheckpointId, setSelectedCheckpointId] = useState<string>("cp-c");
   const [isOffline, setIsOffline] = useState<boolean>(false);
-  const [isFaultActive, setIsFaultActive] = useState<boolean>(true);
-  const [telemetryHistory, setTelemetryHistory] = useState<TelemetryPoint[]>(generateTelemetryHistory());
+  const [isObstacleAlertActive, setIsObstacleAlertActive] = useState<boolean>(true);
   const [alerts, setAlerts] = useState<AlertTicket[]>(initialAlerts);
   const [logs, setLogs] = useState<LogMessage[]>([
     {
       id: "log-1",
       timestamp: "10:22 AM",
-      type: "SYSTEM",
-      message: "ESP32-S3 Rover telemetry link established via Wi-Fi stream.",
+      type: "WIFI",
+      message: "ESP32-S3 Rover R-1 connected via Wi-Fi telemetry link (-58 dBm).",
       level: "success",
     },
     {
       id: "log-2",
       timestamp: "10:24 AM",
       type: "ALERT",
-      message: "CRITICAL: Node C Industrial Transformer voltage sagged to 194.5V (285A / 102 MW).",
+      message: "OBSTACLE: IR module triggered stop hold at Checkpoint C (Perimeter Bay).",
       level: "error",
     },
   ]);
 
   const [rover, setRover] = useState<RoverState>({
-    isPatrolling: true,
-    currentNodeId: "node-b",
-    targetNodeId: "node-c",
-    progress: 45,
+    isPatrolling: false,
+    currentCheckpointId: "cp-b",
+    targetCheckpointId: "cp-c",
+    progress: 72,
     batteryLevel: 89,
-    patrolMode: "Autonomous Inspection",
-    speedMps: 1.8,
-    roverId: "ESP32-S3 Rover",
-    cameraStatus: "ONLINE",
-    xPercent: 62,
+    patrolMode: "Obstacle Hold",
+    speedMps: 0,
+    roverId: "ESP32-S3 Rover R-1",
+    wifiRssi: -58,
+    irObstacleDetected: true,
+    tftEyeState: "OBSTACLE_HALT",
+    xPercent: 66,
     yPercent: 68,
   });
 
@@ -310,8 +277,8 @@ export function GridProvider({ children }: { children: React.ReactNode }) {
         setAiStatus({
           gemini: Boolean(data.gemini),
           elevenLabs: Boolean(data.elevenLabs),
-          provider: String(data.provider || "fallback"),
-          model: String(data.model || "local-telemetry"),
+          provider: String(data.provider || "unconfigured"),
+          model: String(data.model || "unconfigured"),
         });
       })
       .catch(() => {
@@ -322,11 +289,11 @@ export function GridProvider({ children }: { children: React.ReactNode }) {
     };
   }, []);
 
-  // Voice playback simulation
+  // Voice playback state
   const [isPlayingVoice, setIsPlayingVoice] = useState<boolean>(false);
   const [voiceProgress, setVoiceProgress] = useState<number>(0);
 
-  // Active view tab: control-room | chat | artifacts
+  // Active view tab
   const [activeTab, setActiveTab] = useState<"control-room" | "chat" | "artifacts">("control-room");
 
   // User profile & Auth gate state
@@ -335,7 +302,7 @@ export function GridProvider({ children }: { children: React.ReactNode }) {
   const [hasSkippedAuth, setHasSkippedAuth] = useState<boolean>(false);
   const [isAuthLoaded, setIsAuthLoaded] = useState<boolean>(false);
 
-  // Clear any stale storage flags on mount so visiting the domain always presents the Sign In gate
+  // Clear stale auth storage on startup so visiting presents the Sign In gate cleanly
   useEffect(() => {
     try {
       localStorage.removeItem("smartgrid_auth_skipped");
@@ -349,61 +316,9 @@ export function GridProvider({ children }: { children: React.ReactNode }) {
     }
   }, []);
 
-  const login = (email: string, name?: string, role?: string) => {
-    const displayName = name || (email.includes("@") ? email.split("@")[0] : "Jordan Diaz");
-    const avatar = displayName
-      .split(" ")
-      .map((w) => w[0])
-      .join("")
-      .toUpperCase()
-      .slice(0, 2) || "JD";
-    const newUser: UserProfile = {
-      name: displayName,
-      email,
-      role: role || "Grid Operations",
-      avatarText: avatar,
-      isGuest: false,
-    };
-    setUser(newUser);
-    setIsAuthenticated(true);
-    setHasSkippedAuth(false);
-    addLog("SYSTEM", `Operator ${displayName} (${newUser.role}) authenticated successfully.`, "success");
-  };
-
-  const register = (name: string, email: string, role?: string) => {
-    login(email, name, role || "Grid Operations Lead");
-  };
-
-  const skipAuth = () => {
-    const guestUser: UserProfile = {
-      name: "Guest Operator",
-      email: "guest@smartgrid.io",
-      role: "Observer Access",
-      avatarText: "GO",
-      isGuest: true,
-    };
-    setUser(guestUser);
-    setHasSkippedAuth(true);
-    setIsAuthenticated(false);
-    addLog("SYSTEM", "Guest operator access granted. Digital twin preview unlocked.", "info");
-  };
-
-  const logout = () => {
-    setUser(null);
-    setIsAuthenticated(false);
-    setHasSkippedAuth(false);
-    try {
-      localStorage.removeItem("smartgrid_auth_user");
-      localStorage.removeItem("smartgrid_auth_skipped");
-      sessionStorage.removeItem("smartgrid_auth_user");
-      sessionStorage.removeItem("smartgrid_auth_skipped");
-    } catch {}
-    addLog("SYSTEM", "Operator signed out. Gateway locked.", "warn");
-  };
-
   const addLog = (type: LogMessage["type"], message: string, level: LogMessage["level"]) => {
     const newLog: LogMessage = {
-      id: `log-${Date.now()}-${Math.random().toString(36).substr(2, 4)}`,
+      id: `log-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
       timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" }),
       type,
       message,
@@ -412,54 +327,204 @@ export function GridProvider({ children }: { children: React.ReactNode }) {
     setLogs((prev) => [newLog, ...prev.slice(0, 99)]);
   };
 
-  const selectedNode = nodes.find((n) => n.id === selectedNodeId) || nodes[2];
+  const login = (email: string, name?: string, role?: string) => {
+    const displayName = name || (email.includes("@") ? email.split("@")[0] : "Jordan Diaz");
+    const avatar =
+      displayName
+        .split(" ")
+        .map((w) => w[0])
+        .join("")
+        .toUpperCase()
+        .slice(0, 2) || "JD";
+    const newUser: UserProfile = {
+      name: displayName,
+      email,
+      role: role || "Patrol Operations",
+      avatarText: avatar,
+      isGuest: false,
+    };
+    setUser(newUser);
+    setIsAuthenticated(true);
+    setHasSkippedAuth(false);
+    addLog("SYSTEM", `Operator ${displayName} (${newUser.role}) authenticated.`, "success");
+  };
 
-  const triggerFault = (active?: boolean) => {
-    const newState = active !== undefined ? active : !isFaultActive;
-    setIsFaultActive(newState);
+  const register = (name: string, email: string, role?: string) => {
+    login(email, name, role || "Patrol Operations Lead");
+  };
 
-    setNodes((prev) =>
-      prev.map((n) => {
-        if (n.id === "node-c") {
+  const skipAuth = () => {
+    const guestUser: UserProfile = {
+      name: "Guest Operator",
+      email: "guest@celestiarover.io",
+      role: "Observer Access",
+      avatarText: "GO",
+      isGuest: true,
+    };
+    setUser(guestUser);
+    setHasSkippedAuth(true);
+    setIsAuthenticated(false);
+    addLog("SYSTEM", "Guest operator access granted. Rover patrol view unlocked.", "info");
+  };
+
+  const logout = () => {
+    setUser(null);
+    setIsAuthenticated(false);
+    setHasSkippedAuth(false);
+    addLog("SYSTEM", "Operator signed out. Console locked.", "warn");
+  };
+
+  const selectedCheckpoint =
+    checkpoints.find((c) => c.id === selectedCheckpointId) || checkpoints[2];
+
+  const triggerObstacleAlert = (active?: boolean) => {
+    const newState = active !== undefined ? active : !isObstacleAlertActive;
+    const timeStr = new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+    setIsObstacleAlertActive(newState);
+
+    setCheckpoints((prev) =>
+      prev.map((cp) => {
+        if (cp.id === "cp-c") {
           return {
-            ...n,
-            status: newState ? "critical" : "normal",
-            statusLabel: newState ? "Critical" : "Normal",
-            voltage: newState ? 194.5 : 229.0,
-            current: newState ? 285.0 : 155.0,
-            powerLoad: newState ? 102 : 45,
-            lastUpdated: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+            ...cp,
+            status: newState ? "alert" : "clear",
+            statusLabel: newState ? "Alert" : "Clear",
+            irSensor: newState ? "OBSTACLE" : "CLEAR",
+            lastVisited: timeStr,
             description: newState
-              ? "High load detected. Immediate attention."
-              : "Substation load nominal. Normal baseline.",
+              ? "IR obstacle detected on patrol path."
+              : "Perimeter Bay clear. Normal patrol sweep.",
+            subDescription: newState ? "Rear Bay • Obstacle Detected" : "Rear Bay • Clear Path",
           };
         }
-        return n;
+        return cp;
       })
     );
 
     if (newState) {
-      addLog("ALERT", "Load fault triggered at Node C: 194.5V / 285A detected.", "error");
+      setRover((prev) => ({
+        ...prev,
+        isPatrolling: false,
+        patrolMode: "Obstacle Hold",
+        speedMps: 0,
+        irObstacleDetected: true,
+        tftEyeState: "OBSTACLE_HALT",
+      }));
+      setAlerts((prev) => {
+        const hasActive = prev.some((a) => a.checkpointId === "cp-c" && a.status === "ACTIVE");
+        if (hasActive) return prev;
+        return [
+          {
+            id: `ALT-${Math.floor(4000 + Math.random() * 5000)}`,
+            checkpointId: "cp-c",
+            checkpointName: "Checkpoint C: Perimeter Bay",
+            severity: "CRITICAL",
+            title: "IR Obstacle Detected Along Perimeter Bay Path",
+            timestamp: timeStr,
+            irSensor: "OBSTACLE",
+            signalRssi: -67,
+            details: "ESP32-S3 IR obstacle module detected an obstruction at Checkpoint C and engaged local obstacle hold.",
+            recommendations: [
+              "Inspect the Perimeter Bay corridor visually before resuming travel past Checkpoint C.",
+              "Route ESP32-S3 Rover R-1 to Checkpoint A or B while Checkpoint C is obstructed.",
+              "Clear the obstacle alert once the path is confirmed clear.",
+            ],
+            status: "ACTIVE",
+          },
+          ...prev,
+        ];
+      });
+      addLog("ALERT", "IR obstacle detected at Checkpoint C (Perimeter Bay). Rover engaged local hold.", "error");
     } else {
-      addLog("SYSTEM", "Fault cleared at Node C. Voltage and load returned to nominal.", "success");
+      setRover((prev) => ({
+        ...prev,
+        irObstacleDetected: false,
+        patrolMode: prev.isPatrolling ? "Full Path Loop" : "Standby",
+        tftEyeState: prev.isPatrolling ? "PATROL_SCAN" : "STANDBY",
+      }));
+      setAlerts((prev) =>
+        prev.map((a) => (a.checkpointId === "cp-c" ? { ...a, status: "RESOLVED" as const } : a))
+      );
+      addLog("PATH", "Obstacle cleared at Checkpoint C. Path ready for rover patrol.", "success");
     }
   };
 
   const startPatrol = () => {
-    setRover((prev) => ({ ...prev, isPatrolling: true }));
-    addLog("ROVER", "ESP32-S3 Rover patrol started. Autonomous inspection active.", "success");
+    setRover((prev) => {
+      // If Checkpoint C is obstructed, safely patrol between clear Checkpoints A and B
+      const safeTarget =
+        isObstacleAlertActive && prev.targetCheckpointId === "cp-c" ? "cp-a" : prev.targetCheckpointId;
+      return {
+        ...prev,
+        isPatrolling: true,
+        targetCheckpointId: safeTarget,
+        patrolMode: isObstacleAlertActive ? "Targeted Check" : "Full Path Loop",
+        speedMps: 1.4,
+        irObstacleDetected: false,
+        tftEyeState: "PATROL_SCAN",
+      };
+    });
+    addLog(
+      "ROVER",
+      isObstacleAlertActive
+        ? "ESP32-S3 Rover R-1 resumed patrol on clear path segments (avoiding obstructed Checkpoint C)."
+        : "ESP32-S3 Rover R-1 patrol started across Checkpoints A → B → C.",
+      "success"
+    );
   };
 
   const stopPatrol = () => {
-    setRover((prev) => ({ ...prev, isPatrolling: false }));
-    addLog("ROVER", "ESP32-S3 Rover paused at current checkpoint.", "warn");
+    setRover((prev) => ({
+      ...prev,
+      isPatrolling: false,
+      patrolMode: "Standby",
+      speedMps: 0,
+      tftEyeState: "STANDBY",
+    }));
+    addLog("ROVER", "ESP32-S3 Rover R-1 paused in standby mode.", "warn");
+  };
+
+  const routeRoverTo = (checkpointId: string) => {
+    const target = checkpoints.find((c) => c.id === checkpointId);
+    if (!target) return;
+    setSelectedCheckpointId(checkpointId);
+
+    if (target.irSensor === "OBSTACLE") {
+      setRover((prev) => ({
+        ...prev,
+        isPatrolling: false,
+        targetCheckpointId: checkpointId,
+        patrolMode: "Obstacle Hold",
+        speedMps: 0,
+        irObstacleDetected: true,
+        tftEyeState: "OBSTACLE_HALT",
+      }));
+      addLog(
+        "ALERT",
+        `Cannot advance into ${target.name} (${target.badge}) while IR obstacle is active. Rover holding position.`,
+        "warn"
+      );
+      return;
+    }
+
+    setRover((prev) => ({
+      ...prev,
+      isPatrolling: true,
+      targetCheckpointId: checkpointId,
+      progress: prev.currentCheckpointId === checkpointId ? 100 : 10,
+      patrolMode: "Targeted Check",
+      speedMps: 1.5,
+      irObstacleDetected: false,
+      tftEyeState: "PATROL_SCAN",
+    }));
+    addLog("ROVER", `Routing ESP32-S3 Rover R-1 to Checkpoint ${target.badge}: ${target.name}.`, "success");
   };
 
   const acknowledgeAlert = (id: string) => {
     setAlerts((prev) =>
       prev.map((a) => (a.id === id ? { ...a, status: "ACKNOWLEDGED" as const } : a))
     );
-    addLog("SYSTEM", `Alert ticket ${id} acknowledged by operator.`, "info");
+    addLog("SYSTEM", `Alert ${id} acknowledged by operator.`, "info");
   };
 
   const stopSpeaking = () => {
@@ -488,7 +553,6 @@ export function GridProvider({ children }: { children: React.ReactNode }) {
     const cleanText = text.trim();
     if (!cleanText) return;
 
-    // Toggle off if already playing the same message
     if (isPlayingVoice && (!messageId || speakingMessageId === messageId)) {
       stopSpeaking();
       return;
@@ -513,29 +577,24 @@ export function GridProvider({ children }: { children: React.ReactNode }) {
         const audio = new Audio(url);
         audioRef.current = audio;
 
-        addLog("SYSTEM", "Playing ElevenLabs synthesized voice audio.", "success");
+        addLog("SYSTEM", "Playing ElevenLabs synthesized voice alert.", "success");
 
         audio.ontimeupdate = () => {
           if (audio.duration && Number.isFinite(audio.duration)) {
-            setVoiceProgress(Math.min(18, Math.round((audio.currentTime / audio.duration) * 18)));
+            setVoiceProgress(Math.min(100, Math.round((audio.currentTime / audio.duration) * 100)));
           }
         };
-        audio.onended = () => {
-          stopSpeaking();
-        };
-        audio.onerror = () => {
-          stopSpeaking();
-        };
+        audio.onended = () => stopSpeaking();
+        audio.onerror = () => stopSpeaking();
 
         await audio.play();
         return;
       }
     } catch {
-      // Fall through to Web Speech / visual timer fallback
+      // Fall through to browser Web Speech fallback
     }
 
-    // Graceful fallback: Browser Web Speech API + progress timer when ELEVENLABS_API_KEY is not set
-    addLog("SYSTEM", "ElevenLabs key not configured; using browser voice fallback.", "info");
+    addLog("SYSTEM", "Using browser voice fallback for spoken alert.", "info");
     if (typeof window !== "undefined" && "speechSynthesis" in window) {
       const utterance = new SpeechSynthesisUtterance(cleanText);
       utterance.rate = 1.02;
@@ -546,16 +605,15 @@ export function GridProvider({ children }: { children: React.ReactNode }) {
 
     fallbackTimerRef.current = setInterval(() => {
       setVoiceProgress((p) => {
-        if (p >= 18) {
+        if (p >= 100) {
           stopSpeaking();
           return 0;
         }
-        return p + 1;
+        return p + 10;
       });
-    }, 1000);
+    }, 600);
   };
 
-  // Cleanup audio resources on unmount
   useEffect(() => {
     return () => {
       stopSpeaking();
@@ -569,7 +627,6 @@ export function GridProvider({ children }: { children: React.ReactNode }) {
 
   const createNewChat = () => {
     stopSpeaking();
-    // Reuse existing empty session if already on one
     const current = chatSessions.find((s) => s.id === activeChatId);
     if (current && current.messages.length === 0) {
       return;
@@ -614,7 +671,9 @@ export function GridProvider({ children }: { children: React.ReactNode }) {
     };
 
     const existingSession = chatSessions.find((s) => s.id === activeChatId);
-    const targetChatId = existingSession ? existingSession.id : `chat-${now}-${Math.random().toString(36).slice(2, 6)}`;
+    const targetChatId = existingSession
+      ? existingSession.id
+      : `chat-${now}-${Math.random().toString(36).slice(2, 6)}`;
     const historyPayload = (existingSession?.messages || []).slice(-10).map((m) => ({
       sender: m.sender,
       content: m.content,
@@ -626,7 +685,10 @@ export function GridProvider({ children }: { children: React.ReactNode }) {
           s.id === targetChatId
             ? {
                 ...s,
-                title: s.messages.length === 0 || s.title === "New conversation" ? formatSessionTitle(trimmed) : s.title,
+                title:
+                  s.messages.length === 0 || s.title === "New conversation"
+                    ? formatSessionTitle(trimmed)
+                    : s.title,
                 updatedAt: now,
                 messages: [...s.messages, userMsg],
               }
@@ -646,7 +708,7 @@ export function GridProvider({ children }: { children: React.ReactNode }) {
     }
 
     setIsChatLoading(true);
-    addLog("SYSTEM", `Operator queried AI Assistant: "${trimmed}"`, "info");
+    addLog("SYSTEM", `Operator queried Rover AI: "${trimmed}"`, "info");
 
     fetch("/api/chat", {
       method: "POST",
@@ -654,10 +716,10 @@ export function GridProvider({ children }: { children: React.ReactNode }) {
       body: JSON.stringify({
         message: trimmed,
         history: historyPayload,
-        gridContext: {
-          nodes,
+        roverContext: {
+          checkpoints,
           rover,
-          isFaultActive,
+          isObstacleAlertActive,
           activeAlertsCount: alerts.filter((a) => a.status === "ACTIVE").length,
         },
       }),
@@ -671,9 +733,7 @@ export function GridProvider({ children }: { children: React.ReactNode }) {
       })
       .then((data) => {
         const replyText =
-          typeof data.reply === "string" && data.reply.trim()
-            ? data.reply.trim()
-            : "";
+          typeof data.reply === "string" && data.reply.trim() ? data.reply.trim() : "";
 
         if (!replyText) {
           throw new Error("Empty response from AI server.");
@@ -688,13 +748,14 @@ export function GridProvider({ children }: { children: React.ReactNode }) {
         const aiMsg: ChatMessage = {
           id: aiMsgId,
           sender: "assistant",
-          senderName: data.provider === "gemini" ? "SmartGrid AI (Gemini)" : "SmartGrid AI",
+          senderName: data.provider === "gemini" ? "Rover AI (Gemini)" : "Rover AI",
           timestamp: new Date(replyTime).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
           content: replyText,
           isCriticalAlert: Boolean(data.isCriticalAlert),
-          recommendations: Array.isArray(data.recommendations) && data.recommendations.length > 0
-            ? data.recommendations
-            : undefined,
+          recommendations:
+            Array.isArray(data.recommendations) && data.recommendations.length > 0
+              ? data.recommendations
+              : undefined,
           voicePreview,
           model: typeof data.model === "string" ? data.model : undefined,
         };
@@ -719,7 +780,7 @@ export function GridProvider({ children }: { children: React.ReactNode }) {
         const errorChatMsg: ChatMessage = {
           id: `msg-${errTime + 1}`,
           sender: "assistant",
-          senderName: "SmartGrid AI",
+          senderName: "Rover AI",
           timestamp: new Date(errTime).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
           content: `AI server error: ${errMsg}`,
         };
@@ -737,111 +798,123 @@ export function GridProvider({ children }: { children: React.ReactNode }) {
       });
   };
 
-  // Voice alert summary player (uses ElevenLabs API when configured)
+  // Voice patrol alert preview player
   const toggleVoicePlayback = () => {
     if (isPlayingVoice) {
       stopSpeaking();
       return;
     }
-    const nodeC = nodes.find((n) => n.id === "node-c");
-    const summaryScript = `Monitoring alert for Node C Industrial Transformer. Voltage has dropped to ${
-      nodeC?.voltage ?? 194.5
-    } volts under ${nodeC?.powerLoad ?? 102} megawatts load. Review AI Assistant recommendations for manual inspection and load checks.`;
+    const summaryScript = isObstacleAlertActive
+      ? `Patrol alert for ESP32-S3 Rover R-1. IR obstacle detected at Checkpoint C Perimeter Bay. Rover is holding position with ${rover.batteryLevel} percent battery. Check the corridor before resuming patrol.`
+      : `ESP32-S3 Rover R-1 status nominal. All three patrol checkpoints are clear with ${rover.batteryLevel} percent battery and active Wi-Fi telemetry.`;
     void speakText(summaryScript, "advisory-preview");
   };
 
   const resetSystem = () => {
-    setNodes(initialNodes);
-    setIsFaultActive(true);
+    setCheckpoints(initialCheckpoints);
+    setIsObstacleAlertActive(true);
     setIsOffline(false);
-    setThresholds(initialThresholds);
     setAlerts(initialAlerts);
     setRover({
-      isPatrolling: true,
-      currentNodeId: "node-b",
-      targetNodeId: "node-c",
-      progress: 45,
+      isPatrolling: false,
+      currentCheckpointId: "cp-b",
+      targetCheckpointId: "cp-c",
+      progress: 72,
       batteryLevel: 89,
-      patrolMode: "Autonomous Inspection",
-      speedMps: 1.8,
-      roverId: "ESP32-S3 Rover",
-      cameraStatus: "ONLINE",
-      xPercent: 62,
+      patrolMode: "Obstacle Hold",
+      speedMps: 0,
+      roverId: "ESP32-S3 Rover R-1",
+      wifiRssi: -58,
+      irObstacleDetected: true,
+      tftEyeState: "OBSTACLE_HALT",
+      xPercent: 66,
       yPercent: 68,
     });
-    addLog("SYSTEM", "System reset to default state.", "info");
+    addLog("SYSTEM", "Surveillance rover system reset to default patrol state.", "info");
   };
 
-  // Periodic simulated telemetry jitter (pauses automatically when tab is hidden)
+  // Live rover movement & Wi-Fi RSSI telemetry loop (pauses when tab is hidden or offline)
   useEffect(() => {
     const interval = setInterval(() => {
       if (isOffline || (typeof document !== "undefined" && document.hidden)) return;
 
-      const now = new Date();
-      const timeLabel = now.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" });
+      const timeStr = new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
 
-      setNodes((prevNodes) =>
-        prevNodes.map((node) => ({
-          ...node,
-          voltage: Number((node.voltage + (Math.random() - 0.5) * 0.4).toFixed(1)),
-          current: Number((node.current + (Math.random() - 0.5) * 0.8).toFixed(1)),
-        }))
+      // Slight realistic Wi-Fi RSSI fluctuation across checkpoints
+      setCheckpoints((prev) =>
+        prev.map((cp) => {
+          const delta = Math.round((Math.random() - 0.5) * 2);
+          const nextRssi = Math.max(-78, Math.min(-48, cp.signalRssi + delta));
+          return { ...cp, signalRssi: nextRssi };
+        })
       );
 
-      setTelemetryHistory((prev) => {
-        const newPoint: TelemetryPoint = {
-          timestamp: now.toISOString(),
-          timeLabel,
-          nodeAVoltage: 230.2,
-          nodeACurrent: 48.4,
-          nodeBVoltage: 218.7,
-          nodeBCurrent: 142.6,
-          nodeCVoltage: isFaultActive ? 194.5 : 229.0,
-          nodeCCurrent: isFaultActive ? 285.0 : 155.0,
-        };
-        return [...prev.slice(1), newPoint];
-      });
+      setRover((prev) => {
+        const nextRssi = Math.max(-76, Math.min(-48, prev.wifiRssi + Math.round((Math.random() - 0.5) * 2)));
 
-      // Rover progress update
-      if (rover.isPatrolling) {
-        setRover((prev) => {
-          const next = prev.progress + 3;
-          if (next >= 100) {
-            const seq = ["node-a", "node-b", "node-c"];
-            const currIdx = seq.indexOf(prev.targetNodeId);
-            const nextIdx = (currIdx + 1) % seq.length;
-            return {
-              ...prev,
-              currentNodeId: prev.targetNodeId,
-              targetNodeId: seq[nextIdx],
-              progress: 0,
-            };
-          }
-          return { ...prev, progress: next };
-        });
-      }
-    }, 2500);
+        if (!prev.isPatrolling) {
+          return { ...prev, wifiRssi: nextRssi };
+        }
+
+        const nextProgress = prev.progress + 12;
+        if (nextProgress >= 100) {
+          // Arrived at target checkpoint — increment its patrol pass count
+          const arrivedId = prev.targetCheckpointId;
+          setCheckpoints((cps) =>
+            cps.map((cp) =>
+              cp.id === arrivedId
+                ? { ...cp, patrolPasses: cp.patrolPasses + 1, lastVisited: timeStr }
+                : cp
+            )
+          );
+
+          const seq = isObstacleAlertActive ? ["cp-a", "cp-b"] : ["cp-a", "cp-b", "cp-c"];
+          const currIdx = seq.indexOf(arrivedId);
+          const nextTarget = seq[(currIdx + 1) % seq.length];
+          const xPos = CHECKPOINT_X[arrivedId] ?? 46;
+
+          return {
+            ...prev,
+            currentCheckpointId: arrivedId,
+            targetCheckpointId: nextTarget,
+            progress: 0,
+            xPercent: xPos,
+            wifiRssi: nextRssi,
+            batteryLevel: Math.max(20, prev.batteryLevel),
+          };
+        }
+
+        const startX = CHECKPOINT_X[prev.currentCheckpointId] ?? 18;
+        const endX = CHECKPOINT_X[prev.targetCheckpointId] ?? 46;
+        const interpolatedX = Math.round(startX + ((endX - startX) * nextProgress) / 100);
+
+        return {
+          ...prev,
+          progress: nextProgress,
+          xPercent: interpolatedX,
+          wifiRssi: nextRssi,
+        };
+      });
+    }, 2000);
 
     return () => clearInterval(interval);
-  }, [isOffline, isFaultActive, rover.isPatrolling]);
+  }, [isOffline, isObstacleAlertActive]);
 
   return (
     <GridContext.Provider
       value={{
-        nodes,
-        selectedNodeId,
-        setSelectedNodeId,
-        selectedNode,
-        thresholds,
-        setThresholds,
+        checkpoints,
+        selectedCheckpointId,
+        setSelectedCheckpointId,
+        selectedCheckpoint,
         isOffline,
         setIsOffline,
-        isFaultActive,
-        triggerFault,
+        isObstacleAlertActive,
+        triggerObstacleAlert,
         rover,
         startPatrol,
         stopPatrol,
-        telemetryHistory,
+        routeRoverTo,
         alerts,
         acknowledgeAlert,
         logs,
@@ -867,7 +940,6 @@ export function GridProvider({ children }: { children: React.ReactNode }) {
         autoReadVoice,
         setAutoReadVoice,
 
-        // Auth state
         user,
         isAuthenticated,
         hasSkippedAuth,

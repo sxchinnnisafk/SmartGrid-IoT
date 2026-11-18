@@ -6,11 +6,7 @@ import { useGrid } from "../context/GridContext";
 import { Play, Pause, Bot } from "lucide-react";
 
 export default function ControlRoomActionDock() {
-  const {
-    rover,
-    startPatrol,
-    stopPatrol,
-  } = useGrid();
+  const { rover, startPatrol, stopPatrol } = useGrid();
 
   const handlePatrolToggle = () => {
     if (rover.isPatrolling) {
@@ -40,7 +36,7 @@ export default function ControlRoomActionDock() {
             {rover.isPatrolling ? "Pause patrol" : "Start patrol"}
           </h3>
           <p className="text-xs font-sans text-ink-onAccent/80 mt-0.5 truncate">
-            Monitor corridor with ESP32-S3 rover
+            Control ESP32-S3 rover movement along patrol path
           </p>
         </div>
       </button>
@@ -58,7 +54,7 @@ export default function ControlRoomActionDock() {
             Ask AI Assistant
           </h3>
           <p className="text-xs font-sans text-parchment-muted mt-0.5 truncate">
-            Get diagnostic guidance and suggested actions
+            Review rover status, IR obstacles, and patrol advice
           </p>
         </div>
       </Link>

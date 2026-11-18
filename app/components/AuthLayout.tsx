@@ -36,7 +36,7 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
               <span className="w-1.5 h-1.5 rounded-full bg-cobalt" />
             </div>
             <span className="text-base sm:text-lg font-bold text-ink-text font-sans">
-              SmartGrid <span className="text-cobalt">AIoT</span>
+              Celestia <span className="text-cobalt">Rover</span>
             </span>
           </Link>
 
@@ -61,7 +61,7 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
 
       {/* Footer */}
       <footer className="relative z-20 border-t border-ink-border bg-ink-surface/90 px-6 py-4 text-center text-xs font-sans text-ink-muted">
-        SmartGrid AIoT — Team Celestia (Akash, Sachin, Obed, Rayyan), KLE Technological University
+        Celestia Rover — Autonomous Surveillance &amp; Patrol Interface · Team Celestia, KLE Technological University
       </footer>
     </div>
   );

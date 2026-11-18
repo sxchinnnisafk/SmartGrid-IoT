@@ -9,7 +9,7 @@ import ControlRoomActionDock from "../components/ControlRoomActionDock";
 export default function ControlRoomPage() {
   return (
     <div className="min-h-screen bg-ink text-ink-text flex flex-col justify-between selection:bg-cobalt selection:text-ink-onAccent">
-      <BrandHeader currentViewTitle="Control Room" variant="control-room" />
+      <BrandHeader currentViewTitle="Patrol Control" variant="control-room" />
 
       <main className="flex-1 max-w-[1600px] w-full mx-auto px-4 lg:px-6 py-4 flex flex-col justify-between gap-4">
         <div className="flex flex-col lg:flex-row gap-5 flex-1 items-stretch min-w-0">

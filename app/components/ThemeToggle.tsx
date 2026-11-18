@@ -36,9 +36,9 @@ export default function ThemeToggle() {
       <button
         onClick={() => {
           if (typeof window !== "undefined" && typeof localStorage !== "undefined") {
-            const stored = localStorage.getItem("smartgrid-theme");
+            const stored = localStorage.getItem("celestia-rover-theme");
             if (stored) {
-              localStorage.removeItem("smartgrid-theme");
+              localStorage.removeItem("celestia-rover-theme");
               const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
               setTheme(prefersDark ? "dark" : "light");
             } else {

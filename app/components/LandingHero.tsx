@@ -9,41 +9,39 @@ import {
   AlertTriangle,
   Play,
   Pause,
-  Zap,
+  Radar,
   ChevronRight,
-  Flame,
+  ShieldAlert,
   CheckCircle2,
 } from "lucide-react";
 
 export default function LandingHero() {
   const {
-    nodes,
-    isFaultActive,
-    triggerFault,
+    checkpoints,
+    isObstacleAlertActive,
+    triggerObstacleAlert,
     rover,
     startPatrol,
     stopPatrol,
     logout,
   } = useGrid();
 
-  const [focusedNodeId, setFocusedNodeId] = useState<string>("node-c");
+  const [focusedId, setFocusedId] = useState<string>("cp-c");
   const [depthOffset, setDepthOffset] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
   const [heroScrollY, setHeroScrollY] = useState<number>(0);
   const stageRef = useRef<HTMLDivElement | null>(null);
   const rafRef = useRef<number | null>(null);
 
-  const nodeA = nodes.find((n) => n.id === "node-a") || nodes[0];
-  const nodeB = nodes.find((n) => n.id === "node-b") || nodes[1];
-  const nodeC = nodes.find((n) => n.id === "node-c") || nodes[2];
-  const focusedNode = nodes.find((n) => n.id === focusedNodeId) || nodeC;
+  const cpA = checkpoints.find((c) => c.id === "cp-a") || checkpoints[0];
+  const cpB = checkpoints.find((c) => c.id === "cp-b") || checkpoints[1];
+  const cpC = checkpoints.find((c) => c.id === "cp-c") || checkpoints[2];
+  const focusedCp = checkpoints.find((c) => c.id === focusedId) || cpC;
 
-  // Reveal hero elements immediately on mount
   useEffect(() => {
     const heroEls = document.querySelectorAll<HTMLElement>("#hero-root .reveal");
     heroEls.forEach((el) => el.classList.add("is-revealed"));
   }, []);
 
-  // Subtle GPU-only scroll depth parallax as the visitor scrolls out of the hero
   useEffect(() => {
     if (typeof window === "undefined") return;
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
@@ -64,7 +62,6 @@ export default function LandingHero() {
     };
   }, []);
 
-  // Restrained pointer-driven depth separation across visual planes (GPU transform only)
   const handleStagePointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
     if (typeof window !== "undefined" && window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
       return;
@@ -72,7 +69,7 @@ export default function LandingHero() {
     const el = stageRef.current;
     if (!el) return;
     const rect = el.getBoundingClientRect();
-    const nx = ((e.clientX - rect.left) / rect.width - 0.5) * 2; // -1 to 1
+    const nx = ((e.clientX - rect.left) / rect.width - 0.5) * 2;
     const ny = ((e.clientY - rect.top) / rect.height - 0.5) * 2;
     if (rafRef.current) cancelAnimationFrame(rafRef.current);
     rafRef.current = requestAnimationFrame(() => {
@@ -142,17 +139,17 @@ export default function LandingHero() {
             <span className="w-1.5 h-1.5 rounded-full bg-cobalt" />
           </div>
           <span className="font-bold text-base sm:text-lg text-ink-text font-sans whitespace-nowrap">
-            SmartGrid <span className="text-cobalt">AIoT</span>
+            Celestia <span className="text-cobalt">Rover</span>
           </span>
         </Link>
 
-        {/* Anchor Navigation: Solutions & Impact */}
+        {/* Anchor Navigation */}
         <nav aria-label="Primary sections" className="hidden md:flex items-center gap-7 text-sm font-sans text-ink-muted">
           <a href="#solutions" className="hover:text-ink-text transition-colors whitespace-nowrap">
-            Solutions
+            Overview
           </a>
           <a href="#impact" className="hover:text-ink-text transition-colors whitespace-nowrap">
-            Impact
+            AI Advisor
           </a>
         </nav>
 
@@ -162,7 +159,7 @@ export default function LandingHero() {
             type="button"
             onClick={() => logout()}
             className="hidden sm:inline-flex items-center gap-1.5 px-3.5 py-2 rounded-full bg-ink-surface hover:bg-ink-hover text-xs font-sans font-medium text-ink-secondary border border-ink-border transition-colors whitespace-nowrap"
-            title="Lock Gateway / Return to Operator Sign In"
+            title="Lock Console / Return to Operator Sign In"
           >
             <span>Operator Sign In</span>
           </button>
@@ -170,32 +167,32 @@ export default function LandingHero() {
             href="/control-room"
             className="pill-button-cobalt text-xs sm:text-sm font-semibold px-3.5 sm:px-5 py-2 whitespace-nowrap"
           >
-            <span>Open Control Room</span>
+            <span>Open Patrol Control</span>
             <ArrowUpRight className="w-4 h-4" aria-hidden="true" />
           </Link>
         </div>
       </header>
 
-      {/* Main Hero Body: Tuned so headline, subhead, CTAs, and proof strip fit cleanly above 1280x800 */}
+      {/* Main Hero Body */}
       <main className="relative z-10 max-w-[1440px] w-full mx-auto px-6 sm:px-10 py-6 lg:py-8 grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-10 items-center flex-1">
         {/* Left Editorial Column */}
         <div className="lg:col-span-5 space-y-5 text-left min-w-0">
           <p className="text-sm font-sans font-medium text-cobalt-soft reveal" data-delay="50">
-            Sensing today for a safer tomorrow
+            Autonomous surveillance &amp; path monitoring
           </p>
 
           <h1
             className="font-serif text-4xl sm:text-5xl xl:text-[3.75rem] font-normal leading-[1.06] tracking-tight text-ink-text break-words min-w-0 reveal"
             data-delay="100"
           >
-            See the grid before it becomes a problem.
+            Keep watch on every path, live.
           </h1>
 
           <p
             className="text-base sm:text-lg text-ink-muted font-sans max-w-md leading-relaxed reveal"
             data-delay="150"
           >
-            From edge sensor to operator action across a live three-node digital twin.
+            Track rover status, patrol monitored checkpoints, detect obstacles instantly, and consult AI guidance in real time.
           </p>
 
           {/* Primary & Secondary Actions */}
@@ -204,7 +201,7 @@ export default function LandingHero() {
               href="/control-room"
               className="pill-button-cobalt text-sm sm:text-base py-2.5 px-7 shadow-cobalt"
             >
-              <span>Open Control Room</span>
+              <span>Open Patrol Control</span>
               <ArrowUpRight className="w-4 h-4" aria-hidden="true" />
             </Link>
 
@@ -212,32 +209,32 @@ export default function LandingHero() {
               href="#story-chapters"
               className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-ink-card hover:bg-ink-hover text-sm text-ink-secondary font-sans font-medium border border-ink-border transition-colors"
             >
-              <span>Explore 4-Chapter Story</span>
+              <span>How It Works</span>
               <ChevronRight className="w-4 h-4 text-cobalt-soft" aria-hidden="true" />
             </a>
           </div>
 
-          {/* Grounded Prototype Architecture Facts */}
+          {/* Grounded Surveillance Robot Architecture Facts */}
           <div
             className="pt-5 border-t border-ink-border grid grid-cols-3 gap-4 max-w-md font-sans text-xs reveal"
             data-delay="250"
           >
             <div className="min-w-0">
-              <div className="text-cobalt-soft font-semibold text-sm sm:text-base">3 Nodes</div>
-              <div className="text-ink-muted text-xs mt-0.5">Physical Twin Corridor</div>
+              <div className="text-cobalt-soft font-semibold text-sm sm:text-base">3 Checkpoints</div>
+              <div className="text-ink-muted text-xs mt-0.5">Monitored Patrol Path</div>
             </div>
             <div className="min-w-0">
               <div className="text-signal-normalBright font-semibold text-sm sm:text-base">ESP32-S3</div>
-              <div className="text-ink-muted text-xs mt-0.5">Edge Telemetry Rover</div>
+              <div className="text-ink-muted text-xs mt-0.5">4WD Patrol Rover</div>
             </div>
             <div className="min-w-0">
-              <div className="text-signal-warningBright font-semibold text-sm sm:text-base">AI + Voice</div>
-              <div className="text-ink-muted text-xs mt-0.5">Human-in-the-Loop</div>
+              <div className="text-signal-warningBright font-semibold text-sm sm:text-base">IR + AI</div>
+              <div className="text-ink-muted text-xs mt-0.5">Obstacle &amp; Advisor</div>
             </div>
           </div>
         </div>
 
-        {/* Right Hero Visual: Dimensional Layered Live Digital Twin Stage */}
+        {/* Right Hero Visual: Dimensional Layered Live Patrol Path Stage */}
         <div className="lg:col-span-7 relative flex items-center justify-center min-w-0 reveal" data-delay="150">
           <div
             ref={stageRef}
@@ -245,42 +242,42 @@ export default function LandingHero() {
             onPointerLeave={handleStagePointerLeave}
             className="relative w-full max-w-[680px] rounded-3xl bg-ink-surface border border-ink-border shadow-2xl overflow-hidden flex flex-col"
           >
-            {/* Clean Stage Top Bar (Replaces overlapping quote) */}
+            {/* Stage Top Bar */}
             <div className="relative z-20 px-5 py-3 border-b border-ink-border bg-ink-deep/70 flex flex-wrap items-center justify-between gap-2 text-xs">
               <div className="flex items-center gap-2">
                 <span
                   className={`w-2 h-2 rounded-full ${
-                    isFaultActive ? "bg-signal-criticalBright animate-pulse" : "bg-signal-normalBright"
+                    isObstacleAlertActive ? "bg-signal-criticalBright animate-pulse" : "bg-signal-normalBright"
                   }`}
                 />
                 <span className="font-sans font-medium text-ink-text">
-                  Live Corridor Preview
+                  Live Patrol Preview
                 </span>
                 <span className="text-ink-muted hidden sm:inline">
-                  From data to a brighter tomorrow
+                  {rover.patrolMode}
                 </span>
               </div>
 
-              {/* Interactive Live Controls right in Hero */}
+              {/* Interactive Live Controls */}
               <div className="flex items-center gap-2">
                 <button
                   type="button"
-                  onClick={() => triggerFault(!isFaultActive)}
+                  onClick={() => triggerObstacleAlert(!isObstacleAlertActive)}
                   className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium border transition-colors ${
-                    isFaultActive
+                    isObstacleAlertActive
                       ? "bg-signal-criticalBg text-signal-criticalText border-signal-criticalBorder"
                       : "bg-ink-card text-ink-secondary border-ink-border hover:border-cobalt"
                   }`}
                 >
-                  {isFaultActive ? (
+                  {isObstacleAlertActive ? (
                     <>
                       <CheckCircle2 className="w-3.5 h-3.5" aria-hidden="true" />
-                      <span>Clear Fault</span>
+                      <span>Clear Obstacle</span>
                     </>
                   ) : (
                     <>
-                      <Flame className="w-3.5 h-3.5 text-signal-criticalBright" aria-hidden="true" />
-                      <span>Simulate Fault</span>
+                      <ShieldAlert className="w-3.5 h-3.5 text-signal-criticalBright" aria-hidden="true" />
+                      <span>Simulate Obstacle</span>
                     </>
                   )}
                 </button>
@@ -305,45 +302,44 @@ export default function LandingHero() {
               </div>
             </div>
 
-            {/* Mobile Dedicated Art Direction: Clean Stacked Corridor (Zero Overlap on < 640px) */}
+            {/* Mobile Dedicated Stack */}
             <div className="flex sm:hidden flex-col gap-3 p-4">
-              {[nodeA, nodeB, nodeC].map((node) => {
-                const isSelected = focusedNodeId === node.id;
-                const badgeTone =
-                  node.status === "critical"
-                    ? "bg-signal-critical"
-                    : "bg-control";
+              {[cpA, cpB, cpC].map((cp) => {
+                const isSelected = focusedId === cp.id;
+                const badgeTone = cp.status === "alert" ? "bg-signal-critical" : "bg-control";
                 const statusTextTone =
-                  node.status === "critical"
+                  cp.status === "alert"
                     ? "text-signal-criticalBright"
-                    : node.status === "warning"
+                    : cp.status === "watch"
                     ? "text-signal-warningBright"
                     : "text-signal-normalBright";
 
                 return (
                   <button
-                    key={node.id}
+                    key={cp.id}
                     type="button"
-                    onClick={() => setFocusedNodeId(node.id)}
+                    onClick={() => setFocusedId(cp.id)}
                     className={`w-full flex items-center justify-between gap-3 bg-parchment text-parchment-text px-3.5 py-2.5 rounded-2xl border text-left transition-colors ${
                       isSelected ? "border-cobalt ring-2 ring-cobalt/30" : "border-parchment-border"
                     }`}
                   >
                     <div className="flex items-center gap-2.5 min-w-0">
-                      <span className={`w-6 h-6 rounded-full ${badgeTone} text-ink-onAccent flex items-center justify-center font-bold text-xs shrink-0`}>
-                        {node.badge}
+                      <span
+                        className={`w-6 h-6 rounded-full ${badgeTone} text-ink-onAccent flex items-center justify-center font-bold text-xs shrink-0`}
+                      >
+                        {cp.badge}
                       </span>
                       <div className="min-w-0">
-                        <div className="font-semibold text-xs text-parchment-text truncate">{node.name}</div>
+                        <div className="font-semibold text-xs text-parchment-text truncate">{cp.name}</div>
                         <div className="flex items-center gap-2 text-[11px] text-parchment-muted">
-                          <span>{node.voltage} V</span>
-                          <span>{node.current} A</span>
-                          <span>{node.powerLoad} MW</span>
+                          <span>IR {cp.irSensor}</span>
+                          <span>{cp.signalRssi} dBm</span>
+                          <span>{cp.patrolPasses} passes</span>
                         </div>
                       </div>
                     </div>
                     <span className={`text-[11px] font-semibold shrink-0 px-2 py-0.5 rounded-full bg-ink-card ${statusTextTone}`}>
-                      {node.statusLabel}
+                      {cp.statusLabel}
                     </span>
                   </button>
                 );
@@ -352,17 +348,16 @@ export default function LandingHero() {
               <div className="flex items-center justify-between gap-2 bg-ink-card border border-cobalt px-3.5 py-2.5 rounded-2xl">
                 <div className="flex items-center gap-2">
                   <Wifi className="w-4 h-4 text-cobalt-soft shrink-0" aria-hidden="true" />
-                  <span className="text-xs font-semibold text-ink-text">ESP32-S3 Rover</span>
+                  <span className="text-xs font-semibold text-ink-text">{rover.roverId}</span>
                 </div>
                 <span className="text-[11px] text-cobalt-soft">
-                  {rover.isPatrolling ? `Patrolling (${rover.batteryLevel}%)` : "Standby"}
+                  {rover.patrolMode} ({rover.batteryLevel}%)
                 </span>
               </div>
             </div>
 
-            {/* Desktop Layered 3-Plane Interactive Corridor Stage */}
+            {/* Desktop Layered 3-Plane Interactive Patrol Stage */}
             <div className="hidden sm:block relative w-full h-[380px] sm:h-[400px] overflow-hidden">
-              {/* Plane 0: Topographic contour background */}
               <div
                 className="absolute inset-0 topographic-lines opacity-20 pointer-events-none sc-plane"
                 style={{
@@ -370,7 +365,7 @@ export default function LandingHero() {
                 }}
               />
 
-              {/* Plane 1: Connected SVG Power Transmission Conduit & Rover Route */}
+              {/* Plane 1: Connected SVG Patrol Route */}
               <svg
                 aria-hidden="true"
                 className="absolute inset-0 w-full h-full pointer-events-none sc-plane"
@@ -388,7 +383,7 @@ export default function LandingHero() {
                   </filter>
                 </defs>
 
-                {/* Node A (140, 128) -> Node B (238, 224) */}
+                {/* Path Segment A -> B */}
                 <path
                   d="M 140,132 C 165,178 195,204 238,224"
                   stroke="var(--color-cobalt)"
@@ -396,22 +391,21 @@ export default function LandingHero() {
                   strokeDasharray="6 5"
                   className="animate-dash-flow"
                 />
-                {/* Node B (345, 240) -> Node C left edge (438, 102) */}
+                {/* Path Segment B -> C */}
                 <path
                   d="M 345,240 C 400,235 408,142 438,102"
-                  stroke={isFaultActive ? "var(--color-signal-critical-bright)" : "var(--color-cobalt)"}
+                  stroke={isObstacleAlertActive ? "var(--color-signal-critical-bright)" : "var(--color-cobalt)"}
                   strokeWidth="3"
                   filter="url(#heroLineGlow)"
                 />
-                {/* Animated energy pulses along B -> C */}
                 <path
                   d="M 345,240 C 400,235 408,142 438,102"
-                  stroke={isFaultActive ? "var(--color-signal-critical-bg)" : "var(--color-cobalt-soft)"}
+                  stroke={isObstacleAlertActive ? "var(--color-signal-critical-bg)" : "var(--color-cobalt-soft)"}
                   strokeWidth="1.5"
                   strokeDasharray="5 9"
                   className="animate-dash-flow"
                 />
-                {/* Rover telemetry patrol path along lower corridor */}
+                {/* Return Patrol Loop */}
                 <path
                   d="M 140,330 Q 340,355 545,280"
                   stroke="var(--color-cobalt-soft)"
@@ -420,35 +414,35 @@ export default function LandingHero() {
                   opacity="0.55"
                 />
 
-                {/* Junction Anchor Dots */}
+                {/* Checkpoint Anchor Dots */}
                 <circle cx="140" cy="132" r="4" fill="var(--color-signal-normal-bright)" />
                 <circle cx="238" cy="224" r="4" fill="var(--color-signal-warning-bright)" />
                 <circle
                   cx="438"
                   cy="102"
                   r="4.5"
-                  fill={isFaultActive ? "var(--color-signal-critical-bright)" : "var(--color-signal-normal-bright)"}
+                  fill={isObstacleAlertActive ? "var(--color-signal-critical-bright)" : "var(--color-signal-normal-bright)"}
                 />
               </svg>
 
-              {/* Plane 2: Foreground Interactive Nodes */}
+              {/* Plane 2: Foreground Interactive Checkpoints */}
               <div
                 className="absolute inset-0 sc-plane"
                 style={{
                   transform: `translate3d(${depthOffset.x * 5}px, ${depthOffset.y * 4}px, 0)`,
                 }}
               >
-                {/* NODE A: Residential Feeder */}
+                {/* CHECKPOINT A */}
                 <button
                   type="button"
-                  onClick={() => setFocusedNodeId("node-a")}
+                  onClick={() => setFocusedId("cp-a")}
                   className={`absolute top-[9%] left-[4%] sm:left-[6%] z-10 text-left transition-transform duration-200 ${
-                    focusedNodeId === "node-a" ? "scale-[1.03]" : "hover:scale-[1.02]"
+                    focusedId === "cp-a" ? "scale-[1.03]" : "hover:scale-[1.02]"
                   }`}
                 >
                   <div
                     className={`flex items-center gap-2.5 bg-parchment text-parchment-text px-3 py-2 rounded-xl shadow-parchment border transition-colors ${
-                      focusedNodeId === "node-a" ? "border-cobalt ring-2 ring-cobalt/30" : "border-parchment-border"
+                      focusedId === "cp-a" ? "border-cobalt ring-2 ring-cobalt/30" : "border-parchment-border"
                     }`}
                   >
                     <span className="w-6 h-6 rounded-full bg-control text-ink-onAccent flex items-center justify-center font-bold text-xs shrink-0">
@@ -456,30 +450,30 @@ export default function LandingHero() {
                     </span>
                     <div>
                       <div className="font-semibold text-xs sm:text-sm font-sans text-parchment-text leading-tight">
-                        {nodeA.name}
+                        {cpA.name}
                       </div>
                       <div className="text-[11px] text-parchment-muted font-sans">
-                        {nodeA.powerLoad} {nodeA.powerLoadUnit} · {nodeA.voltage} V
+                        IR {cpA.irSensor} · {cpA.signalRssi} dBm
                       </div>
                     </div>
                   </div>
                   <div className="mt-1.5 ml-3 px-2.5 py-1 rounded-lg bg-ink-card/95 border border-ink-border inline-flex items-center gap-1.5 text-[11px] font-sans text-signal-normalBright">
-                    <Zap className="w-3 h-3" aria-hidden="true" />
-                    <span>Normal operation</span>
+                    <Radar className="w-3 h-3" aria-hidden="true" />
+                    <span>Path clear</span>
                   </div>
                 </button>
 
-                {/* NODE B: EV Charging Hub */}
+                {/* CHECKPOINT B */}
                 <button
                   type="button"
-                  onClick={() => setFocusedNodeId("node-b")}
+                  onClick={() => setFocusedId("cp-b")}
                   className={`absolute top-[52%] left-[12%] sm:left-[18%] z-10 text-left transition-transform duration-200 ${
-                    focusedNodeId === "node-b" ? "scale-[1.03]" : "hover:scale-[1.02]"
+                    focusedId === "cp-b" ? "scale-[1.03]" : "hover:scale-[1.02]"
                   }`}
                 >
                   <div
                     className={`flex items-center gap-2.5 bg-parchment text-parchment-text px-3 py-2 rounded-xl shadow-parchment border transition-colors ${
-                      focusedNodeId === "node-b"
+                      focusedId === "cp-b"
                         ? "border-signal-warningBright ring-2 ring-signal-warningBright/30"
                         : "border-parchment-border"
                     }`}
@@ -489,28 +483,28 @@ export default function LandingHero() {
                     </span>
                     <div>
                       <div className="font-semibold text-xs sm:text-sm font-sans text-parchment-text leading-tight">
-                        {nodeB.name}
+                        {cpB.name}
                       </div>
                       <div className="text-[11px] text-parchment-muted font-sans">
-                        {nodeB.powerLoad} {nodeB.powerLoadUnit} · {nodeB.voltage} V
+                        IR {cpB.irSensor} · {cpB.signalRssi} dBm
                       </div>
                     </div>
                   </div>
                   <div className="mt-1.5 ml-3 px-2.5 py-1 rounded-lg bg-ink-card/95 border border-ink-border inline-flex items-center gap-1.5 text-[11px] font-sans text-signal-warningBright">
-                    <Zap className="w-3 h-3" aria-hidden="true" />
-                    <span>Peak load warning</span>
+                    <Radar className="w-3 h-3" aria-hidden="true" />
+                    <span>Active corridor watch</span>
                   </div>
                 </button>
 
-                {/* NODE C: Industrial Transformer */}
+                {/* CHECKPOINT C */}
                 <button
                   type="button"
-                  onClick={() => setFocusedNodeId("node-c")}
+                  onClick={() => setFocusedId("cp-c")}
                   className={`absolute top-[16%] right-[4%] sm:right-[6%] z-10 text-left transition-transform duration-200 ${
-                    focusedNodeId === "node-c" ? "scale-[1.03]" : "hover:scale-[1.02]"
+                    focusedId === "cp-c" ? "scale-[1.03]" : "hover:scale-[1.02]"
                   }`}
                 >
-                  {isFaultActive && (
+                  {isObstacleAlertActive && (
                     <span
                       aria-hidden="true"
                       className="absolute -top-3.5 right-3 w-6 h-6 rounded-full bg-signal-criticalBright text-ink-onAccent flex items-center justify-center font-bold text-xs shadow-lg animate-signal-pulse"
@@ -520,8 +514,8 @@ export default function LandingHero() {
                   )}
                   <div
                     className={`flex items-center gap-2.5 bg-parchment text-parchment-text px-3 py-2 rounded-xl shadow-parchment border transition-colors ${
-                      focusedNodeId === "node-c"
-                        ? isFaultActive
+                      focusedId === "cp-c"
+                        ? isObstacleAlertActive
                           ? "border-signal-criticalBright ring-2 ring-signal-criticalBright/30"
                           : "border-cobalt ring-2 ring-cobalt/30"
                         : "border-parchment-border"
@@ -529,31 +523,31 @@ export default function LandingHero() {
                   >
                     <span
                       className={`w-6 h-6 rounded-full text-ink-onAccent flex items-center justify-center font-bold text-xs shrink-0 ${
-                        isFaultActive ? "bg-signal-critical" : "bg-signal-normal"
+                        isObstacleAlertActive ? "bg-signal-critical" : "bg-signal-normal"
                       }`}
                     >
                       C
                     </span>
                     <div>
                       <div className="font-semibold text-xs sm:text-sm font-sans text-parchment-text leading-tight">
-                        {nodeC.name}
+                        {cpC.name}
                       </div>
                       <div className="text-[11px] text-parchment-muted font-sans">
-                        {nodeC.powerLoad} {nodeC.powerLoadUnit} · {nodeC.voltage} V
+                        IR {cpC.irSensor} · {cpC.signalRssi} dBm
                       </div>
                     </div>
                   </div>
                   <div
                     className={`mt-1.5 ml-3 px-2.5 py-1 rounded-lg bg-ink-card/95 border border-ink-border inline-flex items-center gap-1.5 text-[11px] font-sans font-medium ${
-                      isFaultActive ? "text-signal-criticalBright" : "text-signal-normalBright"
+                      isObstacleAlertActive ? "text-signal-criticalBright" : "text-signal-normalBright"
                     }`}
                   >
                     <AlertTriangle className="w-3 h-3" aria-hidden="true" />
-                    <span>{isFaultActive ? "Critical overload fault" : "Nominal operating state"}</span>
+                    <span>{isObstacleAlertActive ? "IR obstacle detected" : "Path clear"}</span>
                   </div>
                 </button>
 
-                {/* ESP32-S3 Rover Pill (Live Patrol Status) */}
+                {/* ESP32-S3 Rover Live Pill */}
                 <div className="absolute bottom-[10%] right-[6%] sm:right-[10%] z-20">
                   <div className="flex items-center gap-2.5 bg-ink-card border border-cobalt px-3 py-2 rounded-2xl shadow-cobalt rover-pulse">
                     <div className="w-7 h-7 rounded-lg bg-cobalt-tint border border-cobalt-border flex items-center justify-center text-cobalt-soft">
@@ -563,11 +557,11 @@ export default function LandingHero() {
                       <div className="text-xs font-semibold text-ink-text flex items-center gap-1.5">
                         <span>ESP32-S3 Rover</span>
                         <span className="text-[10px] px-1.5 py-0.5 rounded bg-cobalt-tintStrong text-cobalt-soft font-mono">
-                          {rover.isPatrolling ? "Patrolling" : "Standby"}
+                          {rover.patrolMode}
                         </span>
                       </div>
                       <div className="text-[11px] text-ink-muted font-mono">
-                        Battery {rover.batteryLevel}% · Target {rover.targetNodeId.toUpperCase()}
+                        Battery {rover.batteryLevel}% · Target {rover.targetCheckpointId.toUpperCase()}
                       </div>
                     </div>
                   </div>
@@ -579,25 +573,25 @@ export default function LandingHero() {
             <div className="relative z-20 px-5 py-3 border-t border-ink-border bg-ink-deep/80 flex flex-wrap items-center justify-between gap-3 text-xs">
               <div className="flex items-center gap-3 font-mono text-ink-secondary">
                 <span className="font-sans font-semibold text-ink-text">
-                  Node {focusedNode.badge}:
+                  Checkpoint {focusedCp.badge}:
                 </span>
-                <span>{focusedNode.voltage} V</span>
-                <span>{focusedNode.current} A</span>
-                <span>{focusedNode.powerLoad} MW</span>
+                <span>IR {focusedCp.irSensor}</span>
+                <span>{focusedCp.signalRssi} dBm</span>
+                <span>{focusedCp.patrolPasses} passes</span>
               </div>
 
               <div className="flex items-center gap-4 text-xs font-sans text-ink-muted">
                 <span className="inline-flex items-center gap-1.5">
                   <span className="w-2 h-2 rounded-full bg-signal-normalBright" />
-                  Normal
+                  Clear
                 </span>
                 <span className="inline-flex items-center gap-1.5">
                   <span className="w-2 h-2 rounded-full bg-signal-warningBright" />
-                  Warning
+                  Watch
                 </span>
                 <span className="inline-flex items-center gap-1.5">
                   <span className="w-2 h-2 rounded-full bg-signal-criticalBright" />
-                  Critical
+                  Alert
                 </span>
               </div>
             </div>
@@ -608,11 +602,11 @@ export default function LandingHero() {
       {/* Bottom Footer Bar */}
       <footer className="relative z-20 px-6 sm:px-10 py-4 border-t border-ink-border max-w-[1440px] w-full mx-auto flex flex-col sm:flex-row items-center justify-between gap-3 text-xs font-sans text-ink-muted">
         <div className="flex flex-wrap items-center gap-5">
-          <span>Cleaner grids</span>
-          <span>Stronger communities</span>
-          <span>Brighter tomorrows</span>
+          <span>Clearer paths</span>
+          <span>Continuous patrol</span>
+          <span>Live rover status</span>
         </div>
-        <div className="font-semibold text-ink-secondary">SmartGrid AIoT</div>
+        <div className="font-semibold text-ink-secondary">Celestia Rover</div>
       </footer>
     </div>
   );

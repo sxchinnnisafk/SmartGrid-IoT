@@ -6,37 +6,37 @@ import {
   Plus,
   Compass,
   Wifi,
-  Flame,
+  ShieldAlert,
   CheckCircle2,
   RotateCcw,
 } from "lucide-react";
 
 export default function ControlRoomCanvas() {
   const {
-    nodes,
-    selectedNodeId,
-    setSelectedNodeId,
+    checkpoints,
+    selectedCheckpointId,
+    setSelectedCheckpointId,
     rover,
-    isFaultActive,
-    triggerFault,
+    isObstacleAlertActive,
+    triggerObstacleAlert,
     addLog,
   } = useGrid();
 
   const [zoomLevel, setZoomLevel] = useState<number>(100);
-  const [isAssetPaletteOpen, setIsAssetPaletteOpen] = useState<boolean>(false);
+  const [isPaletteOpen, setIsPaletteOpen] = useState<boolean>(false);
 
-  const nodeA = nodes.find((n) => n.id === "node-a") || nodes[0];
-  const nodeB = nodes.find((n) => n.id === "node-b") || nodes[1];
-  const nodeC = nodes.find((n) => n.id === "node-c") || nodes[2];
+  const cpA = checkpoints.find((c) => c.id === "cp-a") || checkpoints[0];
+  const cpB = checkpoints.find((c) => c.id === "cp-b") || checkpoints[1];
+  const cpC = checkpoints.find((c) => c.id === "cp-c") || checkpoints[2];
 
   const handleZoomIn = () => setZoomLevel((z) => Math.min(140, z + 10));
   const handleZoomOut = () => setZoomLevel((z) => Math.max(70, z - 10));
   const handleResetZoom = () => setZoomLevel(100);
 
-  const handleSelectAssetFromPalette = (nodeId: string, label: string) => {
-    setSelectedNodeId(nodeId);
-    addLog("SYSTEM", `Focused corridor asset: ${label} (${nodeId.toUpperCase()}).`, "info");
-    setIsAssetPaletteOpen(false);
+  const handleSelectCheckpoint = (checkpointId: string, label: string) => {
+    setSelectedCheckpointId(checkpointId);
+    addLog("PATH", `Focused patrol checkpoint: ${label} (${checkpointId.toUpperCase()}).`, "info");
+    setIsPaletteOpen(false);
   };
 
   return (
@@ -46,104 +46,101 @@ export default function ControlRoomCanvas() {
         <div className="flex items-center gap-3 min-w-0">
           <button
             type="button"
-            onClick={() => setIsAssetPaletteOpen(!isAssetPaletteOpen)}
+            onClick={() => setIsPaletteOpen(!isPaletteOpen)}
             className="w-9 h-9 rounded-full bg-parchment-light hover:bg-parchment-bright text-parchment-text border border-parchment-borderStrong flex items-center justify-center shadow-sm transition-transform hover:scale-105 shrink-0"
-            title="Inspect corridor assets"
-            aria-label="Toggle micro-grid asset palette"
-            aria-expanded={isAssetPaletteOpen}
+            title="Select patrol checkpoint"
+            aria-label="Toggle patrol checkpoint list"
+            aria-expanded={isPaletteOpen}
           >
             <Plus className="w-5 h-5 text-cobalt" aria-hidden="true" />
           </button>
           <div className="min-w-0">
             <h2 className="font-serif text-lg sm:text-xl font-normal text-parchment-text leading-tight truncate">
-              Interactive Three-Node Corridor
+              Live Patrol Path &amp; Rover Map
             </h2>
             <p className="text-xs font-sans text-parchment-muted truncate">
-              Select a node to inspect live telemetry or simulate a fault event
+              Select a checkpoint to inspect IR status, route the rover, or test an obstacle halt
             </p>
           </div>
         </div>
 
-        {/* Live Fault Quick Toggle */}
+        {/* Live IR Obstacle Quick Toggle */}
         <div className="flex items-center gap-2 shrink-0">
           <button
             type="button"
-            onClick={() => triggerFault(!isFaultActive)}
+            onClick={() => triggerObstacleAlert(!isObstacleAlertActive)}
             className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-sans font-semibold border transition-colors ${
-              isFaultActive
+              isObstacleAlertActive
                 ? "bg-signal-criticalBg text-signal-criticalText border-signal-criticalBorder hover:bg-parchment-bright"
                 : "bg-parchment-light text-parchment-text border-parchment-borderStrong hover:border-cobalt"
             }`}
           >
-            {isFaultActive ? (
+            {isObstacleAlertActive ? (
               <>
                 <CheckCircle2 className="w-3.5 h-3.5" aria-hidden="true" />
-                <span>Clear Fault</span>
+                <span>Clear Obstacle</span>
               </>
             ) : (
               <>
-                <Flame className="w-3.5 h-3.5 text-signal-critical" aria-hidden="true" />
-                <span>Trigger Fault</span>
+                <ShieldAlert className="w-3.5 h-3.5 text-signal-critical" aria-hidden="true" />
+                <span>Simulate Obstacle</span>
               </>
             )}
           </button>
         </div>
       </div>
 
-      {/* Asset Palette Dropdown */}
-      {isAssetPaletteOpen && (
+      {/* Checkpoint Quick Palette Dropdown */}
+      {isPaletteOpen && (
         <div className="absolute top-16 left-5 z-30 bg-parchment-bright border border-parchment-borderStrong rounded-2xl p-4 shadow-xl text-xs font-sans w-72">
           <div className="text-xs font-semibold text-parchment-text mb-2.5">
-            Corridor Micro-Grid Assets
+            Monitored Patrol Checkpoints
           </div>
           <div className="space-y-2">
-            <button
-              type="button"
-              onClick={() => handleSelectAssetFromPalette("node-a", "Solar Micro-Inverter Feeder")}
-              className="w-full p-2.5 bg-parchment-light rounded-xl border border-parchment-border flex items-center gap-2.5 hover:border-cobalt text-left transition-colors"
-            >
-              <span className="w-2 h-2 rounded-full bg-signal-normalBright shrink-0" />
-              <span className="font-medium text-parchment-text">Solar Micro-Inverter Feeder (Node A)</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => handleSelectAssetFromPalette("node-b", "EV DC Fast Charger Bank")}
-              className="w-full p-2.5 bg-parchment-light rounded-xl border border-parchment-border flex items-center gap-2.5 hover:border-cobalt text-left transition-colors"
-            >
-              <span className="w-2 h-2 rounded-full bg-signal-warningBright shrink-0" />
-              <span className="font-medium text-parchment-text">EV DC Fast Charger Bank (Node B)</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => handleSelectAssetFromPalette("node-c", "Distribution Step-Down Transformer")}
-              className="w-full p-2.5 bg-parchment-light rounded-xl border border-parchment-border flex items-center gap-2.5 hover:border-signal-critical text-left transition-colors"
-            >
-              <span className="w-2 h-2 rounded-full bg-signal-criticalBright shrink-0" />
-              <span className="font-medium text-parchment-text">Industrial Transformer (Node C)</span>
-            </button>
+            {checkpoints.map((cp) => (
+              <button
+                key={cp.id}
+                type="button"
+                onClick={() => handleSelectCheckpoint(cp.id, cp.name)}
+                className="w-full p-2.5 bg-parchment-light rounded-xl border border-parchment-border flex items-center gap-2.5 hover:border-cobalt text-left transition-colors"
+              >
+                <span
+                  className={`w-2 h-2 rounded-full shrink-0 ${
+                    cp.status === "alert"
+                      ? "bg-signal-criticalBright"
+                      : cp.status === "watch"
+                      ? "bg-signal-warningBright"
+                      : "bg-signal-normalBright"
+                  }`}
+                />
+                <span className="font-medium text-parchment-text">
+                  {cp.name} (Checkpoint {cp.badge})
+                </span>
+              </button>
+            ))}
           </div>
           <p className="mt-3 text-[11px] text-parchment-muted">
-            Click an asset to focus its live telemetry readout.
+            Click a checkpoint to focus its live IR &amp; patrol status.
           </p>
         </div>
       )}
 
-      {/* Mobile Dedicated Corridor Stack (Zero Overlap on < 640px) */}
+      {/* Mobile Dedicated Patrol Stack */}
       <div className="flex sm:hidden flex-col gap-2.5 px-4 py-4">
-        {[nodeA, nodeB, nodeC].map((node) => {
-          const isSelected = selectedNodeId === node.id;
+        {[cpA, cpB, cpC].map((cp) => {
+          const isSelected = selectedCheckpointId === cp.id;
           const statusClasses =
-            node.status === "critical"
+            cp.status === "alert"
               ? "bg-signal-criticalBg text-signal-criticalText"
-              : node.status === "warning"
+              : cp.status === "watch"
               ? "bg-signal-warningBg text-signal-warningText"
               : "bg-signal-normalBg text-signal-normalText";
 
           return (
             <button
-              key={node.id}
+              key={cp.id}
               type="button"
-              onClick={() => setSelectedNodeId(node.id)}
+              onClick={() => setSelectedCheckpointId(cp.id)}
               className={`w-full p-3 rounded-2xl bg-parchment-bright border text-left flex items-center justify-between gap-2.5 transition-colors ${
                 isSelected ? "border-cobalt ring-2 ring-cobalt/20" : "border-parchment-borderStrong"
               }`}
@@ -151,22 +148,22 @@ export default function ControlRoomCanvas() {
               <div className="flex items-center gap-2.5 min-w-0">
                 <span
                   className={`w-6 h-6 rounded-full text-ink-onAccent flex items-center justify-center text-xs font-bold shrink-0 ${
-                    node.status === "critical" ? "bg-signal-critical" : "bg-control"
+                    cp.status === "alert" ? "bg-signal-critical" : "bg-control"
                   }`}
                 >
-                  {node.badge}
+                  {cp.badge}
                 </span>
                 <div className="min-w-0">
-                  <div className="font-semibold text-xs text-parchment-text truncate">{node.name}</div>
+                  <div className="font-semibold text-xs text-parchment-text truncate">{cp.name}</div>
                   <div className="flex items-center gap-2 text-[11px] text-parchment-muted">
-                    <span>{node.voltage} V</span>
-                    <span>{node.current} A</span>
-                    <span>{node.powerLoad} MW</span>
+                    <span>IR {cp.irSensor}</span>
+                    <span>{cp.signalRssi} dBm</span>
+                    <span>{cp.patrolPasses} passes</span>
                   </div>
                 </div>
               </div>
               <span className={`px-2 py-0.5 rounded-full text-[10px] font-semibold shrink-0 ${statusClasses}`}>
-                {node.statusLabel}
+                {cp.statusLabel}
               </span>
             </button>
           );
@@ -175,20 +172,19 @@ export default function ControlRoomCanvas() {
         <div className="flex items-center justify-between gap-2 px-3.5 py-2.5 rounded-2xl bg-ink-card border border-cobalt text-ink-text">
           <div className="flex items-center gap-2">
             <Wifi className="w-4 h-4 text-cobalt-soft shrink-0" aria-hidden="true" />
-            <span className="text-xs font-semibold">ESP32-S3 Rover</span>
+            <span className="text-xs font-semibold">{rover.roverId}</span>
           </div>
           <span className="text-[11px] text-ink-muted">
-            {rover.isPatrolling ? `Patrolling (${rover.batteryLevel}%)` : "Paused"}
+            {rover.patrolMode} ({rover.batteryLevel}%)
           </span>
         </div>
       </div>
 
-      {/* Desktop Main Isometric Interactive Stage */}
+      {/* Desktop Main Isometric Interactive Patrol Map */}
       <div
         className="hidden sm:block relative flex-1 w-full h-full overflow-hidden transition-transform duration-200"
         style={{ transform: `scale(${zoomLevel / 100})`, transformOrigin: "center center" }}
       >
-        {/* Stylized Landscape Background, Road Corridor & Aligned Transmission Arcs */}
         <svg
           aria-hidden="true"
           className="absolute inset-0 w-full h-full pointer-events-none"
@@ -196,7 +192,7 @@ export default function ControlRoomCanvas() {
           fill="none"
           xmlns="http://www.w3.org/2000/svg"
         >
-          {/* Subtle contour lines */}
+          {/* Subtle terrain contours */}
           <path
             d="M 40,140 Q 260,95 480,160 T 960,130"
             stroke="var(--color-paper-border-strong)"
@@ -219,7 +215,7 @@ export default function ControlRoomCanvas() {
             opacity="0.5"
           />
 
-          {/* Isometric Road Corridor */}
+          {/* Physical Patrol Walkway */}
           <path
             d="M 90,380 Q 340,340 500,270 T 880,180"
             stroke="var(--color-paper-dark)"
@@ -227,7 +223,7 @@ export default function ControlRoomCanvas() {
             strokeLinecap="round"
           />
 
-          {/* Energy Transmission Line: Node A (185, 165) -> Node B (445, 315) */}
+          {/* Patrol Segment A -> B */}
           <path
             d="M 185,165 C 260,210 340,280 445,315"
             stroke="var(--color-cobalt)"
@@ -243,10 +239,10 @@ export default function ControlRoomCanvas() {
             fill="none"
           />
 
-          {/* Energy Transmission Line: Node B (500, 315) -> Node C (795, 165) */}
+          {/* Patrol Segment B -> C */}
           <path
             d="M 500,315 C 620,305 700,235 795,165"
-            stroke={isFaultActive ? "var(--color-signal-critical)" : "var(--color-cobalt)"}
+            stroke={isObstacleAlertActive ? "var(--color-signal-critical)" : "var(--color-cobalt)"}
             strokeWidth="3.5"
             fill="none"
           />
@@ -259,17 +255,17 @@ export default function ControlRoomCanvas() {
             fill="none"
           />
 
-          {/* Junction Anchor Dots */}
+          {/* Waypoint Anchor Dots */}
           <circle cx="185" cy="165" r="5" fill="var(--color-cobalt)" />
           <circle cx="445" cy="315" r="5" fill="var(--color-signal-warning)" />
           <circle
             cx="795"
             cy="165"
             r="5.5"
-            fill={isFaultActive ? "var(--color-signal-critical)" : "var(--color-signal-normal)"}
+            fill={isObstacleAlertActive ? "var(--color-signal-critical)" : "var(--color-signal-normal)"}
           />
 
-          {/* Rover Dashed Telemetry Trail */}
+          {/* Rover Live Track */}
           <path
             d="M 190,415 Q 480,440 810,365"
             stroke="var(--color-cobalt)"
@@ -280,27 +276,27 @@ export default function ControlRoomCanvas() {
           />
         </svg>
 
-        {/* NODE A: Residential Feeder (Top Left — Zero Overlap) */}
+        {/* CHECKPOINT A: North Gate Entry */}
         <button
           type="button"
-          onClick={() => setSelectedNodeId("node-a")}
+          onClick={() => setSelectedCheckpointId("cp-a")}
           className={`absolute top-[6%] left-[3%] sm:left-[5%] z-20 text-left transition-transform duration-200 ${
-            selectedNodeId === "node-a" ? "scale-[1.03]" : "hover:scale-[1.02]"
+            selectedCheckpointId === "cp-a" ? "scale-[1.03]" : "hover:scale-[1.02]"
           }`}
         >
-          <div className="w-36 rounded-2xl bg-parchment-light border border-parchment-borderStrong shadow-sm p-2 mb-1.5">
+          <div className="w-40 rounded-2xl bg-parchment-light border border-parchment-borderStrong shadow-sm p-2 mb-1.5">
             <div className="py-1 rounded-lg bg-cobalt-tint border border-cobalt-border text-center text-[10px] font-mono text-cobalt font-bold">
-              Solar Roof
+              {cpA.zone}
             </div>
             <div className="grid grid-cols-2 gap-1 text-[10px] font-mono text-parchment-secondary mt-1.5 text-center">
-              <div className="py-0.5 px-1 rounded bg-parchment">{nodeA.householdCount ?? 1420} homes</div>
-              <div className="py-0.5 px-1 rounded bg-parchment">{nodeA.phaseBalance}%</div>
+              <div className="py-0.5 px-1 rounded bg-parchment">IR {cpA.irSensor}</div>
+              <div className="py-0.5 px-1 rounded bg-parchment">{cpA.patrolPasses} passes</div>
             </div>
           </div>
 
           <div
             className={`flex items-center gap-2 px-3 py-1.5 rounded-full bg-parchment-bright border transition-colors shadow-sm ${
-              selectedNodeId === "node-a"
+              selectedCheckpointId === "cp-a"
                 ? "border-cobalt ring-2 ring-cobalt/20"
                 : "border-parchment-borderStrong hover:border-cobalt"
             }`}
@@ -310,40 +306,40 @@ export default function ControlRoomCanvas() {
             </span>
             <div className="text-left font-sans">
               <div className="font-semibold text-xs text-parchment-text leading-tight">
-                {nodeA.name}
+                {cpA.name}
               </div>
               <div className="text-[10px] text-parchment-muted">
-                {nodeA.powerLoad} MW · {nodeA.voltage} V
+                Wi-Fi {cpA.signalRssi} dBm · {cpA.lastVisited}
               </div>
             </div>
             <span className="ml-1 inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-signal-normalBg text-signal-normalText text-[10px] font-sans font-semibold">
               <span className="w-1.5 h-1.5 rounded-full bg-signal-normalBright" />
-              {nodeA.statusLabel}
+              {cpA.statusLabel}
             </span>
           </div>
         </button>
 
-        {/* NODE B: EV Charging Hub (Lower Center — Cleanly Separated from C) */}
+        {/* CHECKPOINT B: Central Corridor */}
         <button
           type="button"
-          onClick={() => setSelectedNodeId("node-b")}
+          onClick={() => setSelectedCheckpointId("cp-b")}
           className={`absolute top-[46%] left-[28%] sm:left-[31%] z-20 text-left transition-transform duration-200 ${
-            selectedNodeId === "node-b" ? "scale-[1.03]" : "hover:scale-[1.02]"
+            selectedCheckpointId === "cp-b" ? "scale-[1.03]" : "hover:scale-[1.02]"
           }`}
         >
-          <div className="w-36 rounded-2xl bg-parchment-light border border-parchment-borderStrong shadow-sm p-2 mb-1.5">
+          <div className="w-40 rounded-2xl bg-parchment-light border border-parchment-borderStrong shadow-sm p-2 mb-1.5">
             <div className="py-1 rounded-lg bg-signal-warningBg border border-signal-warningBorder text-center text-[10px] font-mono text-signal-warningText font-bold">
-              EV Canopy
+              {cpB.zone}
             </div>
             <div className="grid grid-cols-2 gap-1 text-[10px] font-mono text-parchment-secondary mt-1.5 text-center">
-              <div className="py-0.5 px-1 rounded bg-parchment">{nodeB.activeEVs ?? 24} EVs</div>
-              <div className="py-0.5 px-1 rounded bg-parchment">{nodeB.powerLoad} MW</div>
+              <div className="py-0.5 px-1 rounded bg-parchment">IR {cpB.irSensor}</div>
+              <div className="py-0.5 px-1 rounded bg-parchment">{cpB.patrolPasses} passes</div>
             </div>
           </div>
 
           <div
             className={`flex items-center gap-2 px-3 py-1.5 rounded-full bg-parchment-bright border transition-colors shadow-sm ${
-              selectedNodeId === "node-b"
+              selectedCheckpointId === "cp-b"
                 ? "border-signal-warning ring-2 ring-signal-warning/25"
                 : "border-parchment-borderStrong hover:border-signal-warning"
             }`}
@@ -353,53 +349,53 @@ export default function ControlRoomCanvas() {
             </span>
             <div className="text-left font-sans">
               <div className="font-semibold text-xs text-parchment-text leading-tight">
-                {nodeB.name}
+                {cpB.name}
               </div>
               <div className="text-[10px] text-parchment-muted">
-                {nodeB.powerLoad} MW · {nodeB.voltage} V
+                Wi-Fi {cpB.signalRssi} dBm · {cpB.lastVisited}
               </div>
             </div>
             <span className="ml-1 inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-signal-warningBg text-signal-warningText text-[10px] font-sans font-semibold">
               <span className="w-1.5 h-1.5 rounded-full bg-signal-warningBright" />
-              {nodeB.statusLabel}
+              {cpB.statusLabel}
             </span>
           </div>
         </button>
 
-        {/* NODE C: Industrial Transformer (Top Right — Zero Overlap) */}
+        {/* CHECKPOINT C: Perimeter Bay */}
         <button
           type="button"
-          onClick={() => setSelectedNodeId("node-c")}
+          onClick={() => setSelectedCheckpointId("cp-c")}
           className={`absolute top-[6%] right-[3%] sm:right-[5%] z-20 text-left transition-transform duration-200 ${
-            selectedNodeId === "node-c" ? "scale-[1.03]" : "hover:scale-[1.02]"
+            selectedCheckpointId === "cp-c" ? "scale-[1.03]" : "hover:scale-[1.02]"
           }`}
         >
           <div className="w-40 rounded-2xl bg-parchment-light border border-parchment-borderStrong shadow-sm p-2 mb-1.5 ml-auto">
             <div
               className={`py-1 rounded-lg border text-center text-[10px] font-mono font-bold ${
-                isFaultActive
+                isObstacleAlertActive
                   ? "bg-signal-criticalBg text-signal-critical border-signal-criticalBorder animate-pulse"
                   : "bg-signal-normalBg text-signal-normalText border-signal-normalBorder"
               }`}
             >
-              Substation T-3
+              {cpC.zone}
             </div>
             <div className="grid grid-cols-2 gap-1 text-[10px] font-mono text-parchment-secondary mt-1.5 text-center">
               <div
                 className={`py-0.5 px-1 rounded font-semibold ${
-                  isFaultActive ? "bg-signal-criticalBg text-signal-critical" : "bg-parchment"
+                  isObstacleAlertActive ? "bg-signal-criticalBg text-signal-critical" : "bg-parchment"
                 }`}
               >
-                {nodeC.powerLoad} MW
+                IR {cpC.irSensor}
               </div>
-              <div className="py-0.5 px-1 rounded bg-parchment">{nodeC.voltage} V</div>
+              <div className="py-0.5 px-1 rounded bg-parchment">{cpC.signalRssi} dBm</div>
             </div>
           </div>
 
           <div
             className={`flex items-center gap-2 px-3 py-1.5 rounded-full bg-parchment-bright border transition-colors shadow-sm ${
-              selectedNodeId === "node-c"
-                ? isFaultActive
+              selectedCheckpointId === "cp-c"
+                ? isObstacleAlertActive
                   ? "border-signal-critical ring-2 ring-signal-critical/25"
                   : "border-cobalt ring-2 ring-cobalt/20"
                 : "border-parchment-borderStrong hover:border-signal-critical"
@@ -407,39 +403,39 @@ export default function ControlRoomCanvas() {
           >
             <span
               className={`w-5 h-5 rounded-full text-ink-onAccent flex items-center justify-center text-[11px] font-bold shrink-0 ${
-                isFaultActive ? "bg-signal-critical" : "bg-signal-normal"
+                isObstacleAlertActive ? "bg-signal-critical" : "bg-signal-normal"
               }`}
             >
               C
             </span>
             <div className="text-left font-sans">
               <div className="font-semibold text-xs text-parchment-text leading-tight">
-                {nodeC.name}
+                {cpC.name}
               </div>
               <div className="text-[10px] text-parchment-muted">
-                {isFaultActive ? "High load detected" : "Nominal operating state"}
+                {isObstacleAlertActive ? "Obstacle blocking path" : "Clear patrol sweep"}
               </div>
             </div>
             <span
               className={`ml-1 inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-sans font-semibold ${
-                isFaultActive
+                isObstacleAlertActive
                   ? "bg-signal-criticalBg text-signal-criticalText"
                   : "bg-signal-normalBg text-signal-normalText"
               }`}
             >
               <span
                 className={`w-1.5 h-1.5 rounded-full ${
-                  isFaultActive ? "bg-signal-criticalBright animate-ping" : "bg-signal-normalBright"
+                  isObstacleAlertActive ? "bg-signal-criticalBright animate-ping" : "bg-signal-normalBright"
                 }`}
               />
-              {nodeC.statusLabel}
+              {cpC.statusLabel}
             </span>
           </div>
         </button>
 
-        {/* ESP32-S3 ROVER PATROL ON CANVAS */}
+        {/* ESP32-S3 ROVER LIVE MARKER ON PATROL PATH */}
         <div
-          className="absolute z-20 transition-transform duration-700"
+          className="absolute z-20 transition-all duration-700"
           style={{
             bottom: "10%",
             left: `${Math.min(76, Math.max(12, rover.xPercent))}%`,
@@ -448,9 +444,9 @@ export default function ControlRoomCanvas() {
           <div className="flex items-center gap-2 px-3 py-1.5 rounded-2xl bg-ink-card border border-cobalt text-ink-text shadow-cobalt rover-pulse">
             <Wifi className="w-4 h-4 text-cobalt-soft shrink-0" aria-hidden="true" />
             <div className="text-left">
-              <div className="text-[11px] font-mono font-bold leading-tight">ESP32-S3 Rover</div>
+              <div className="text-[11px] font-mono font-bold leading-tight">{rover.roverId}</div>
               <div className="text-[10px] font-sans text-ink-muted leading-tight">
-                {rover.isPatrolling ? `Patrolling (${rover.batteryLevel}%)` : "Paused"}
+                {rover.patrolMode} · {rover.batteryLevel}% · {rover.speedMps.toFixed(1)} m/s
               </div>
             </div>
           </div>

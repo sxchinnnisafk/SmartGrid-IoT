@@ -2,45 +2,38 @@
 
 import React, { useState } from "react";
 import { useGrid } from "../context/GridContext";
-import {
-  FileText,
-  X,
-} from "lucide-react";
+import { FileText, Compass, X } from "lucide-react";
 
 export default function AIArtifactsPanel() {
-  const {
-    nodes,
-    isFaultActive,
-  } = useGrid();
-
+  const { checkpoints, rover, isObstacleAlertActive } = useGrid();
   const [activeModalArtifact, setActiveModalArtifact] = useState<string | null>(null);
 
-  const nodeA = nodes.find((n) => n.id === "node-a") || nodes[0];
-  const nodeB = nodes.find((n) => n.id === "node-b") || nodes[1];
-  const nodeC = nodes.find((n) => n.id === "node-c") || nodes[2];
+  const cpA = checkpoints.find((c) => c.id === "cp-a") || checkpoints[0];
+  const cpB = checkpoints.find((c) => c.id === "cp-b") || checkpoints[1];
+  const cpC = checkpoints.find((c) => c.id === "cp-c") || checkpoints[2];
 
   return (
     <>
       <aside className="w-full lg:w-72 xl:w-80 shrink-0 rounded-3xl bg-ink-surface border border-ink-border text-ink-text p-5 flex flex-col justify-between select-none">
         <div>
           <div className="flex items-center gap-2 mb-4">
-            <FileText className="w-4 h-4 text-cobalt-soft" aria-hidden="true" />
+            <Compass className="w-4 h-4 text-cobalt-soft" aria-hidden="true" />
             <h2 className="font-serif text-2xl font-normal text-ink-text">
-              Current artifacts
+              Live telemetry
             </h2>
           </div>
 
           <div className="space-y-3.5">
-            {/* ARTIFACT 1: Live Grid Snapshot */}
+            {/* ARTIFACT 1: Live Patrol Path Snapshot */}
             <div className="rounded-2xl bg-ink-card border border-ink-border p-3.5 text-xs font-sans">
               <div className="flex items-center justify-between gap-2 mb-3">
                 <div className="min-w-0">
                   <h3 className="font-semibold text-ink-text text-xs truncate">
-                    Grid snapshot
+                    Patrol path snapshot
                   </h3>
                   <div className="flex items-center gap-1.5 text-[11px] text-signal-normalBright font-mono mt-0.5">
                     <span className="w-1.5 h-1.5 rounded-full bg-signal-normalBright animate-pulse" />
-                    <span>Live data</span>
+                    <span>{rover.patrolMode}</span>
                   </div>
                 </div>
 
@@ -67,37 +60,37 @@ export default function AIArtifactsPanel() {
                     cy="20"
                     r="7.5"
                     fill={
-                      isFaultActive
+                      isObstacleAlertActive
                         ? "var(--color-signal-critical-bright)"
                         : "var(--color-signal-normal-bright)"
                     }
-                    className={isFaultActive ? "animate-pulse" : ""}
+                    className={isObstacleAlertActive ? "animate-pulse" : ""}
                   />
                   <circle cx="210" cy="42" r="6.5" fill="var(--color-signal-warning-bright)" />
                 </svg>
 
                 <div className="grid grid-cols-3 text-[10px] font-mono mt-1">
                   <div className="text-left">
-                    <div className="text-ink-text font-semibold">Node A</div>
-                    <div className="text-ink-muted">{nodeA.powerLoad} MW</div>
+                    <div className="text-ink-text font-semibold">CP A</div>
+                    <div className="text-ink-muted">{cpA.statusLabel}</div>
                   </div>
                   <div
                     className={`text-center font-semibold ${
-                      isFaultActive ? "text-signal-criticalBright" : "text-signal-normalBright"
+                      isObstacleAlertActive ? "text-signal-criticalBright" : "text-signal-normalBright"
                     }`}
                   >
-                    <div>Node C</div>
-                    <div>{nodeC.voltage}V</div>
+                    <div>CP C</div>
+                    <div>IR {cpC.irSensor}</div>
                   </div>
                   <div className="text-right">
-                    <div className="text-ink-text font-semibold">Node B</div>
-                    <div className="text-ink-muted">{nodeB.powerLoad} MW</div>
+                    <div className="text-ink-text font-semibold">CP B</div>
+                    <div className="text-ink-muted">{cpB.statusLabel}</div>
                   </div>
                 </div>
               </div>
             </div>
 
-            {/* ARTIFACT 2: AI Maintenance Report */}
+            {/* ARTIFACT 2: Rover Diagnostics Report */}
             <div className="rounded-2xl bg-ink-card border border-ink-border p-3.5 text-xs font-sans">
               <div className="flex items-center justify-between gap-2 mb-2">
                 <div className="flex items-center gap-2 min-w-0">
@@ -106,10 +99,10 @@ export default function AIArtifactsPanel() {
                   </div>
                   <div className="min-w-0">
                     <h3 className="font-semibold text-ink-text text-xs truncate">
-                      AI maintenance report
+                      Rover status report
                     </h3>
                     <div className="text-[11px] text-signal-normalBright font-mono">
-                      Ready · 10:18 AM
+                      Batt {rover.batteryLevel}% · {rover.wifiRssi} dBm
                     </div>
                   </div>
                 </div>
@@ -124,18 +117,18 @@ export default function AIArtifactsPanel() {
               </div>
 
               <p className="text-[11px] text-ink-muted leading-relaxed">
-                AI monitoring summary of Node C overload readings and suggested operator checks.
+                Live ESP32-S3 patrol mode, IR obstacle sensor state, Wi-Fi signal strength, and operator checks.
               </p>
             </div>
           </div>
         </div>
 
         <div className="pt-4 border-t border-ink-border mt-4 text-center text-[11px] font-sans text-ink-muted">
-          People, infrastructure, cleaner tomorrow
+          Celestia Rover · Patrolling &amp; Monitoring
         </div>
       </aside>
 
-      {/* Artifact Modal for Detailed Report Inspection */}
+      {/* Detailed Modal */}
       {activeModalArtifact && (
         <div
           className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-ink-deep/80 backdrop-blur-md"
@@ -149,17 +142,17 @@ export default function AIArtifactsPanel() {
               <div>
                 <h3 className="font-serif text-2xl text-ink-text">
                   {activeModalArtifact === "snapshot"
-                    ? "Live Grid Topology Snapshot"
-                    : "AI Maintenance Diagnostic Report"}
+                    ? "Live Patrol Path Snapshot"
+                    : "ESP32-S3 Rover Status Report"}
                 </h3>
                 <p className="text-xs font-sans text-cobalt-soft mt-0.5">
-                  IEEE 1547 & BESCOM O&M Framework Reference
+                  {rover.roverId} · Wi-Fi Telemetry &amp; IR Obstacle Monitor
                 </p>
               </div>
               <button
                 type="button"
                 onClick={() => setActiveModalArtifact(null)}
-                aria-label="Close artifact modal"
+                aria-label="Close telemetry modal"
                 className="p-1.5 rounded-full hover:bg-ink-hover text-ink-muted hover:text-ink-text transition-colors"
               >
                 <X className="w-5 h-5" aria-hidden="true" />
@@ -168,25 +161,31 @@ export default function AIArtifactsPanel() {
 
             <div className="space-y-3 text-xs leading-relaxed text-ink-secondary font-sans">
               <div className="p-3.5 rounded-xl bg-ink-card border border-ink-border">
-                <div className="text-ink-text font-semibold mb-1">Incident Summary</div>
+                <div className="text-ink-text font-semibold mb-1">Rover Hardware Telemetry</div>
                 <p>
-                  Node C (Industrial Transformer) reported phase voltage at {nodeC.voltage}V with {nodeC.current}A current draw and {nodeC.powerLoad}{nodeC.powerLoadUnit} load.
+                  Mode: <strong className="text-ink-text">{rover.patrolMode}</strong> · Battery:{" "}
+                  <strong className="text-ink-text">{rover.batteryLevel}%</strong> · Speed:{" "}
+                  <strong className="text-ink-text">{rover.speedMps.toFixed(1)} m/s</strong> · Wi-Fi RSSI:{" "}
+                  <strong className="text-ink-text">{rover.wifiRssi} dBm</strong> · SPI TFT Eyes:{" "}
+                  <strong className="text-ink-text">{rover.tftEyeState}</strong>.
+                </p>
+              </div>
+
+              <div className="p-3.5 rounded-xl bg-ink-card border border-ink-border">
+                <div className="text-ink-text font-semibold mb-1">Checkpoint IR Path Summary</div>
+                <p>
+                  • Checkpoint A ({cpA.name}): {cpA.statusLabel} · IR {cpA.irSensor} · {cpA.patrolPasses} passes<br />
+                  • Checkpoint B ({cpB.name}): {cpB.statusLabel} · IR {cpB.irSensor} · {cpB.patrolPasses} passes<br />
+                  • Checkpoint C ({cpC.name}): {cpC.statusLabel} · IR {cpC.irSensor} · {cpC.patrolPasses} passes
                 </p>
               </div>
 
               <div className="p-3.5 rounded-xl bg-ink-card border border-ink-border">
                 <div className="text-ink-text font-semibold mb-1">Suggested Operator Checks</div>
                 <p>
-                  1. Verify Node C voltage sag ({nodeC.voltage}V) and current load ({nodeC.current}A) on the live digital twin.<br />
-                  2. Review available headroom on Residential Feeder A (98MW / 120MW limit) and EV Hub B before any manual load changes.<br />
-                  3. Coordinate manual on-site inspection if abnormal readings persist (no automated dispatch is performed by the web app).
-                </p>
-              </div>
-
-              <div className="p-3.5 rounded-xl bg-ink-card border border-ink-border">
-                <div className="text-ink-text font-semibold mb-1">Evidence & Data Sources</div>
-                <p>
-                  Historical benchmark: KERC Combined Tariff Order 2025 records BESCOM repair expenditure of ₹134.44 Cr for 36,035 faulty distribution transformers in FY 2023 to 2024.
+                  1. Verify Checkpoint C visually whenever the IR obstacle sensor reports OBSTACLE.<br />
+                  2. Route the rover to clear checkpoints (A or B) if the rear bay path is obstructed.<br />
+                  3. Confirm the corridor is unobstructed before clearing the obstacle alert and resuming full-loop patrol.
                 </p>
               </div>
             </div>
@@ -197,7 +196,7 @@ export default function AIArtifactsPanel() {
                 onClick={() => setActiveModalArtifact(null)}
                 className="pill-button-cobalt text-xs py-2 px-5"
               >
-                Close Artifact
+                Close
               </button>
             </div>
           </div>

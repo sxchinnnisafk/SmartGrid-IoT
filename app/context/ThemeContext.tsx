@@ -27,7 +27,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
       if (typeof window === "undefined" || typeof localStorage === "undefined") {
         return "dark";
       }
-      const stored = localStorage.getItem("smartgrid-theme") as Theme | null;
+      const stored = localStorage.getItem("celestia-rover-theme") as Theme | null;
       const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
       return stored || (prefersDark ? "dark" : "light");
     };
@@ -45,7 +45,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
 
     const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
     const handleChange = (e: MediaQueryListEvent) => {
-      if (!localStorage.getItem("smartgrid-theme")) {
+      if (!localStorage.getItem("celestia-rover-theme")) {
         const newTheme = e.matches ? "dark" : "light";
         setThemeState(newTheme);
         setResolvedTheme(newTheme);
@@ -59,7 +59,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
   const setTheme = useCallback((newTheme: Theme) => {
     setThemeState(newTheme);
     setResolvedTheme(newTheme);
-    localStorage.setItem("smartgrid-theme", newTheme);
+    localStorage.setItem("celestia-rover-theme", newTheme);
     document.documentElement.setAttribute("data-theme", newTheme);
   }, []);
 

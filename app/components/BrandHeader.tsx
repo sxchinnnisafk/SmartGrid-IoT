@@ -10,14 +10,14 @@ import {
   ChevronDown,
   Home,
   Bot,
-  Layers,
+  Compass,
   LogOut,
   UserCheck,
   Menu,
   X,
   CheckCircle2,
   AlertTriangle,
-  Flame,
+  ShieldAlert,
   Play,
   Pause,
 } from "lucide-react";
@@ -28,15 +28,15 @@ interface BrandHeaderProps {
 }
 
 export default function BrandHeader({
-  currentViewTitle = "Control Room",
+  currentViewTitle = "Patrol Control",
 }: BrandHeaderProps) {
   const pathname = usePathname();
   const router = useRouter();
   const {
-    nodes,
-    setSelectedNodeId,
-    isFaultActive,
-    triggerFault,
+    checkpoints,
+    setSelectedCheckpointId,
+    isObstacleAlertActive,
+    triggerObstacleAlert,
     rover,
     startPatrol,
     stopPatrol,
@@ -54,12 +54,11 @@ export default function BrandHeader({
   const commandInputRef = useRef<HTMLInputElement | null>(null);
 
   const displayName = user?.name || "Jordan Diaz";
-  const displayRole = user?.role || "Grid Operations";
+  const displayRole = user?.role || "Patrol Operations";
   const displayAvatar = user?.avatarText || "JD";
   const isGuest = user?.isGuest ?? false;
   const unacknowledgedCount = alerts.filter((a) => a.status === "ACTIVE").length;
 
-  // Global keyboard shortcut Ctrl+K / Cmd+K for quick operator command search
   useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {
       if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "k") {
@@ -95,40 +94,44 @@ export default function BrandHeader({
   const quickCommands = [
     {
       id: "nav-landing",
-      label: "Go to Landing Story",
-      hint: "Overview & 4 chapters",
+      label: "Go to Overview",
+      hint: "Mission & rover story",
       action: () => router.push("/"),
     },
     {
       id: "nav-control",
-      label: "Go to Control Room",
-      hint: "Live 3-node digital twin",
+      label: "Go to Patrol Control",
+      hint: "Live rover & path monitor",
       action: () => router.push("/control-room"),
     },
     {
       id: "nav-ai",
       label: "Go to AI Assistant",
-      hint: "Diagnostics & voice briefs",
+      hint: "Patrol advice & voice summaries",
       action: () => router.push("/ai-assistant"),
     },
-    ...nodes.map((n) => ({
-      id: `inspect-${n.id}`,
-      label: `Inspect Node ${n.badge}: ${n.name}`,
-      hint: `${n.voltage}V · ${n.powerLoad}${n.powerLoadUnit} · ${n.statusLabel}`,
+    ...checkpoints.map((cp) => ({
+      id: `inspect-${cp.id}`,
+      label: `Inspect Checkpoint ${cp.badge}: ${cp.name}`,
+      hint: `IR ${cp.irSensor} · ${cp.signalRssi} dBm · ${cp.statusLabel}`,
       action: () => {
-        setSelectedNodeId(n.id);
+        setSelectedCheckpointId(cp.id);
         router.push("/control-room");
       },
     })),
     {
-      id: "toggle-fault",
-      label: isFaultActive ? "Clear Node C Fault" : "Simulate Node C Fault",
-      hint: "Live fault scenario",
-      action: () => triggerFault(!isFaultActive),
+      id: "toggle-obstacle",
+      label: isObstacleAlertActive
+        ? "Clear Checkpoint C Obstacle Alert"
+        : "Simulate Checkpoint C Obstacle Alert",
+      hint: "IR obstacle scenario",
+      action: () => triggerObstacleAlert(!isObstacleAlertActive),
     },
     {
       id: "toggle-patrol",
-      label: rover.isPatrolling ? "Pause ESP32-S3 Rover Patrol" : "Start ESP32-S3 Rover Patrol",
+      label: rover.isPatrolling
+        ? "Pause ESP32-S3 Rover Patrol"
+        : "Start ESP32-S3 Rover Patrol",
       hint: `Battery ${rover.batteryLevel}%`,
       action: () => (rover.isPatrolling ? stopPatrol() : startPatrol()),
     },
@@ -156,11 +159,11 @@ export default function BrandHeader({
                 <span className="w-1.5 h-1.5 rounded-full bg-cobalt" />
               </div>
               <span className="font-bold text-sm lg:text-base text-ink-text font-sans whitespace-nowrap">
-                SmartGrid <span className="text-cobalt">AIoT</span>
+                Celestia <span className="text-cobalt">Rover</span>
               </span>
             </Link>
 
-            {/* Breadcrumb (Compact, no wrap) */}
+            {/* Breadcrumb */}
             <div className="hidden 2xl:flex items-center gap-2 text-xs text-ink-muted font-sans pl-3 border-l border-ink-border whitespace-nowrap">
               <Link href="/" className="hover:text-ink-text transition-colors" aria-label="Home">
                 <Home className="w-3.5 h-3.5" aria-hidden="true" />
@@ -170,7 +173,7 @@ export default function BrandHeader({
             </div>
           </div>
 
-          {/* Center Navigation Pills (Single-line, zero wrap) */}
+          {/* Center Navigation Pills */}
           <nav
             aria-label="Workspace navigation"
             className="hidden lg:flex items-center gap-1 bg-ink-surface p-1 rounded-full border border-ink-border text-xs font-sans shrink-0"
@@ -183,18 +186,18 @@ export default function BrandHeader({
                   : "text-ink-muted hover:text-ink-text"
               }`}
             >
-              Landing
+              Overview
             </Link>
             <Link
               href="/control-room"
               className={`px-3 py-1.5 rounded-full transition-colors flex items-center gap-1.5 whitespace-nowrap ${
-                pathname === "/control-room"
+                pathname === "/control-room" || pathname === "/dashboard"
                   ? "bg-cobalt text-ink-onAccent font-semibold shadow-cobalt"
                   : "text-ink-muted hover:text-ink-text"
               }`}
             >
-              <Layers className="w-3.5 h-3.5 shrink-0" aria-hidden="true" />
-              <span>Control Room</span>
+              <Compass className="w-3.5 h-3.5 shrink-0" aria-hidden="true" />
+              <span>Patrol Control</span>
             </Link>
             <Link
               href="/ai-assistant"
@@ -234,7 +237,7 @@ export default function BrandHeader({
                   setIsAlertsOpen(!isAlertsOpen);
                   setIsUserMenuOpen(false);
                 }}
-                aria-label="Notifications"
+                aria-label="Path alerts"
                 aria-expanded={isAlertsOpen}
                 className="p-2 rounded-full hover:bg-ink-hover text-ink-muted hover:text-ink-text transition-colors relative"
               >
@@ -249,12 +252,12 @@ export default function BrandHeader({
               {isAlertsOpen && (
                 <div className="absolute right-0 top-11 z-50 w-80 rounded-2xl bg-ink-surface border border-ink-borderStrong p-4 text-xs shadow-2xl">
                   <div className="flex items-center justify-between pb-2.5 mb-2.5 border-b border-ink-border">
-                    <span className="font-semibold text-ink-text font-sans">Active Grid Alerts</span>
+                    <span className="font-semibold text-ink-text font-sans">Active Path Alerts</span>
                     <span className="font-mono text-ink-muted">{alerts.length} total</span>
                   </div>
                   <div className="space-y-2 max-h-64 overflow-y-auto">
                     {alerts.length === 0 ? (
-                      <div className="py-4 text-center text-ink-muted">No active alerts.</div>
+                      <div className="py-4 text-center text-ink-muted">No path alerts.</div>
                     ) : (
                       alerts.map((al) => (
                         <div
@@ -277,18 +280,18 @@ export default function BrandHeader({
                               {al.timestamp}
                             </span>
                           </div>
-                          <p className="text-[11px] text-ink-muted leading-snug">{al.rootCause}</p>
+                          <p className="text-[11px] text-ink-muted leading-snug">{al.details}</p>
                           <div className="flex items-center justify-between pt-1">
                             <button
                               type="button"
                               onClick={() => {
-                                setSelectedNodeId(al.nodeId);
+                                setSelectedCheckpointId(al.checkpointId);
                                 setIsAlertsOpen(false);
                                 router.push("/control-room");
                               }}
                               className="text-[11px] text-cobalt-soft hover:underline font-medium"
                             >
-                              Inspect {al.nodeId.toUpperCase()}
+                              Inspect {al.checkpointId.toUpperCase()}
                             </button>
                             {al.status !== "ACTIVE" ? (
                               <span className="inline-flex items-center gap-1 text-[11px] text-signal-normalBright">
@@ -399,14 +402,14 @@ export default function BrandHeader({
               onClick={() => setIsMobileNavOpen(false)}
               className="px-3 py-2 rounded-xl bg-ink-card text-ink-text font-medium"
             >
-              Landing Story
+              Overview
             </Link>
             <Link
               href="/control-room"
               onClick={() => setIsMobileNavOpen(false)}
               className="px-3 py-2 rounded-xl bg-ink-card text-ink-text font-medium"
             >
-              Control Room
+              Patrol Control
             </Link>
             <Link
               href="/ai-assistant"
@@ -436,7 +439,7 @@ export default function BrandHeader({
                 type="text"
                 value={commandQuery}
                 onChange={(e) => setCommandQuery(e.target.value)}
-                placeholder="Jump to view, inspect node, or toggle rover..."
+                placeholder="Jump to view, inspect checkpoint, or toggle rover..."
                 className="flex-1 bg-transparent text-sm text-ink-text placeholder-ink-muted focus:outline-none"
               />
               <button
@@ -463,8 +466,8 @@ export default function BrandHeader({
                     className="w-full px-3 py-2.5 rounded-xl hover:bg-ink-hover flex items-center justify-between gap-3 text-left transition-colors"
                   >
                     <span className="text-sm text-ink-text font-medium flex items-center gap-2">
-                      {cmd.id === "toggle-fault" && (
-                        <Flame className="w-3.5 h-3.5 text-signal-criticalBright" aria-hidden="true" />
+                      {cmd.id === "toggle-obstacle" && (
+                        <ShieldAlert className="w-3.5 h-3.5 text-signal-criticalBright" aria-hidden="true" />
                       )}
                       {cmd.id === "toggle-patrol" &&
                         (rover.isPatrolling ? (

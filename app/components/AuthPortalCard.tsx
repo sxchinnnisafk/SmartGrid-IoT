@@ -39,15 +39,15 @@ export default function AuthPortalCard({
   const [password, setPassword] = useState("");
   const [name, setName] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
-  const [role, setRole] = useState("Grid Operations");
+  const [role, setRole] = useState("Patrol Operations");
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
   const [successMsg, setSuccessMsg] = useState("");
 
   const handleDemoFill = () => {
-    setEmail("operator.diaz@smartgrid.io");
-    setPassword("SmartGrid@2026");
+    setEmail("operator.diaz@celestiarover.io");
+    setPassword("Celestia@2026");
     setName("Jordan Diaz");
     setError("");
   };
@@ -64,7 +64,7 @@ export default function AuthPortalCard({
     setIsLoading(true);
     await new Promise((r) => setTimeout(r, 500));
     setIsLoading(false);
-    setSuccessMsg("Operator authenticated! Initializing digital twin...");
+    setSuccessMsg("Operator authenticated! Initializing patrol console...");
 
     login(email, name || undefined, role);
 
@@ -134,7 +134,7 @@ export default function AuthPortalCard({
         </div>
 
         <div className="text-[11px] font-mono tracking-widest text-[#717888] uppercase mb-1">
-          POWER HACK 2026 • TEAM CELESTIA
+          CELESTIA ROVER • SURVEILLANCE &amp; PATROL
         </div>
 
         <h1 className="font-serif text-3xl sm:text-4xl font-normal text-[#181a24] tracking-tight">
@@ -143,8 +143,8 @@ export default function AuthPortalCard({
 
         <p className="text-xs sm:text-sm text-[#5d6475] font-sans mt-1 max-w-md mx-auto">
           {mode === "signin"
-            ? "Sign in with operator credentials to monitor distribution nodes and deploy edge rovers."
-            : "Register your operator profile for live grid monitoring, rover patrol control, and AI advisory."}
+            ? "Sign in with operator credentials to monitor patrol paths and guide the ESP32-S3 surveillance rover."
+            : "Register your operator profile for live rover status, path monitoring, and AI patrol advisory."}
         </p>
       </div>
 
@@ -218,7 +218,7 @@ export default function AuthPortalCard({
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                placeholder="operator.diaz@smartgrid.io"
+                placeholder="operator.diaz@celestiarover.io"
                 required
                 className="w-full pl-10 pr-3 py-3 rounded-2xl bg-[#f7f2ea] border border-[#d6c7b3] text-[#181a24] placeholder-[#8a92a3] focus:outline-none focus:border-[#3b59f8] focus:ring-2 focus:ring-[#3b59f8]/20 transition-all text-xs"
               />
@@ -297,7 +297,7 @@ export default function AuthPortalCard({
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                placeholder="operator@smartgrid.io"
+                placeholder="operator@celestiarover.io"
                 required
                 className="w-full pl-10 pr-3 py-3 rounded-2xl bg-[#f7f2ea] border border-[#d6c7b3] text-[#181a24] placeholder-[#8a92a3] focus:outline-none focus:border-[#3b59f8] focus:ring-2 focus:ring-[#3b59f8]/20 transition-all text-xs"
               />
@@ -349,10 +349,10 @@ export default function AuthPortalCard({
               onChange={(e) => setRole(e.target.value)}
               className="w-full px-3.5 py-3 rounded-2xl bg-[#f7f2ea] border border-[#d6c7b3] text-[#181a24] focus:outline-none focus:border-[#3b59f8] transition-all text-xs font-mono"
             >
-              <option value="Grid Operations">Grid Operations (Monitoring &amp; Rerouting)</option>
+              <option value="Patrol Operations">Patrol Operations (Path Monitoring &amp; Control)</option>
               <option value="Embedded Systems Lead">Embedded Lead (ESP32-S3 Rover Firmware)</option>
-              <option value="Distribution Engineer">Distribution Engineer (Substation Specialist)</option>
-              <option value="AI Safety Reviewer">AI Safety Reviewer (Human-in-the-Loop)</option>
+              <option value="Security Analyst">Security Analyst (Perimeter &amp; Obstacles)</option>
+              <option value="AI Systems Reviewer">AI Systems Reviewer (Human-in-the-Loop)</option>
             </select>
           </div>
 
@@ -396,7 +396,7 @@ export default function AuthPortalCard({
         </button>
 
         <p className="text-[11px] text-[#717888] font-sans mt-2">
-          Unlocks instant access to the three-node digital twin, live rover telemetry, and AI diagnostics.
+          Unlocks instant access to live ESP32-S3 rover status, path patrolling, and AI surveillance guidance.
         </p>
       </div>
 

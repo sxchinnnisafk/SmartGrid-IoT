@@ -5,9 +5,9 @@ import { ThemeProvider } from "./context/ThemeContext";
 import ScrollRevealObserver from "./components/ScrollRevealObserver";
 
 export const metadata: Metadata = {
-  title: "SmartGrid AIoT — Intelligent Power Monitoring & Management System",
+  title: "Celestia Rover — Autonomous Surveillance & Patrol Interface",
   description:
-    "Team Celestia's prototype combining an edge rover, a live grid twin, and AI-assisted operator response for Power Hack 2026.",
+    "Team Celestia's surveillance robot interface combining an ESP32-S3 mobile patrol rover, live path monitoring, and AI operator guidance.",
   icons: {
     icon: "/assets/team_celestia_logo.png",
   },

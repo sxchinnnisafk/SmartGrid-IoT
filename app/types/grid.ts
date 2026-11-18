@@ -6,78 +6,58 @@ export interface UserProfile {
   isGuest: boolean;
 }
 
-export type NodeStatus = "normal" | "warning" | "critical";
+export type CheckpointStatus = "clear" | "watch" | "alert";
 
-export interface GridNodeData {
+export interface PatrolCheckpoint {
   id: string;
   name: string;
   badge: "A" | "B" | "C";
-  type: "Residential Feeder" | "EV Charging Hub" | "Industrial Transformer";
-  status: NodeStatus;
-  statusLabel: "Normal" | "Warning" | "Critical";
-  voltage: number;     // V
-  current: number;     // A
-  powerLoad: number;   // kW or MW
-  powerLoadUnit: "kW" | "MW";
-  phaseBalance: number;// %
-  oilLevel?: number;   // % (for transformer)
-  activeEVs?: number;  // count (for EV hub)
-  householdCount?: number; // count (for feeder)
+  zone: "Entry Perimeter" | "Main Walkway" | "Rear Sector";
+  status: CheckpointStatus;
+  statusLabel: "Clear" | "Watch" | "Alert";
+  irSensor: "CLEAR" | "OBSTACLE";
+  signalRssi: number; // dBm
+  patrolPasses: number;
+  lastVisited: string;
   location: string;
-  lastUpdated: string;
   description: string;
   subDescription: string;
 }
 
-export interface ThresholdConfig {
-  voltageMin: number;
-  voltageMax: number;
-  currentMax: number;
-}
-
-export interface TelemetryPoint {
-  timestamp: string;
-  timeLabel: string;
-  nodeAVoltage: number;
-  nodeACurrent: number;
-  nodeBVoltage: number;
-  nodeBCurrent: number;
-  nodeCVoltage: number;
-  nodeCCurrent: number;
-}
-
 export interface AlertTicket {
   id: string;
-  nodeId: string;
-  nodeName: string;
+  checkpointId: string;
+  checkpointName: string;
   severity: "CRITICAL" | "WARNING" | "INFO";
   title: string;
   timestamp: string;
-  voltage: number;
-  current: number;
-  rootCause: string;
-  aiMitigation: string[];
+  irSensor: "CLEAR" | "OBSTACLE";
+  signalRssi: number;
+  details: string;
+  recommendations: string[];
   status: "ACTIVE" | "ACKNOWLEDGED" | "RESOLVED";
 }
 
 export interface RoverState {
   isPatrolling: boolean;
-  currentNodeId: string;
-  targetNodeId: string;
-  progress: number; // 0 to 100
-  batteryLevel: number;
-  patrolMode: "Full Network Sweep" | "Targeted Diagnostic" | "Emergency Inspection" | "Autonomous Inspection";
+  currentCheckpointId: string;
+  targetCheckpointId: string;
+  progress: number; // 0 to 100 along current segment
+  batteryLevel: number; // %
+  patrolMode: "Full Path Loop" | "Targeted Check" | "Obstacle Hold" | "Standby";
   speedMps: number;
   roverId: string;
-  cameraStatus: "ONLINE" | "OFFLINE";
-  xPercent: number; // position on map
-  yPercent: number;
+  wifiRssi: number; // dBm
+  irObstacleDetected: boolean;
+  tftEyeState: "PATROL_SCAN" | "OBSTACLE_HALT" | "STANDBY";
+  xPercent: number; // horizontal position on patrol map
+  yPercent: number; // vertical position on patrol map
 }
 
 export interface LogMessage {
   id: string;
   timestamp: string;
-  type: "MQTT" | "SYSTEM" | "ROVER" | "ALERT" | "HTTP";
+  type: "ROVER" | "PATH" | "ALERT" | "SYSTEM" | "WIFI";
   message: string;
   level: "info" | "warn" | "error" | "success";
 }

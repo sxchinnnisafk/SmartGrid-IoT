@@ -14,9 +14,9 @@ import {
 } from "lucide-react";
 
 const QUICK_PROMPTS = [
-  "Summarize Node C fault risk",
-  "Check ESP32-S3 rover patrol status",
-  "Suggest next steps for Node C",
+  "Check ESP32-S3 rover status",
+  "Inspect Perimeter Bay obstacle alert",
+  "Suggest next patrol check",
 ];
 
 export default function AIAssistantChat() {
@@ -53,10 +53,10 @@ export default function AIAssistantChat() {
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 pb-3.5 mb-3.5 border-b border-parchment-border">
           <div className="min-w-0">
             <h1 className="font-serif text-2xl xl:text-3xl font-normal text-parchment-text tracking-tight">
-              SmartGrid AI Assistant
+              Rover AI Assistant
             </h1>
             <p className="text-xs sm:text-sm text-parchment-muted font-sans mt-0.5">
-              Your AI partner for a more resilient grid.
+              Your AI partner for rover patrolling and path monitoring.
             </p>
           </div>
 
@@ -116,7 +116,7 @@ export default function AIAssistantChat() {
                 Hey! What&apos;s on your mind?
               </p>
               <p className="text-xs text-parchment-muted font-sans mt-1 max-w-sm">
-                Ask anything about the grid, the ESP32-S3 rover, hardware architecture, or just say hi.
+                Ask anything about the ESP32-S3 rover, patrol checkpoints, IR obstacle alerts, or just say hi.
               </p>
             </div>
           )}
@@ -234,7 +234,7 @@ export default function AIAssistantChat() {
                 <Loader2 className="w-4 h-4 animate-spin" aria-hidden="true" />
               </div>
               <div className="bg-parchment-bright border border-parchment-borderStrong rounded-2xl rounded-tl-sm px-4 py-3 text-xs text-parchment-muted font-sans">
-                Analyzing live corridor telemetry with {aiStatus.gemini ? aiStatus.model : "SmartGrid AI"}...
+                Thinking with {aiStatus.gemini ? aiStatus.model : "Rover AI"}...
               </div>
             </div>
           )}
@@ -266,10 +266,10 @@ export default function AIAssistantChat() {
           <button
             type="button"
             disabled={isChatLoading}
-            onClick={() => sendChatMessage("Attach current three-node telemetry snapshot and diagnose anomalies.")}
+            onClick={() => sendChatMessage("Review the current rover status and all three patrol checkpoints.")}
             className="p-1.5 text-parchment-subtle hover:text-parchment-text transition-colors disabled:opacity-50"
-            title="Attach telemetry snapshot"
-            aria-label="Attach telemetry snapshot"
+            title="Attach rover & path snapshot"
+            aria-label="Attach rover & path snapshot"
           >
             <Paperclip className="w-4 h-4" aria-hidden="true" />
           </button>
@@ -278,7 +278,7 @@ export default function AIAssistantChat() {
             type="text"
             value={inputText}
             onChange={(e) => setInputText(e.target.value)}
-            placeholder="Ask Gemini about the grid..."
+            placeholder="Ask Gemini about the rover or patrol path..."
             className="flex-1 bg-transparent text-xs sm:text-sm font-sans text-parchment-text placeholder-parchment-subtle focus:outline-none min-w-0"
           />
 
@@ -287,7 +287,7 @@ export default function AIAssistantChat() {
             disabled={isChatLoading}
             onClick={() => {
               setAutoReadVoice(true);
-              sendChatMessage("Summarize Node C status and recommended actions aloud.");
+              sendChatMessage("Give a short spoken summary of current rover and patrol path status.");
             }}
             className="p-1.5 text-parchment-subtle hover:text-parchment-text transition-colors disabled:opacity-50"
             title="Request spoken AI summary"
@@ -311,7 +311,7 @@ export default function AIAssistantChat() {
         </form>
 
         <div className="text-center text-[11px] font-sans text-parchment-muted">
-          SmartGrid AI monitors telemetry and suggests actions only — no automated dispatch.
+          Celestia Rover AI monitors patrol telemetry and advises operators only.
         </div>
       </div>
     </div>
