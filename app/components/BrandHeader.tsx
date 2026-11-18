@@ -10,9 +10,6 @@ import {
   ChevronDown,
   Home,
   Bot,
-  GitBranch,
-  PlayCircle,
-  Camera,
   Layers,
   LogOut,
   UserCheck,
@@ -38,15 +35,13 @@ export default function BrandHeader({
   const {
     nodes,
     setSelectedNodeId,
-    isThermalFaultActive,
-    triggerThermalFault,
+    isFaultActive,
+    triggerFault,
     rover,
     startPatrol,
     stopPatrol,
     alerts,
     acknowledgeAlert,
-    setIsEvidenceModalOpen,
-    startEndToEndDemo,
     user,
     logout,
   } = useGrid();
@@ -116,16 +111,10 @@ export default function BrandHeader({
       hint: "Diagnostics & voice briefs",
       action: () => router.push("/ai-assistant"),
     },
-    {
-      id: "nav-workflow",
-      label: "Go to Workflow Canvas",
-      hint: "Operator switching plan",
-      action: () => router.push("/workflow"),
-    },
     ...nodes.map((n) => ({
       id: `inspect-${n.id}`,
       label: `Inspect Node ${n.badge}: ${n.name}`,
-      hint: `${n.temperature}°C · ${n.voltage}V · ${n.statusLabel}`,
+      hint: `${n.voltage}V · ${n.powerLoad}${n.powerLoadUnit} · ${n.statusLabel}`,
       action: () => {
         setSelectedNodeId(n.id);
         router.push("/control-room");
@@ -133,27 +122,15 @@ export default function BrandHeader({
     })),
     {
       id: "toggle-fault",
-      label: isThermalFaultActive ? "Clear Node C Thermal Fault" : "Simulate Node C Thermal Fault",
+      label: isFaultActive ? "Clear Node C Fault" : "Simulate Node C Fault",
       hint: "Live fault scenario",
-      action: () => triggerThermalFault(!isThermalFaultActive),
+      action: () => triggerFault(!isFaultActive),
     },
     {
       id: "toggle-patrol",
       label: rover.isPatrolling ? "Pause ESP32-S3 Rover Patrol" : "Start ESP32-S3 Rover Patrol",
       hint: `Battery ${rover.batteryLevel}%`,
       action: () => (rover.isPatrolling ? stopPatrol() : startPatrol()),
-    },
-    {
-      id: "open-demo",
-      label: "Launch 5-Step Demo Flow",
-      hint: "Guided walkthrough",
-      action: () => startEndToEndDemo(),
-    },
-    {
-      id: "open-evidence",
-      label: "Open Hardware Evidence",
-      hint: "ESP32-S3 physical rover photos",
-      action: () => setIsEvidenceModalOpen(true),
     },
   ];
 
@@ -230,41 +207,10 @@ export default function BrandHeader({
               <Bot className="w-3.5 h-3.5 shrink-0" aria-hidden="true" />
               <span>AI Assistant</span>
             </Link>
-            <Link
-              href="/workflow"
-              className={`px-3 py-1.5 rounded-full transition-colors flex items-center gap-1.5 whitespace-nowrap ${
-                pathname === "/workflow"
-                  ? "bg-cobalt text-ink-onAccent font-semibold shadow-cobalt"
-                  : "text-ink-muted hover:text-ink-text"
-              }`}
-            >
-              <GitBranch className="w-3.5 h-3.5 shrink-0" aria-hidden="true" />
-              <span>Workflow</span>
-            </Link>
           </nav>
 
           {/* Right Controls & Profile */}
           <div className="flex items-center gap-2 shrink-0">
-            <button
-              type="button"
-              onClick={startEndToEndDemo}
-              className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-ink-card hover:bg-ink-hover text-xs font-sans font-medium text-cobalt-soft border border-ink-border transition-colors whitespace-nowrap"
-              title="Launch 5-Step Tabletop Demonstration sequence"
-            >
-              <PlayCircle className="w-3.5 h-3.5 shrink-0" aria-hidden="true" />
-              <span>Demo Flow</span>
-            </button>
-
-            <button
-              type="button"
-              onClick={() => setIsEvidenceModalOpen(true)}
-              className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-ink-card hover:bg-ink-hover text-xs font-sans font-medium text-ink-secondary border border-ink-border transition-colors whitespace-nowrap"
-              title="Inspect actual prototype rover photographs & wiring"
-            >
-              <Camera className="w-3.5 h-3.5 text-cobalt-soft shrink-0" aria-hidden="true" />
-              <span>Evidence</span>
-            </button>
-
             {/* Command Palette Trigger */}
             <button
               type="button"
@@ -469,33 +415,6 @@ export default function BrandHeader({
             >
               AI Assistant
             </Link>
-            <Link
-              href="/workflow"
-              onClick={() => setIsMobileNavOpen(false)}
-              className="px-3 py-2 rounded-xl bg-ink-card text-ink-text font-medium"
-            >
-              Workflow Canvas
-            </Link>
-            <button
-              type="button"
-              onClick={() => {
-                setIsMobileNavOpen(false);
-                startEndToEndDemo();
-              }}
-              className="px-3 py-2 rounded-xl bg-cobalt-tint text-cobalt-soft font-medium text-left"
-            >
-              Demo Flow
-            </button>
-            <button
-              type="button"
-              onClick={() => {
-                setIsMobileNavOpen(false);
-                setIsEvidenceModalOpen(true);
-              }}
-              className="px-3 py-2 rounded-xl bg-ink-card text-ink-secondary font-medium text-left"
-            >
-              Hardware Evidence
-            </button>
           </nav>
         )}
       </header>

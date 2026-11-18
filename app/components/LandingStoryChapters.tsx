@@ -19,7 +19,7 @@ export default function LandingStoryChapters() {
   const {
     nodes,
     rover,
-    isThermalFaultActive,
+    isFaultActive,
     isPlayingVoice,
     toggleVoicePlayback,
     voiceProgress,
@@ -107,7 +107,7 @@ export default function LandingStoryChapters() {
       title: "The Invisible Risk",
       subtitle: "Distribution asset failures create a costly reliability challenge",
       content:
-        "Distribution transformers and associated assets face severe overload, fluctuating phase balance, and thermal stress. Delayed visibility makes maintenance reactive rather than preventative. KERC's Combined Tariff Order 2025 records BESCOM-reported repair expenditure of ₹134.44 crore for 36,035 faulty distribution transformers in FY 2023–24 alone.",
+        "Distribution transformers and associated assets face severe overload, fluctuating phase balance, and voltage stress. Delayed visibility makes maintenance reactive rather than preventative. KERC's Combined Tariff Order 2025 records BESCOM-reported repair expenditure of ₹134.44 crore for 36,035 faulty distribution transformers in FY 2023–24 alone.",
       highlight:
         "Historical BESCOM repair expenditure: ₹134.44 Cr for 36,035 transformers in FY24 (KERC Tariff Order 2025, p. 314).",
       tag: "Problem Analysis",
@@ -133,7 +133,7 @@ export default function LandingStoryChapters() {
       title: "Three-Node Digital Twin",
       subtitle: "Live network visibility connecting edge to control room",
       content:
-        "The digital twin models three illustrative corridor nodes: Node A Residential Feeder (stable baseline), Node B EV Charging Hub (peak-load surge), and Node C Industrial Transformer (simulated thermal fault at 102°C). Every node state stays strictly aligned across the rover, digital twin, AI assistant, and workflow.",
+        "The digital twin models three illustrative corridor nodes: Node A Residential Feeder (stable baseline), Node B EV Charging Hub (peak-load surge), and Node C Industrial Transformer (simulated overload & voltage sag fault at 194.5V / 102 MW). Every node state stays strictly aligned across the rover, digital twin, and AI assistant.",
       highlight:
         "One consistent three-node model: Node A (Baseline) to Node B (Peak Load) to Node C (Critical Fault).",
       tag: "Digital Twin",
@@ -146,7 +146,7 @@ export default function LandingStoryChapters() {
       title: "Intelligent Diagnostics & Voice",
       subtitle: "AI incident explanation without black-box automation",
       content:
-        "Telemetry streams support instant diagnostic summaries. Gemini via OpenRouter explains root causes (thermal degradation, winding hotspot) and proposes a structured 4-step mitigation. Spoken dispatch alerts announce critical anomalies to field crews.",
+        "Telemetry streams support instant diagnostic summaries. Gemini explains root causes (voltage sag, phase overload) and proposes a structured 4-step mitigation. Spoken dispatch alerts announce critical anomalies to field crews.",
       highlight:
         "AI explains and recommends. The human operator retains full authority over all switching and isolation actions.",
       tag: "AI & Voice",
@@ -196,7 +196,7 @@ export default function LandingStoryChapters() {
                 </div>
                 <div>
                   <div className="flex justify-between text-ink-muted mb-1">
-                    <span>Continuous edge thermal telemetry</span>
+                    <span>Continuous edge corridor telemetry</span>
                     <span className="font-sans text-signal-normalBright font-medium">Early warning</span>
                   </div>
                   <div className="h-2 rounded-full bg-ink-deep overflow-hidden">
@@ -226,19 +226,19 @@ export default function LandingStoryChapters() {
               <div className="flex items-center gap-6">
                 <div
                   className={`w-12 h-8 rounded-2xl transition-colors ${
-                    isThermalFaultActive ? "bg-signal-criticalBright" : "bg-cobalt"
+                    isFaultActive ? "bg-signal-criticalBright" : "bg-cobalt"
                   } shadow-cobalt`}
                 />
                 <div
                   className={`w-12 h-8 rounded-2xl transition-colors ${
-                    isThermalFaultActive ? "bg-signal-criticalBright" : "bg-cobalt"
+                    isFaultActive ? "bg-signal-criticalBright" : "bg-cobalt"
                   } shadow-cobalt`}
                 />
               </div>
               <div className="text-xs font-sans text-ink-muted">
                 SPI TFT Status Eyes:{" "}
                 <span className="font-mono text-ink-secondary">
-                  {isThermalFaultActive ? "ALERT_HOTSPOT" : "NOMINAL_SCAN"}
+                  {isFaultActive ? "ALERT_OVERLOAD" : "NOMINAL_SCAN"}
                 </span>
               </div>
             </div>
@@ -299,8 +299,8 @@ export default function LandingStoryChapters() {
                     <div className="min-w-0">
                       <div className="font-semibold text-xs sm:text-sm truncate">{node.name}</div>
                       <div className="flex items-center gap-2.5 text-[11px] font-sans text-parchment-muted tabular-nums">
-                        <span>{node.temperature}°C</span>
                         <span>{node.voltage}V</span>
+                        <span>{node.current}A</span>
                         <span>{node.powerLoad}MW</span>
                       </div>
                     </div>
@@ -327,7 +327,7 @@ export default function LandingStoryChapters() {
 
             <div className="p-4 rounded-2xl bg-ink-card border border-ink-border space-y-3">
               <p className="text-xs sm:text-sm text-ink-secondary italic font-serif leading-relaxed">
-                &ldquo;Dispatching field crew to Node C. Thermal fault confirmed at 102°C on Industrial Transformer. Isolate breaker SC-12 and verify low-voltage corridor.&rdquo;
+                &ldquo;Dispatching field crew to Node C. Overload fault confirmed at 194.5V and 102 MW on Industrial Transformer. Isolate breaker SC-12 and verify low-voltage corridor.&rdquo;
               </p>
 
               <div className="flex items-center gap-3 pt-2">

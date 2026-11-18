@@ -8,7 +8,6 @@ import {
   AlertTicket,
   RoverState,
   LogMessage,
-  WorkflowNodeItem,
   ChatMessage,
   UserProfile,
 } from "../types/grid";
@@ -22,8 +21,8 @@ interface GridContextType {
   setThresholds: React.Dispatch<React.SetStateAction<ThresholdConfig>>;
   isOffline: boolean;
   setIsOffline: (offline: boolean) => void;
-  isThermalFaultActive: boolean;
-  triggerThermalFault: (active?: boolean) => void;
+  isFaultActive: boolean;
+  triggerFault: (active?: boolean) => void;
   rover: RoverState;
   startPatrol: () => void;
   stopPatrol: () => void;
@@ -34,14 +33,10 @@ interface GridContextType {
   addLog: (type: LogMessage["type"], message: string, level: LogMessage["level"]) => void;
   resetSystem: () => void;
 
-  // Workflow Canvas state
-  workflowNodes: WorkflowNodeItem[];
-  setWorkflowNodes: React.Dispatch<React.SetStateAction<WorkflowNodeItem[]>>;
+  // Edge command & breaker control state
   isBreakerIsolated: boolean;
   toggleBreakerIsolation: () => void;
-  isWorkflowExecuting: boolean;
-  testWorkflow: () => void;
-  publishWorkflow: () => void;
+  publishCommands: () => void;
 
   // Chat & AI Assistant state (Gemini + OpenRouter + Fallback)
   chatMessages: ChatMessage[];
@@ -55,19 +50,6 @@ interface GridContextType {
   };
   activeChatId: string;
   setActiveChatId: (id: string) => void;
-
-  // 5-Step Demo Controller
-  currentDemoStep: number;
-  runDemoStep: (step: number) => void;
-  isDemoRunning: boolean;
-  startEndToEndDemo: () => void;
-  resetDemo: () => void;
-  isDemoModalOpen: boolean;
-  setIsDemoModalOpen: (open: boolean) => void;
-
-  // Hardware Evidence Modal
-  isEvidenceModalOpen: boolean;
-  setIsEvidenceModalOpen: (open: boolean) => void;
 
   // Audio Dispatch & ElevenLabs Voice Player
   isPlayingVoice: boolean;
@@ -90,8 +72,8 @@ interface GridContextType {
   logout: () => void;
 
   // Active view tab (for unified navigation)
-  activeTab: "control-room" | "chat" | "workflow" | "artifacts";
-  setActiveTab: (tab: "control-room" | "chat" | "workflow" | "artifacts") => void;
+  activeTab: "control-room" | "chat" | "artifacts";
+  setActiveTab: (tab: "control-room" | "chat" | "artifacts") => void;
 }
 
 const initialNodes: GridNodeData[] = [
@@ -102,7 +84,6 @@ const initialNodes: GridNodeData[] = [
     type: "Residential Feeder",
     status: "normal",
     statusLabel: "Normal",
-    temperature: 42.5,
     voltage: 230.2,
     current: 48.4,
     powerLoad: 98,
@@ -121,7 +102,6 @@ const initialNodes: GridNodeData[] = [
     type: "EV Charging Hub",
     status: "warning",
     statusLabel: "Warning",
-    temperature: 68.1,
     voltage: 218.7,
     current: 142.6,
     powerLoad: 76,
@@ -140,7 +120,6 @@ const initialNodes: GridNodeData[] = [
     type: "Industrial Transformer",
     status: "critical",
     statusLabel: "Critical",
-    temperature: 102.0,
     voltage: 194.5,
     current: 285.0,
     powerLoad: 102,
@@ -155,8 +134,6 @@ const initialNodes: GridNodeData[] = [
 ];
 
 const initialThresholds: ThresholdConfig = {
-  tempWarning: 65,
-  tempCritical: 85,
   voltageMin: 205,
   voltageMax: 245,
   currentMax: 250,
@@ -168,12 +145,11 @@ const initialAlerts: AlertTicket[] = [
     nodeId: "node-c",
     nodeName: "Node C: Industrial Transformer",
     severity: "CRITICAL",
-    title: "Severe Thermal Runaway (102°C Exceeding 85°C Threshold)",
+    title: "Critical Voltage Sag & Overload (194.5V / 285A)",
     timestamp: "10:24 AM",
-    temperature: 102.0,
     voltage: 194.5,
     current: 285.0,
-    rootCause: "Thermal sensors show elevated equipment temperature (102°C), exceeding 85°C safe limit.",
+    rootCause: "Line sensors show severe voltage sag (194.5V) and overcurrent draw (285A), exceeding safe corridor limits.",
     aiMitigation: [
       "Isolate Node C breaker to prevent damage and ensure safety.",
       "Stop the inspection rover in the area.",
@@ -181,42 +157,6 @@ const initialAlerts: AlertTicket[] = [
       "Dispatch a field crew to inspect and repair.",
     ],
     status: "ACTIVE",
-  },
-];
-
-const initialWorkflowNodes: WorkflowNodeItem[] = [
-  {
-    id: "step-1",
-    type: "trigger",
-    title: "Detect thermal fault",
-    subtitle: "Node C • Threshold exceeded (102°C)",
-    statusBadge: "Critical",
-    statusColor: "critical",
-    x: 80,
-    y: 80,
-    enabled: true,
-  },
-  {
-    id: "step-2",
-    type: "action",
-    title: "Isolate breaker",
-    subtitle: "Node C • Open breaker to prevent damage",
-    statusBadge: "Enabled",
-    statusColor: "normal",
-    enabled: true,
-    x: 420,
-    y: 190,
-  },
-  {
-    id: "step-3",
-    type: "action",
-    title: "Dispatch field crew",
-    subtitle: "Node C • Standard repair kit",
-    statusBadge: "Ready",
-    statusColor: "normal",
-    enabled: true,
-    x: 720,
-    y: 300,
   },
 ];
 
@@ -235,7 +175,7 @@ const initialChatMessages: ChatMessage[] = [
     senderName: "SmartGrid AI",
     timestamp: "10:24 AM",
     content:
-      "Node C is in a critical state. Thermal sensors show elevated equipment temperature (102 °C), exceeding the 85 °C safe threshold. Risk of equipment failure is high if no action is taken.",
+      "Node C is in a critical state. Telemetry shows phase voltage sagging to 194.5V with 285A current draw under 102 MW load, exceeding safe operating limits. Risk of equipment failure is high if no action is taken.",
     isCriticalAlert: true,
     recommendations: [
       "Isolate the Node C breaker to prevent damage and ensure safety.",
@@ -243,11 +183,6 @@ const initialChatMessages: ChatMessage[] = [
       "Reroute load to Node A and B (capacity available).",
       "Dispatch a field crew to inspect and repair.",
     ],
-    workflowCard: {
-      title: "Fault response workflow",
-      description: "Pre-filled with recommended actions for Node C.",
-      buttonText: "Open in Workflow →",
-    },
   },
 ];
 
@@ -259,13 +194,10 @@ const generateTelemetryHistory = (): TelemetryPoint[] => {
     points.push({
       timestamp: d.toISOString(),
       timeLabel: d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" }),
-      nodeATemp: 42 + Math.sin(i * 0.5) * 1.5,
       nodeAVoltage: 230 + Math.cos(i * 0.3) * 1.2,
       nodeACurrent: 48 + Math.sin(i * 0.4) * 2,
-      nodeBTemp: 68 + Math.sin(i * 0.6) * 2,
       nodeBVoltage: 218 + Math.cos(i * 0.5) * 1.8,
       nodeBCurrent: 142 + Math.sin(i * 0.2) * 4,
-      nodeCTemp: 102 + (12 - i) * 0.2,
       nodeCVoltage: 194.5 - (12 - i) * 0.1,
       nodeCCurrent: 285 + Math.sin(i * 0.7) * 3,
     });
@@ -280,7 +212,7 @@ export function GridProvider({ children }: { children: React.ReactNode }) {
   const [selectedNodeId, setSelectedNodeId] = useState<string>("node-c");
   const [thresholds, setThresholds] = useState<ThresholdConfig>(initialThresholds);
   const [isOffline, setIsOffline] = useState<boolean>(false);
-  const [isThermalFaultActive, setIsThermalFaultActive] = useState<boolean>(true);
+  const [isFaultActive, setIsFaultActive] = useState<boolean>(true);
   const [telemetryHistory, setTelemetryHistory] = useState<TelemetryPoint[]>(generateTelemetryHistory());
   const [alerts, setAlerts] = useState<AlertTicket[]>(initialAlerts);
   const [logs, setLogs] = useState<LogMessage[]>([
@@ -295,7 +227,7 @@ export function GridProvider({ children }: { children: React.ReactNode }) {
       id: "log-2",
       timestamp: "10:24 AM",
       type: "ALERT",
-      message: "CRITICAL: Node C Industrial Transformer temperature at 102°C (>85°C limit).",
+      message: "CRITICAL: Node C Industrial Transformer voltage sagged to 194.5V (285A / 102 MW).",
       level: "error",
     },
   ]);
@@ -309,14 +241,12 @@ export function GridProvider({ children }: { children: React.ReactNode }) {
     patrolMode: "Autonomous Inspection",
     speedMps: 1.8,
     roverId: "ESP32-S3 Rover",
-    cameraStatus: "THERMAL_ACTIVE",
+    cameraStatus: "ONLINE",
     xPercent: 62,
     yPercent: 68,
   });
 
-  const [workflowNodes, setWorkflowNodes] = useState<WorkflowNodeItem[]>(initialWorkflowNodes);
   const [isBreakerIsolated, setIsBreakerIsolated] = useState<boolean>(true);
-  const [isWorkflowExecuting, setIsWorkflowExecuting] = useState<boolean>(false);
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>(initialChatMessages);
   const [isChatLoading, setIsChatLoading] = useState<boolean>(false);
   const [aiStatus, setAiStatus] = useState<{
@@ -360,18 +290,12 @@ export function GridProvider({ children }: { children: React.ReactNode }) {
     };
   }, []);
 
-  // 5-Step Demo Controller State
-  const [currentDemoStep, setCurrentDemoStep] = useState<number>(1);
-  const [isDemoRunning, setIsDemoRunning] = useState<boolean>(false);
-  const [isDemoModalOpen, setIsDemoModalOpen] = useState<boolean>(false);
-  const [isEvidenceModalOpen, setIsEvidenceModalOpen] = useState<boolean>(false);
-
   // Voice playback simulation
   const [isPlayingVoice, setIsPlayingVoice] = useState<boolean>(false);
   const [voiceProgress, setVoiceProgress] = useState<number>(0);
 
-  // Active view tab: control-room | chat | workflow | artifacts
-  const [activeTab, setActiveTab] = useState<"control-room" | "chat" | "workflow" | "artifacts">("control-room");
+  // Active view tab: control-room | chat | artifacts
+  const [activeTab, setActiveTab] = useState<"control-room" | "chat" | "artifacts">("control-room");
 
   // User profile & Auth gate state
   const [user, setUser] = useState<UserProfile | null>(null);
@@ -458,9 +382,9 @@ export function GridProvider({ children }: { children: React.ReactNode }) {
 
   const selectedNode = nodes.find((n) => n.id === selectedNodeId) || nodes[2];
 
-  const triggerThermalFault = (active?: boolean) => {
-    const newState = active !== undefined ? active : !isThermalFaultActive;
-    setIsThermalFaultActive(newState);
+  const triggerFault = (active?: boolean) => {
+    const newState = active !== undefined ? active : !isFaultActive;
+    setIsFaultActive(newState);
 
     setNodes((prev) =>
       prev.map((n) => {
@@ -469,7 +393,6 @@ export function GridProvider({ children }: { children: React.ReactNode }) {
             ...n,
             status: newState ? "critical" : "normal",
             statusLabel: newState ? "Critical" : "Normal",
-            temperature: newState ? 102.0 : 44.5,
             voltage: newState ? 194.5 : 229.0,
             current: newState ? 285.0 : 155.0,
             powerLoad: newState ? 102 : 45,
@@ -484,9 +407,9 @@ export function GridProvider({ children }: { children: React.ReactNode }) {
     );
 
     if (newState) {
-      addLog("ALERT", "Thermal anomaly triggered at Node C: 102°C detected.", "error");
+      addLog("ALERT", "Load fault triggered at Node C: 194.5V / 285A detected.", "error");
     } else {
-      addLog("SYSTEM", "Thermal anomaly cleared at Node C. Temperature returned to nominal.", "success");
+      addLog("SYSTEM", "Fault cleared at Node C. Voltage and load returned to nominal.", "success");
     }
   };
 
@@ -510,35 +433,14 @@ export function GridProvider({ children }: { children: React.ReactNode }) {
   const toggleBreakerIsolation = () => {
     setIsBreakerIsolated((prev) => {
       const next = !prev;
-      setWorkflowNodes((nds) =>
-        nds.map((n) => (n.id === "step-2" ? { ...n, enabled: next, statusBadge: next ? "Enabled" : "Disabled" } : n))
-      );
-      addLog("WORKFLOW", `Breaker isolation on Node C set to: ${next ? "ENABLED" : "DISABLED"}`, next ? "warn" : "info");
+      addLog("SYSTEM", `Breaker isolation on Node C set to: ${next ? "ENABLED" : "DISABLED"}`, next ? "warn" : "info");
       return next;
     });
   };
 
-  const testWorkflow = () => {
-    setIsWorkflowExecuting(true);
-    addLog("WORKFLOW", "Testing automated fault mitigation pipeline (Step 1 -> Step 2 -> Step 3)...", "info");
-
-    setTimeout(() => {
-      addLog("WORKFLOW", "Step 1: Detect thermal fault confirmed on Node C (102°C)", "success");
-    }, 800);
-
-    setTimeout(() => {
-      addLog("WORKFLOW", "Step 2: Isolate breaker command verified. Simulated relay triggered.", "success");
-    }, 1800);
-
-    setTimeout(() => {
-      addLog("WORKFLOW", "Step 3: Dispatch field crew generated. Audio alert prepared.", "success");
-      setIsWorkflowExecuting(false);
-    }, 2800);
-  };
-
-  const publishWorkflow = () => {
-    addLog("WORKFLOW", "Operator approved and published workflow to live edge telemetry return path.", "success");
-    alert("Workflow published! Commands dispatched to ESP32-S3 Rover and edge controllers.");
+  const publishCommands = () => {
+    addLog("SYSTEM", "Operator approved and published commands to live edge telemetry return path.", "success");
+    alert("Commands published! Updates dispatched to ESP32-S3 Rover and edge controllers.");
   };
 
   const stopSpeaking = () => {
@@ -672,7 +574,7 @@ export function GridProvider({ children }: { children: React.ReactNode }) {
         gridContext: {
           nodes,
           rover,
-          isThermalFaultActive,
+          isFaultActive,
           isBreakerIsolated,
           activeAlertsCount: alerts.filter((a) => a.status === "ACTIVE").length,
         },
@@ -695,13 +597,6 @@ export function GridProvider({ children }: { children: React.ReactNode }) {
           isCriticalAlert: Boolean(data.isCriticalAlert),
           recommendations: Array.isArray(data.recommendations) && data.recommendations.length > 0
             ? data.recommendations
-            : undefined,
-          workflowCard: data.suggestWorkflow
-            ? {
-                title: "Fault response workflow",
-                description: "Pre-filled with recommended actions for Node C.",
-                buttonText: "Open in Workflow",
-              }
             : undefined,
         };
 
@@ -737,69 +632,17 @@ export function GridProvider({ children }: { children: React.ReactNode }) {
       return;
     }
     const nodeC = nodes.find((n) => n.id === "node-c");
-    const dispatchScript = `Dispatching field crew to Node C. Thermal fault confirmed at ${
-      nodeC?.temperature ?? 102
-    } degrees Celsius on Industrial Transformer. Breaker SC-12 isolation ${
+    const dispatchScript = `Dispatching field crew to Node C. Overload fault confirmed at ${
+      nodeC?.voltage ?? 194.5
+    } volts and ${nodeC?.powerLoad ?? 102} megawatts on Industrial Transformer. Breaker SC-12 isolation ${
       isBreakerIsolated ? "is armed" : "is standing by"
     }. Bring standard repair kit.`;
     void speakText(dispatchScript, "dispatch-preview");
   };
 
-  // 5-Step End-to-End Demo Sequence (from PDF Page 6)
-  const runDemoStep = (step: number) => {
-    setCurrentDemoStep(step);
-    if (step === 1) {
-      // Step 1: Start Patrol
-      setRover((r) => ({ ...r, isPatrolling: true, progress: 10, currentNodeId: "node-a", targetNodeId: "node-b" }));
-      addLog("ROVER", "DEMO STEP 1: Operator initiated rover patrol from control room.", "success");
-    } else if (step === 2) {
-      // Step 2: Patrol + Sense
-      setRover((r) => ({ ...r, isPatrolling: true, progress: 65, currentNodeId: "node-b", targetNodeId: "node-c" }));
-      addLog("ROVER", "DEMO STEP 2: Rover moved from Node A through Node B toward Node C, streaming telemetry.", "info");
-    } else if (step === 3) {
-      // Step 3: Trigger the Event
-      triggerThermalFault(true);
-      addLog("ALERT", "DEMO STEP 3: Controlled thermal anomaly (102°C) introduced at Node C.", "error");
-    } else if (step === 4) {
-      // Step 4: Edge Response
-      setRover((r) => ({ ...r, isPatrolling: false, progress: 95, currentNodeId: "node-c" }));
-      addLog("ROVER", "DEMO STEP 4: Rover halts at Node C, TFT switches to critical alert, relay simulates isolation.", "warn");
-    } else if (step === 5) {
-      // Step 5: Twin + AI Response
-      setIsPlayingVoice(true);
-      addLog("SYSTEM", "DEMO STEP 5: Digital twin marks Node C critical, AI generates dispatch brief & voice alert.", "success");
-    }
-  };
-
-  const startEndToEndDemo = () => {
-    setIsDemoRunning(true);
-    setIsDemoModalOpen(true);
-    runDemoStep(1);
-  };
-
-  const resetDemo = () => {
-    setIsDemoRunning(false);
-    setCurrentDemoStep(1);
-    setIsThermalFaultActive(false);
-    setRover({
-      isPatrolling: true,
-      currentNodeId: "node-a",
-      targetNodeId: "node-b",
-      progress: 20,
-      batteryLevel: 89,
-      patrolMode: "Autonomous Inspection",
-      speedMps: 1.8,
-      roverId: "ESP32-S3 Rover",
-      cameraStatus: "THERMAL_ACTIVE",
-      xPercent: 62,
-      yPercent: 68,
-    });
-    addLog("SYSTEM", "Demonstration reset to baseline.", "info");
-  };
-
   const resetSystem = () => {
     setNodes(initialNodes);
-    setIsThermalFaultActive(true);
+    setIsFaultActive(true);
     setIsOffline(false);
     setThresholds(initialThresholds);
     setAlerts(initialAlerts);
@@ -812,7 +655,7 @@ export function GridProvider({ children }: { children: React.ReactNode }) {
       patrolMode: "Autonomous Inspection",
       speedMps: 1.8,
       roverId: "ESP32-S3 Rover",
-      cameraStatus: "THERMAL_ACTIVE",
+      cameraStatus: "ONLINE",
       xPercent: 62,
       yPercent: 68,
     });
@@ -828,40 +671,23 @@ export function GridProvider({ children }: { children: React.ReactNode }) {
       const timeLabel = now.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" });
 
       setNodes((prevNodes) =>
-        prevNodes.map((node) => {
-          const jitter = (Math.random() - 0.5) * 0.8;
-          let temp = node.temperature + jitter * 0.2;
-          if (node.id === "node-c" && isThermalFaultActive) {
-            temp = Math.max(99, Math.min(104, 102.0 + (Math.random() - 0.5) * 1.2));
-          } else if (node.id === "node-a") {
-            temp = 42.5 + (Math.random() - 0.5) * 0.6;
-          } else if (node.id === "node-b") {
-            temp = 68.1 + (Math.random() - 0.5) * 1.0;
-          }
-
-          return {
-            ...node,
-            temperature: Number(temp.toFixed(1)),
-            voltage: Number((node.voltage + (Math.random() - 0.5) * 0.4).toFixed(1)),
-            current: Number((node.current + (Math.random() - 0.5) * 0.8).toFixed(1)),
-          };
-        })
+        prevNodes.map((node) => ({
+          ...node,
+          voltage: Number((node.voltage + (Math.random() - 0.5) * 0.4).toFixed(1)),
+          current: Number((node.current + (Math.random() - 0.5) * 0.8).toFixed(1)),
+        }))
       );
 
       setTelemetryHistory((prev) => {
-        const last = prev[prev.length - 1];
         const newPoint: TelemetryPoint = {
           timestamp: now.toISOString(),
           timeLabel,
-          nodeATemp: last ? Number((last.nodeATemp + (Math.random() - 0.5) * 0.4).toFixed(1)) : 42.5,
           nodeAVoltage: 230.2,
           nodeACurrent: 48.4,
-          nodeBTemp: last ? Number((last.nodeBTemp + (Math.random() - 0.5) * 0.6).toFixed(1)) : 68.1,
           nodeBVoltage: 218.7,
           nodeBCurrent: 142.6,
-          nodeCTemp: isThermalFaultActive ? 102.0 + (Math.random() - 0.5) * 0.8 : 44.5,
-          nodeCVoltage: isThermalFaultActive ? 194.5 : 229.0,
-          nodeCCurrent: isThermalFaultActive ? 285.0 : 155.0,
+          nodeCVoltage: isFaultActive ? 194.5 : 229.0,
+          nodeCCurrent: isFaultActive ? 285.0 : 155.0,
         };
         return [...prev.slice(1), newPoint];
       });
@@ -887,7 +713,7 @@ export function GridProvider({ children }: { children: React.ReactNode }) {
     }, 2500);
 
     return () => clearInterval(interval);
-  }, [isOffline, isThermalFaultActive, rover.isPatrolling]);
+  }, [isOffline, isFaultActive, rover.isPatrolling]);
 
   return (
     <GridContext.Provider
@@ -900,8 +726,8 @@ export function GridProvider({ children }: { children: React.ReactNode }) {
         setThresholds,
         isOffline,
         setIsOffline,
-        isThermalFaultActive,
-        triggerThermalFault,
+        isFaultActive,
+        triggerFault,
         rover,
         startPatrol,
         stopPatrol,
@@ -912,13 +738,9 @@ export function GridProvider({ children }: { children: React.ReactNode }) {
         addLog,
         resetSystem,
 
-        workflowNodes,
-        setWorkflowNodes,
         isBreakerIsolated,
         toggleBreakerIsolation,
-        isWorkflowExecuting,
-        testWorkflow,
-        publishWorkflow,
+        publishCommands,
 
         chatMessages,
         sendChatMessage,
@@ -926,17 +748,6 @@ export function GridProvider({ children }: { children: React.ReactNode }) {
         aiStatus,
         activeChatId,
         setActiveChatId,
-
-        currentDemoStep,
-        runDemoStep,
-        isDemoRunning,
-        startEndToEndDemo,
-        resetDemo,
-        isDemoModalOpen,
-        setIsDemoModalOpen,
-
-        isEvidenceModalOpen,
-        setIsEvidenceModalOpen,
 
         isPlayingVoice,
         toggleVoicePlayback,

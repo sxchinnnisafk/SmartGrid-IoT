@@ -5,13 +5,8 @@ import BrandHeader from "../components/BrandHeader";
 import ControlRoomCanvas from "../components/ControlRoomCanvas";
 import ControlRoomSidebar from "../components/ControlRoomSidebar";
 import ControlRoomActionDock from "../components/ControlRoomActionDock";
-import HardwareEvidenceModal from "../components/HardwareEvidenceModal";
-import EndToEndDemoModal from "../components/EndToEndDemoModal";
-import { useGrid } from "../context/GridContext";
 
 export default function ControlRoomPage() {
-  const { isEvidenceModalOpen, isDemoModalOpen } = useGrid();
-
   return (
     <div className="min-h-screen bg-ink text-ink-text flex flex-col justify-between selection:bg-cobalt selection:text-ink-onAccent">
       <BrandHeader currentViewTitle="Control Room" variant="control-room" />
@@ -31,9 +26,6 @@ export default function ControlRoomPage() {
           <ControlRoomActionDock />
         </div>
       </main>
-
-      {isEvidenceModalOpen && <HardwareEvidenceModal />}
-      {isDemoModalOpen && <EndToEndDemoModal />}
     </div>
   );
 }

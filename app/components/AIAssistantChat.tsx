@@ -1,11 +1,8 @@
 "use client";
 
 import React, { useState, useRef, useEffect } from "react";
-import { useRouter } from "next/navigation";
 import { useGrid } from "../context/GridContext";
 import {
-  MessageSquare,
-  GitBranch,
   Sparkles,
   Paperclip,
   Mic,
@@ -16,24 +13,18 @@ import {
   Loader2,
 } from "lucide-react";
 
-interface AIAssistantChatProps {
-  onSwitchToWorkflow?: () => void;
-}
-
 const QUICK_PROMPTS = [
-  "Summarize Node C thermal risk",
+  "Summarize Node C fault risk",
   "Check ESP32-S3 rover patrol status",
   "Draft field crew dispatch brief",
 ];
 
-export default function AIAssistantChat({ onSwitchToWorkflow }: AIAssistantChatProps) {
-  const router = useRouter();
+export default function AIAssistantChat() {
   const {
     chatMessages,
     sendChatMessage,
     isChatLoading,
     aiStatus,
-    setActiveTab,
     isPlayingVoice,
     speakingMessageId,
     speakText,
@@ -53,14 +44,6 @@ export default function AIAssistantChat({ onSwitchToWorkflow }: AIAssistantChatP
     if (!inputText.trim() || isChatLoading) return;
     sendChatMessage(inputText);
     setInputText("");
-  };
-
-  const handleOpenWorkflow = () => {
-    if (onSwitchToWorkflow) {
-      onSwitchToWorkflow();
-    } else {
-      router.push("/workflow");
-    }
   };
 
   return (
@@ -122,28 +105,6 @@ export default function AIAssistantChat({ onSwitchToWorkflow }: AIAssistantChatP
           </div>
         </div>
 
-        {/* Mode Switcher Pills: Chat vs Workflow */}
-        <div className="flex items-center justify-center mb-4">
-          <div className="inline-flex p-1 rounded-full bg-parchment-dark border border-parchment-borderStrong">
-            <button
-              type="button"
-              onClick={() => setActiveTab("chat")}
-              className="flex items-center gap-2 px-5 py-1.5 rounded-full bg-cobalt text-ink-onAccent text-xs font-semibold shadow-sm transition-colors"
-            >
-              <MessageSquare className="w-3.5 h-3.5" aria-hidden="true" />
-              <span>Chat</span>
-            </button>
-            <button
-              type="button"
-              onClick={handleOpenWorkflow}
-              className="flex items-center gap-2 px-5 py-1.5 rounded-full text-parchment-secondary hover:text-parchment-text text-xs font-semibold transition-colors"
-            >
-              <GitBranch className="w-3.5 h-3.5" aria-hidden="true" />
-              <span>Workflow</span>
-            </button>
-          </div>
-        </div>
-
         {/* Conversation Stream */}
         <div className="space-y-4 max-h-[400px] overflow-y-auto pr-1.5">
           {chatMessages.map((msg) => {
@@ -199,32 +160,6 @@ export default function AIAssistantChat({ onSwitchToWorkflow }: AIAssistantChatP
                           </div>
                         ))}
                       </div>
-                    </div>
-                  )}
-
-                  {msg.workflowCard && (
-                    <div className="mt-2 p-3 rounded-xl bg-parchment-card border border-parchment-borderStrong flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
-                      <div className="flex items-center gap-2.5 min-w-0">
-                        <div className="w-8 h-8 rounded-lg bg-cobalt-tint border border-cobalt-border flex items-center justify-center text-cobalt shrink-0">
-                          <GitBranch className="w-4 h-4" aria-hidden="true" />
-                        </div>
-                        <div className="min-w-0">
-                          <div className="font-semibold text-xs text-parchment-text truncate">
-                            {msg.workflowCard.title}
-                          </div>
-                          <div className="text-[11px] text-parchment-muted truncate">
-                            {msg.workflowCard.description}
-                          </div>
-                        </div>
-                      </div>
-
-                      <button
-                        type="button"
-                        onClick={handleOpenWorkflow}
-                        className="pill-button-cobalt text-xs py-1.5 px-3.5 shrink-0"
-                      >
-                        <span>Open in Workflow</span>
-                      </button>
                     </div>
                   )}
 

@@ -396,7 +396,7 @@ export default function AuthPortalCard({
         </button>
 
         <p className="text-[11px] text-[#717888] font-sans mt-2">
-          Unlocks instant access to the three-node digital twin, live rover telemetry, and AI mitigation workflows.
+          Unlocks instant access to the three-node digital twin, live rover telemetry, and AI diagnostics.
         </p>
       </div>
 

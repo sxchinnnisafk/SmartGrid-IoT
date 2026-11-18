@@ -89,15 +89,7 @@ function CustomGridNode({ data }: { data: GridNodeData }) {
       </div>
 
       {/* Metrics Grid */}
-      <div className="grid grid-cols-3 gap-2 pt-2 border-t border-[var(--color-border)] text-center font-mono">
-        <div className="bg-[var(--color-bg-subtle)] p-1.5 rounded border border-[var(--color-border)]">
-          <div className="text-[10px] text-[var(--color-text-muted)]">TEMP</div>
-          <div className={`text-xs font-bold ${
-            nodeData.temperature > 80 ? "text-[var(--color-error)]" : nodeData.temperature > 60 ? "text-[var(--color-warning)]" : "text-[var(--color-success)]"
-          }`}>
-            {nodeData.temperature}°C
-          </div>
-        </div>
+      <div className="grid grid-cols-2 gap-2 pt-2 border-t border-[var(--color-border)] text-center font-mono">
         <div className="bg-[var(--color-bg-subtle)] p-1.5 rounded border border-[var(--color-border)]">
           <div className="text-[10px] text-[var(--color-text-muted)]">VOLT</div>
           <div className="text-xs font-bold text-[var(--color-accent)]">{nodeData.voltage}V</div>
@@ -167,7 +159,7 @@ export default function GridTopologyMap() {
         target: "node-c",
         animated: true,
         style: { stroke: "var(--color-warning)", strokeWidth: 3, strokeDasharray: "6 6" },
-        label: "Patrol Route Segment 2 (Thermal Vector)",
+        label: "Patrol Route Segment 2 (Corridor Vector)",
         labelStyle: { fill: "var(--color-text-muted)", fontSize: 11, fontFamily: "monospace" },
         labelBgStyle: { fill: "var(--color-bg-elevated)", fillOpacity: 0.9 },
       },

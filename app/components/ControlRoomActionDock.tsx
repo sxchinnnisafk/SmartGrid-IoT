@@ -2,15 +2,14 @@
 
 import React, { useState } from "react";
 import { useGrid } from "../context/GridContext";
-import { Play, Pause, FlaskConical, Upload } from "lucide-react";
+import { Play, Pause, Upload } from "lucide-react";
 
 export default function ControlRoomActionDock() {
   const {
     rover,
     startPatrol,
     stopPatrol,
-    startEndToEndDemo,
-    publishWorkflow,
+    publishCommands,
     isBreakerIsolated,
     user,
   } = useGrid();
@@ -26,13 +25,13 @@ export default function ControlRoomActionDock() {
   };
 
   const handlePublishConfirm = () => {
-    publishWorkflow();
+    publishCommands();
     setIsPublishModalOpen(false);
   };
 
   return (
     <>
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 w-full select-none">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 w-full select-none">
         {/* ACTION 1: Start / Pause Patrol */}
         <button
           type="button"
@@ -56,26 +55,7 @@ export default function ControlRoomActionDock() {
           </div>
         </button>
 
-        {/* ACTION 2: Test Scenario */}
-        <button
-          type="button"
-          onClick={startEndToEndDemo}
-          className="group relative rounded-2xl bg-parchment hover:bg-parchment-light text-parchment-text p-4 lg:p-5 border border-parchment-border shadow-parchment transition-transform transition-colors hover:-translate-y-0.5 active:translate-y-0 flex items-center gap-4 text-left"
-        >
-          <div className="w-11 h-11 rounded-xl bg-parchment-dark flex items-center justify-center shrink-0 text-cobalt group-hover:scale-105 transition-transform">
-            <FlaskConical className="w-5 h-5" aria-hidden="true" />
-          </div>
-          <div className="min-w-0">
-            <h3 className="font-serif text-xl font-normal text-parchment-text leading-tight">
-              Test scenario
-            </h3>
-            <p className="text-xs font-sans text-parchment-muted mt-0.5 truncate">
-              Simulate 5-step tabletop grid event
-            </p>
-          </div>
-        </button>
-
-        {/* ACTION 3: Publish Changes */}
+        {/* ACTION 2: Publish Changes */}
         <button
           type="button"
           onClick={() => setIsPublishModalOpen(true)}

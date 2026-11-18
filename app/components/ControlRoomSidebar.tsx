@@ -92,13 +92,7 @@ export default function ControlRoomSidebar() {
           <span className="font-sans font-medium text-parchment-muted">Live telemetry</span>
           <span className="font-mono text-cobalt font-semibold">{activeNode.id.toUpperCase()}</span>
         </div>
-        <div className="grid grid-cols-3 gap-2 text-center font-mono">
-          <div className="bg-parchment p-2 rounded-xl">
-            <div className="text-[11px] font-sans text-parchment-muted">Temp</div>
-            <div className="text-xs font-bold text-parchment-text mt-0.5">
-              {activeNode.temperature}°C
-            </div>
-          </div>
+        <div className="grid grid-cols-2 gap-2 text-center font-mono">
           <div className="bg-parchment p-2 rounded-xl">
             <div className="text-[11px] font-sans text-parchment-muted">Volt</div>
             <div className="text-xs font-bold text-cobalt mt-0.5">

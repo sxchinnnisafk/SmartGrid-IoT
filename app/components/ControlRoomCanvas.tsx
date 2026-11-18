@@ -17,8 +17,8 @@ export default function ControlRoomCanvas() {
     selectedNodeId,
     setSelectedNodeId,
     rover,
-    isThermalFaultActive,
-    triggerThermalFault,
+    isFaultActive,
+    triggerFault,
     addLog,
   } = useGrid();
 
@@ -59,23 +59,23 @@ export default function ControlRoomCanvas() {
               Interactive Three-Node Corridor
             </h2>
             <p className="text-xs font-sans text-parchment-muted truncate">
-              Select a node to inspect live telemetry or simulate a thermal event
+              Select a node to inspect live telemetry or simulate a fault event
             </p>
           </div>
         </div>
 
-        {/* Live Thermal Fault Quick Toggle */}
+        {/* Live Fault Quick Toggle */}
         <div className="flex items-center gap-2 shrink-0">
           <button
             type="button"
-            onClick={() => triggerThermalFault(!isThermalFaultActive)}
+            onClick={() => triggerFault(!isFaultActive)}
             className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-sans font-semibold border transition-colors ${
-              isThermalFaultActive
+              isFaultActive
                 ? "bg-signal-criticalBg text-signal-criticalText border-signal-criticalBorder hover:bg-parchment-bright"
                 : "bg-parchment-light text-parchment-text border-parchment-borderStrong hover:border-cobalt"
             }`}
           >
-            {isThermalFaultActive ? (
+            {isFaultActive ? (
               <>
                 <CheckCircle2 className="w-3.5 h-3.5" aria-hidden="true" />
                 <span>Clear Fault</span>
@@ -159,8 +159,8 @@ export default function ControlRoomCanvas() {
                 <div className="min-w-0">
                   <div className="font-semibold text-xs text-parchment-text truncate">{node.name}</div>
                   <div className="flex items-center gap-2 text-[11px] text-parchment-muted">
-                    <span>{node.temperature}°C</span>
                     <span>{node.voltage} V</span>
+                    <span>{node.current} A</span>
                     <span>{node.powerLoad} MW</span>
                   </div>
                 </div>
@@ -246,7 +246,7 @@ export default function ControlRoomCanvas() {
           {/* Energy Transmission Line: Node B (500, 315) -> Node C (795, 165) */}
           <path
             d="M 500,315 C 620,305 700,235 795,165"
-            stroke={isThermalFaultActive ? "var(--color-signal-critical)" : "var(--color-cobalt)"}
+            stroke={isFaultActive ? "var(--color-signal-critical)" : "var(--color-cobalt)"}
             strokeWidth="3.5"
             fill="none"
           />
@@ -266,7 +266,7 @@ export default function ControlRoomCanvas() {
             cx="795"
             cy="165"
             r="5.5"
-            fill={isThermalFaultActive ? "var(--color-signal-critical)" : "var(--color-signal-normal)"}
+            fill={isFaultActive ? "var(--color-signal-critical)" : "var(--color-signal-normal)"}
           />
 
           {/* Rover Dashed Telemetry Trail */}
@@ -313,7 +313,7 @@ export default function ControlRoomCanvas() {
                 {nodeA.name}
               </div>
               <div className="text-[10px] text-parchment-muted">
-                {nodeA.powerLoad} MW · {nodeA.temperature}°C
+                {nodeA.powerLoad} MW · {nodeA.voltage} V
               </div>
             </div>
             <span className="ml-1 inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-signal-normalBg text-signal-normalText text-[10px] font-sans font-semibold">
@@ -356,7 +356,7 @@ export default function ControlRoomCanvas() {
                 {nodeB.name}
               </div>
               <div className="text-[10px] text-parchment-muted">
-                {nodeB.temperature}°C · {nodeB.voltage} V
+                {nodeB.powerLoad} MW · {nodeB.voltage} V
               </div>
             </div>
             <span className="ml-1 inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-signal-warningBg text-signal-warningText text-[10px] font-sans font-semibold">
@@ -377,7 +377,7 @@ export default function ControlRoomCanvas() {
           <div className="w-40 rounded-2xl bg-parchment-light border border-parchment-borderStrong shadow-sm p-2 mb-1.5 ml-auto">
             <div
               className={`py-1 rounded-lg border text-center text-[10px] font-mono font-bold ${
-                isThermalFaultActive
+                isFaultActive
                   ? "bg-signal-criticalBg text-signal-critical border-signal-criticalBorder animate-pulse"
                   : "bg-signal-normalBg text-signal-normalText border-signal-normalBorder"
               }`}
@@ -387,10 +387,10 @@ export default function ControlRoomCanvas() {
             <div className="grid grid-cols-2 gap-1 text-[10px] font-mono text-parchment-secondary mt-1.5 text-center">
               <div
                 className={`py-0.5 px-1 rounded font-semibold ${
-                  isThermalFaultActive ? "bg-signal-criticalBg text-signal-critical" : "bg-parchment"
+                  isFaultActive ? "bg-signal-criticalBg text-signal-critical" : "bg-parchment"
                 }`}
               >
-                {nodeC.temperature}°C
+                {nodeC.powerLoad} MW
               </div>
               <div className="py-0.5 px-1 rounded bg-parchment">{nodeC.voltage} V</div>
             </div>
@@ -399,7 +399,7 @@ export default function ControlRoomCanvas() {
           <div
             className={`flex items-center gap-2 px-3 py-1.5 rounded-full bg-parchment-bright border transition-colors shadow-sm ${
               selectedNodeId === "node-c"
-                ? isThermalFaultActive
+                ? isFaultActive
                   ? "border-signal-critical ring-2 ring-signal-critical/25"
                   : "border-cobalt ring-2 ring-cobalt/20"
                 : "border-parchment-borderStrong hover:border-signal-critical"
@@ -407,7 +407,7 @@ export default function ControlRoomCanvas() {
           >
             <span
               className={`w-5 h-5 rounded-full text-ink-onAccent flex items-center justify-center text-[11px] font-bold shrink-0 ${
-                isThermalFaultActive ? "bg-signal-critical" : "bg-signal-normal"
+                isFaultActive ? "bg-signal-critical" : "bg-signal-normal"
               }`}
             >
               C
@@ -417,19 +417,19 @@ export default function ControlRoomCanvas() {
                 {nodeC.name}
               </div>
               <div className="text-[10px] text-parchment-muted">
-                {isThermalFaultActive ? "High load detected" : "Nominal thermal state"}
+                {isFaultActive ? "High load detected" : "Nominal operating state"}
               </div>
             </div>
             <span
               className={`ml-1 inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-sans font-semibold ${
-                isThermalFaultActive
+                isFaultActive
                   ? "bg-signal-criticalBg text-signal-criticalText"
                   : "bg-signal-normalBg text-signal-normalText"
               }`}
             >
               <span
                 className={`w-1.5 h-1.5 rounded-full ${
-                  isThermalFaultActive ? "bg-signal-criticalBright animate-ping" : "bg-signal-normalBright"
+                  isFaultActive ? "bg-signal-criticalBright animate-ping" : "bg-signal-normalBright"
                 }`}
               />
               {nodeC.statusLabel}

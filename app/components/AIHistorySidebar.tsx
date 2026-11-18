@@ -5,7 +5,7 @@ import { useGrid } from "../context/GridContext";
 import { Clock, Search, Plus, MessageSquare } from "lucide-react";
 
 const TODAY_CHATS = [
-  { id: "chat-today-node-c", title: "Node C thermal fault", time: "10:24 AM" },
+  { id: "chat-today-node-c", title: "Node C fault review", time: "10:24 AM" },
   { id: "chat-today-ev-hub", title: "EV hub load review", time: "9:11 AM" },
   { id: "chat-today-rover", title: "Rover patrol setup", time: "8:03 AM" },
 ];

@@ -6,7 +6,6 @@ interface IncomingNode {
   name: string;
   status: string;
   statusLabel: string;
-  temperature: number;
   voltage: number;
   current: number;
   powerLoad: number;
@@ -32,7 +31,7 @@ interface ChatRequestBody {
       speedMps: number;
       cameraStatus: string;
     };
-    isThermalFaultActive?: boolean;
+    isFaultActive?: boolean;
     isBreakerIsolated?: boolean;
     activeAlertsCount?: number;
   };
@@ -42,7 +41,6 @@ interface StructuredAIReply {
   reply: string;
   isCriticalAlert: boolean;
   recommendations?: string[];
-  suggestWorkflow?: boolean;
 }
 
 function isConfigured(value: string | undefined): boolean {
@@ -56,10 +54,10 @@ function buildSystemPrompt(gridContext?: ChatRequestBody["gridContext"]): string
     gridContext?.nodes
       ?.map(
         (n) =>
-          `- Node ${n.badge} (${n.name}): Status=${n.statusLabel}, Temp=${n.temperature}°C, Voltage=${n.voltage}V, Current=${n.current}A, Load=${n.powerLoad}${n.powerLoadUnit}, PhaseBalance=${n.phaseBalance}%`
+          `- Node ${n.badge} (${n.name}): Status=${n.statusLabel}, Voltage=${n.voltage}V, Current=${n.current}A, Load=${n.powerLoad}${n.powerLoadUnit}, PhaseBalance=${n.phaseBalance}%`
       )
       .join("\n") ||
-    "- Node A (Residential Feeder): Normal, 42.5°C, 230.2V, 98MW\n- Node B (EV Charging Hub): Warning, 68.1°C, 218.7V, 76MW\n- Node C (Industrial Transformer): Critical, 102.0°C, 194.5V, 102MW";
+    "- Node A (Residential Feeder): Normal, 230.2V, 98MW\n- Node B (EV Charging Hub): Warning, 218.7V, 76MW\n- Node C (Industrial Transformer): Critical, 194.5V, 102MW";
 
   const roverSummary = gridContext?.rover
     ? `ESP32-S3 Rover: patrolling=${gridContext.rover.isPatrolling}, current=${gridContext.rover.currentNodeId}, target=${gridContext.rover.targetNodeId}, battery=${gridContext.rover.batteryLevel}%, speed=${gridContext.rover.speedMps}m/s, camera=${gridContext.rover.cameraStatus}`
@@ -74,18 +72,17 @@ EDGE ROVER:
 ${roverSummary}
 
 SAFETY & STATE:
-- Thermal fault active on Node C: ${gridContext?.isThermalFaultActive ? "YES" : "NO"}
+- Overload fault active on Node C: ${gridContext?.isFaultActive ? "YES" : "NO"}
 - Breaker SC-12 simulated isolation armed: ${gridContext?.isBreakerIsolated ? "YES" : "NO"}
 - Active alerts count: ${gridContext?.activeAlertsCount ?? 0}
-- Policy: Human-in-the-loop mandatory. You explain root causes and recommend mitigation steps; human operators retain final authority over all switching/isolation actions. This is an isolated low-voltage tabletop prototype with no live utility mains connection.
+- Policy: Human-in-the-loop mandatory. You explain root causes and recommend mitigation steps; human operators retain final authority over all switching/isolation actions. Do not invent temperature sensor readings (no temperature sensor is installed). This is an isolated low-voltage tabletop prototype with no live utility mains connection.
 
 RESPONSE FORMAT:
 Return ONLY valid JSON with this exact schema (no markdown code fences):
 {
   "reply": "Clear, concise, operator-grade diagnostic answer (2-4 sentences referencing exact live numbers).",
   "isCriticalAlert": boolean,
-  "recommendations": ["Optional array of 2-4 crisp numbered action steps when mitigation is relevant"],
-  "suggestWorkflow": boolean
+  "recommendations": ["Optional array of 2-4 crisp numbered action steps when mitigation is relevant"]
 }`;
 }
 
@@ -105,7 +102,6 @@ function parseStructuredReply(rawText: string, fallbackCritical: boolean): Struc
         recommendations: Array.isArray(parsed.recommendations)
           ? parsed.recommendations.filter((r): r is string => typeof r === "string" && r.trim().length > 0).slice(0, 5)
           : undefined,
-        suggestWorkflow: Boolean(parsed.suggestWorkflow),
       };
     }
   } catch {
@@ -121,25 +117,25 @@ function parseStructuredReply(rawText: string, fallbackCritical: boolean): Struc
 function buildLocalFallback(message: string, gridContext?: ChatRequestBody["gridContext"]): StructuredAIReply {
   const q = message.toLowerCase();
   const nodeC = gridContext?.nodes?.find((n) => n.id === "node-c");
-  const nodeCTemp = nodeC?.temperature ?? 102.0;
   const nodeCVolt = nodeC?.voltage ?? 194.5;
-  const faultActive = gridContext?.isThermalFaultActive ?? true;
+  const nodeCCurrent = nodeC?.current ?? 285.0;
+  const nodeCLoad = nodeC?.powerLoad ?? 102;
+  const faultActive = gridContext?.isFaultActive ?? true;
 
-  if (q.includes("node c") || q.includes("risk") || q.includes("thermal") || q.includes("fault")) {
+  if (q.includes("node c") || q.includes("risk") || q.includes("overload") || q.includes("fault")) {
     return {
       reply: faultActive
-        ? `Thermal sensors at Node C read ${nodeCTemp}°C with phase voltage sagging to ${nodeCVolt}V, exceeding the 85°C safe threshold. Winding degradation risk is elevated until isolation is confirmed.`
-        : `Node C is currently operating within nominal thermal bounds at ${nodeCTemp}°C and ${nodeCVolt}V with no active fault ticket.`,
+        ? `Telemetry at Node C reads phase voltage sagging to ${nodeCVolt}V with ${nodeCCurrent}A current draw under ${nodeCLoad} MW load, exceeding safe operating bounds. Equipment stress risk is elevated until isolation is confirmed.`
+        : `Node C is currently operating within nominal bounds at ${nodeCVolt}V and ${nodeCLoad} MW with no active fault ticket.`,
       isCriticalAlert: faultActive,
       recommendations: faultActive
         ? [
             "Isolate the Node C SC-12 breaker to protect transformer windings.",
             "Hold ESP32-S3 Rover R-1 at safe standoff distance.",
             "Reroute 26 MW surplus load to Residential Feeder A and EV Hub B.",
-            "Dispatch field crew with standard thermal inspection kit.",
+            "Dispatch field crew with standard inspection kit.",
           ]
         : undefined,
-      suggestWorkflow: faultActive,
     };
   }
 
@@ -153,14 +149,13 @@ function buildLocalFallback(message: string, gridContext?: ChatRequestBody["grid
 
   if (q.includes("dispatch") || q.includes("voice") || q.includes("brief")) {
     return {
-      reply: `Field dispatch brief prepared: Crew assigned to Substation Bay 3 (Node C, ${nodeCTemp}°C). Verify breaker SC-12 isolation status before thermal imaging inspection. Use the Listen button to play spoken audio via ElevenLabs.`,
+      reply: `Field dispatch brief prepared: Crew assigned to Substation Bay 3 (Node C, ${nodeCVolt}V, ${nodeCLoad} MW). Verify breaker SC-12 isolation status before physical inspection. Use the Listen button to play spoken audio via ElevenLabs.`,
       isCriticalAlert: faultActive,
-      suggestWorkflow: faultActive,
     };
   }
 
   return {
-    reply: `Corridor telemetry verified across 3 nodes. Node A is stable at baseline, Node B is handling elevated EV charging load, and Node C reads ${nodeCTemp}°C (${faultActive ? "critical thermal alert active" : "nominal"}).`,
+    reply: `Corridor telemetry verified across 3 nodes. Node A is stable at baseline, Node B is handling elevated EV charging load, and Node C reads ${nodeCVolt}V / ${nodeCLoad} MW (${faultActive ? "critical overload alert active" : "nominal"}).`,
     isCriticalAlert: false,
   };
 }
@@ -221,7 +216,7 @@ export async function POST(request: NextRequest) {
           if (rawText) {
             const structured = parseStructuredReply(
               rawText,
-              Boolean(body.gridContext?.isThermalFaultActive)
+              Boolean(body.gridContext?.isFaultActive)
             );
             return NextResponse.json({
               provider: "gemini",
@@ -270,7 +265,7 @@ export async function POST(request: NextRequest) {
         if (rawText) {
           const structured = parseStructuredReply(
             rawText,
-            Boolean(body.gridContext?.isThermalFaultActive)
+            Boolean(body.gridContext?.isFaultActive)
           );
           return NextResponse.json({
             provider: "openrouter",

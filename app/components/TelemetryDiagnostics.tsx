@@ -31,11 +31,11 @@ export default function TelemetryDiagnostics() {
     telemetryHistory,
     alerts,
     acknowledgeAlert,
-    isThermalFaultActive,
+    isFaultActive,
     isOffline,
   } = useGrid();
 
-  const [activeMetricTab, setActiveMetricTab] = useState<"temp" | "voltage" | "current">("temp");
+  const [activeMetricTab, setActiveMetricTab] = useState<"voltage" | "current">("voltage");
 
   const activeAlerts = alerts.filter((a) => a.nodeId === selectedNode.id || a.severity === "CRITICAL");
 
@@ -59,16 +59,6 @@ export default function TelemetryDiagnostics() {
             </div>
 
             <div className="flex items-center gap-1.5 bg-[var(--color-bg-subtle)] p-1 rounded-lg border border-[var(--color-border)]">
-              <button
-                onClick={() => setActiveMetricTab("temp")}
-                className={`px-3 py-1 rounded text-xs font-mono transition-all ${
-                  activeMetricTab === "temp"
-                    ? "bg-[var(--color-accent)] text-[var(--color-text-inverse)] font-bold shadow"
-                    : "text-[var(--color-text-muted)] hover:text-[var(--color-text)]"
-                }`}
-              >
-                Temperature (°C)
-              </button>
               <button
                 onClick={() => setActiveMetricTab("voltage")}
                 className={`px-3 py-1 rounded text-xs font-mono transition-all ${
@@ -118,13 +108,6 @@ export default function TelemetryDiagnostics() {
                     color: "var(--color-chart-tooltip-text)",
                   }}
                 />
-                {activeMetricTab === "temp" && (
-                  <>
-                    <Line type="monotone" dataKey="nodeATemp" name="Node A (Resid)" stroke="var(--color-success)" strokeWidth={2} dot={false} />
-                    <Line type="monotone" dataKey="nodeBTemp" name="Node B (EV Hub)" stroke="var(--color-warning)" strokeWidth={2} dot={false} />
-                    <Line type="monotone" dataKey="nodeCTemp" name="Node C (Industrial)" stroke="var(--color-error)" strokeWidth={3} dot={false} />
-                  </>
-                )}
                 {activeMetricTab === "voltage" && (
                   <>
                     <Line type="monotone" dataKey="nodeAVoltage" name="Node A Voltage (V)" stroke="var(--color-success)" strokeWidth={2} dot={false} />
@@ -247,7 +230,7 @@ export default function TelemetryDiagnostics() {
                 </span>
               </div>
               <p className="text-xs text-[var(--color-text-muted)]">
-                Automated failure analysis based on ESP32 telemetry, thermal FLIR vectors, and IEEE 1547 grid standards.
+                Automated failure analysis based on ESP32 telemetry, voltage/current vectors, and IEEE 1547 grid standards.
               </p>
             </div>
           </div>
@@ -270,9 +253,9 @@ export default function TelemetryDiagnostics() {
               <span>1. Diagnostic Analysis</span>
             </div>
             <p className="text-[var(--color-text-muted)] leading-relaxed">
-              {isThermalFaultActive
-                ? "Node C (Industrial Transformer) is exhibiting severe thermal runaway at 98.4°C on winding coil T-3. Voltage drop to 194.5V indicates high impedance fault or overloaded Phase C leg. Risk of dielectric oil breakdown is critical."
-                : "All grid nodes are operating within nominal thermal envelopes. Node A and B maintain stable phase synchronicity with minor load fluctuations."}
+              {isFaultActive
+                ? "Node C (Industrial Transformer) is exhibiting severe overload on winding coil T-3. Voltage drop to 194.5V with 285A draw indicates high impedance fault or overloaded Phase C leg."
+                : "All grid nodes are operating within nominal voltage and load envelopes. Node A and B maintain stable phase synchronicity with minor load fluctuations."}
             </p>
           </div>
 
@@ -283,7 +266,7 @@ export default function TelemetryDiagnostics() {
             </div>
             <ul className="text-[var(--color-text-muted)] space-y-1.5 list-disc list-inside">
               <li>Auto-throttle Node C transformer tap changer by 2 steps.</li>
-              <li>Activate autonomous patrol rover R-1 for targeted acoustic & thermal verification.</li>
+              <li>Activate autonomous patrol rover R-1 for targeted corridor verification.</li>
               <li>Reroute 150kW surplus EV charging load from Node B to Node A feeder.</li>
             </ul>
           </div>

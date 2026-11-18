@@ -19,8 +19,8 @@ export default function Header() {
   const {
     isOffline,
     setIsOffline,
-    isThermalFaultActive,
-    triggerThermalFault,
+    isFaultActive,
+    triggerFault,
     alerts,
     resetSystem,
   } = useGrid();
@@ -75,17 +75,17 @@ export default function Header() {
 
           {/* Fault Status Pill */}
           <button
-            onClick={() => triggerThermalFault()}
+            onClick={() => triggerFault()}
             className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-mono transition-all border ${
-              isThermalFaultActive
+              isFaultActive
                 ? "bg-[var(--color-error-bg)] text-[var(--color-error-text)] border-[var(--color-error-border)] glow-error animate-pulse"
                 : "bg-[var(--color-bg-subtle)] text-[var(--color-text-muted)] border-[var(--color-border)]"
             }`}
-            title="Click to toggle simulated Node C thermal fault"
+            title="Click to toggle simulated Node C fault"
           >
             <ShieldAlert className="w-4 h-4" />
             <span>
-              {isThermalFaultActive ? "THERMAL FAULT ACTIVE" : "GRID HEALTH: NOMINAL"}
+              {isFaultActive ? "OVERLOAD FAULT ACTIVE" : "GRID HEALTH: NOMINAL"}
             </span>
           </button>
 

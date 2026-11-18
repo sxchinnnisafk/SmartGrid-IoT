@@ -1,11 +1,9 @@
 "use client";
 
 import React, { useState } from "react";
-import { useRouter } from "next/navigation";
 import { useGrid } from "../context/GridContext";
 import {
   FileText,
-  GitBranch,
   Volume2,
   Play,
   Pause,
@@ -13,13 +11,12 @@ import {
 } from "lucide-react";
 
 export default function AIArtifactsPanel() {
-  const router = useRouter();
   const {
     nodes,
     isPlayingVoice,
     toggleVoicePlayback,
     voiceProgress,
-    isThermalFaultActive,
+    isFaultActive,
   } = useGrid();
 
   const [activeModalArtifact, setActiveModalArtifact] = useState<string | null>(null);
@@ -76,11 +73,11 @@ export default function AIArtifactsPanel() {
                     cy="20"
                     r="7.5"
                     fill={
-                      isThermalFaultActive
+                      isFaultActive
                         ? "var(--color-signal-critical-bright)"
                         : "var(--color-signal-normal-bright)"
                     }
-                    className={isThermalFaultActive ? "animate-pulse" : ""}
+                    className={isFaultActive ? "animate-pulse" : ""}
                   />
                   <circle cx="210" cy="42" r="6.5" fill="var(--color-signal-warning-bright)" />
                 </svg>
@@ -92,11 +89,11 @@ export default function AIArtifactsPanel() {
                   </div>
                   <div
                     className={`text-center font-semibold ${
-                      isThermalFaultActive ? "text-signal-criticalBright" : "text-signal-normalBright"
+                      isFaultActive ? "text-signal-criticalBright" : "text-signal-normalBright"
                     }`}
                   >
                     <div>Node C</div>
-                    <div>{nodeC.temperature}°C</div>
+                    <div>{nodeC.voltage}V</div>
                   </div>
                   <div className="text-right">
                     <div className="text-ink-text font-semibold">Node B</div>
@@ -133,42 +130,11 @@ export default function AIArtifactsPanel() {
               </div>
 
               <p className="text-[11px] text-ink-muted leading-relaxed">
-                Automated analysis of Node C thermal event and risk assessment.
+                Automated analysis of Node C overload event and risk assessment.
               </p>
             </div>
 
-            {/* ARTIFACT 3: Fault Response Workflow */}
-            <div className="rounded-2xl bg-ink-card border border-ink-border p-3.5 text-xs font-sans">
-              <div className="flex items-center justify-between gap-2 mb-2">
-                <div className="flex items-center gap-2 min-w-0">
-                  <div className="w-7 h-7 rounded-lg bg-cobalt-tint border border-cobalt-border flex items-center justify-center text-cobalt-soft shrink-0">
-                    <GitBranch className="w-3.5 h-3.5" aria-hidden="true" />
-                  </div>
-                  <div className="min-w-0">
-                    <h3 className="font-semibold text-ink-text text-xs truncate">
-                      Fault response workflow
-                    </h3>
-                    <div className="text-[11px] text-signal-warningBright font-mono">
-                      Ready · 10:20 AM
-                    </div>
-                  </div>
-                </div>
-
-                <button
-                  type="button"
-                  onClick={() => router.push("/workflow")}
-                  className="px-3 py-1 rounded-full bg-cobalt hover:bg-cobalt-hover text-ink-onAccent text-[11px] font-semibold transition-colors shrink-0"
-                >
-                  Open
-                </button>
-              </div>
-
-              <p className="text-[11px] text-ink-muted leading-relaxed">
-                Isolate, reroute, and dispatch steps pre-configured for operator review.
-              </p>
-            </div>
-
-            {/* ARTIFACT 4: Voice Dispatch Preview */}
+            {/* ARTIFACT 3: Voice Dispatch Preview */}
             <div className="rounded-2xl bg-ink-card border border-ink-border p-3.5 text-xs font-sans">
               <div className="flex items-center justify-between gap-2 mb-2">
                 <div className="flex items-center gap-2 min-w-0">
@@ -197,7 +163,7 @@ export default function AIArtifactsPanel() {
               <div className="mt-2.5 p-2.5 rounded-xl bg-ink-deep border border-ink-border flex items-center justify-between gap-2.5">
                 <div className="flex-1 min-w-0">
                   <p className="italic text-[11px] text-ink-secondary leading-snug font-serif mb-1.5">
-                    &ldquo;Dispatching field crew to Node C. Thermal fault detected. Bring standard repair kit.&rdquo;
+                    &ldquo;Dispatching field crew to Node C. Overload fault detected. Bring standard repair kit.&rdquo;
                   </p>
                   <div className="flex items-center gap-1 h-3">
                     {[3, 6, 9, 12, 8, 13, 10, 6, 11, 14, 9, 5].map((h, i) => (
@@ -275,7 +241,7 @@ export default function AIArtifactsPanel() {
               <div className="p-3.5 rounded-xl bg-ink-card border border-ink-border">
                 <div className="text-ink-text font-semibold mb-1">Incident Summary</div>
                 <p>
-                  Node C (Industrial Transformer) reported winding temperature at {nodeC.temperature}°C against the 85.0°C safe threshold. Phase voltage observed at {nodeC.voltage}V with {nodeC.current}A current draw.
+                  Node C (Industrial Transformer) reported phase voltage at {nodeC.voltage}V with {nodeC.current}A current draw and {nodeC.powerLoad}{nodeC.powerLoadUnit} load.
                 </p>
               </div>
 

@@ -15,7 +15,6 @@ export interface GridNodeData {
   type: "Residential Feeder" | "EV Charging Hub" | "Industrial Transformer";
   status: NodeStatus;
   statusLabel: "Normal" | "Warning" | "Critical";
-  temperature: number; // °C
   voltage: number;     // V
   current: number;     // A
   powerLoad: number;   // kW or MW
@@ -31,8 +30,6 @@ export interface GridNodeData {
 }
 
 export interface ThresholdConfig {
-  tempWarning: number;
-  tempCritical: number;
   voltageMin: number;
   voltageMax: number;
   currentMax: number;
@@ -41,13 +38,10 @@ export interface ThresholdConfig {
 export interface TelemetryPoint {
   timestamp: string;
   timeLabel: string;
-  nodeATemp: number;
   nodeAVoltage: number;
   nodeACurrent: number;
-  nodeBTemp: number;
   nodeBVoltage: number;
   nodeBCurrent: number;
-  nodeCTemp: number;
   nodeCVoltage: number;
   nodeCCurrent: number;
 }
@@ -59,7 +53,6 @@ export interface AlertTicket {
   severity: "CRITICAL" | "WARNING" | "INFO";
   title: string;
   timestamp: string;
-  temperature: number;
   voltage: number;
   current: number;
   rootCause: string;
@@ -76,7 +69,7 @@ export interface RoverState {
   patrolMode: "Full Network Sweep" | "Targeted Diagnostic" | "Emergency Inspection" | "Autonomous Inspection";
   speedMps: number;
   roverId: string;
-  cameraStatus: "ONLINE" | "THERMAL_ACTIVE" | "OFFLINE";
+  cameraStatus: "ONLINE" | "OFFLINE";
   xPercent: number; // position on map
   yPercent: number;
 }
@@ -84,22 +77,9 @@ export interface RoverState {
 export interface LogMessage {
   id: string;
   timestamp: string;
-  type: "MQTT" | "SYSTEM" | "ROVER" | "ALERT" | "HTTP" | "WORKFLOW";
+  type: "MQTT" | "SYSTEM" | "ROVER" | "ALERT" | "HTTP";
   message: string;
   level: "info" | "warn" | "error" | "success";
-}
-
-export interface WorkflowNodeItem {
-  id: string;
-  type: "trigger" | "action" | "condition";
-  title: string;
-  subtitle: string;
-  statusBadge?: string;
-  statusColor?: "normal" | "warning" | "critical";
-  enabled?: boolean;
-  x: number;
-  y: number;
-  isExecuting?: boolean;
 }
 
 export interface ChatMessage {
@@ -111,18 +91,4 @@ export interface ChatMessage {
   content: string;
   isCriticalAlert?: boolean;
   recommendations?: string[];
-  workflowCard?: {
-    title: string;
-    description: string;
-    buttonText: string;
-  };
-}
-
-export interface DemoStepInfo {
-  step: number;
-  title: string;
-  subtitle: string;
-  description: string;
-  actionLabel: string;
-  status: "pending" | "active" | "completed";
 }

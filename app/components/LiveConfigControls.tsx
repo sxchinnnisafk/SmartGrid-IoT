@@ -21,20 +21,9 @@ export default function LiveConfigControls() {
     stopPatrol,
     thresholds,
     setThresholds,
-    isThermalFaultActive,
-    triggerThermalFault,
+    triggerFault,
     addLog,
   } = useGrid();
-
-  const handleTempWarningChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const val = Number(e.target.value);
-    setThresholds((prev) => ({ ...prev, tempWarning: val }));
-  };
-
-  const handleTempCriticalChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const val = Number(e.target.value);
-    setThresholds((prev) => ({ ...prev, tempCritical: val }));
-  };
 
   const handleVoltageMinChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const val = Number(e.target.value);
@@ -65,7 +54,7 @@ export default function LiveConfigControls() {
           </div>
 
           <p className="text-xs text-[var(--color-text-muted)] mb-4">
-            Deploy ESP32-guided inspection rover along distribution topology lines to perform thermal FLIR scans and acoustic partial discharge checks.
+            Deploy ESP32-guided inspection rover along distribution topology lines to perform visual corridor checks and telemetry verification.
           </p>
 
           <div className="grid grid-cols-2 gap-3 mb-5 font-mono text-xs">
@@ -108,10 +97,10 @@ export default function LiveConfigControls() {
           )}
 
           <button
-            onClick={() => addLog("ROVER", "Manual FLIR snapshot requested from Rover R-1 camera.", "info")}
+            onClick={() => addLog("ROVER", "Manual camera snapshot requested from Rover R-1.", "info")}
             className="px-4 py-2.5 bg-[var(--color-bg-subtle)] hover:bg-[var(--color-bg-hover)] text-[var(--color-text)] text-xs font-mono rounded-xl border border-[var(--color-border)] transition-colors"
           >
-            FLIR Snapshot
+            Camera Snapshot
           </button>
         </div>
       </div>
@@ -136,38 +125,6 @@ export default function LiveConfigControls() {
           </p>
 
           <div className="space-y-4 font-mono text-xs">
-            {/* Warning Temp Slider */}
-            <div>
-              <div className="flex justify-between mb-1.5 text-[var(--color-text)]">
-                <span>Warning Temperature Threshold</span>
-                <span className="text-[var(--color-warning)] font-bold">{thresholds.tempWarning}°C</span>
-              </div>
-              <input
-                type="range"
-                min="50"
-                max="80"
-                value={thresholds.tempWarning}
-                onChange={handleTempWarningChange}
-                className="w-full accent-[var(--color-warning)] bg-[var(--color-bg)] cursor-pointer h-2 bg-[var(--color-bg-subtle)] rounded-lg border border-[var(--color-border)]"
-              />
-            </div>
-
-            {/* Critical Temp Slider */}
-            <div>
-              <div className="flex justify-between mb-1.5 text-[var(--color-text)]">
-                <span>Critical Temperature Threshold</span>
-                <span className="text-[var(--color-error)] font-bold">{thresholds.tempCritical}°C</span>
-              </div>
-              <input
-                type="range"
-                min="75"
-                max="110"
-                value={thresholds.tempCritical}
-                onChange={handleTempCriticalChange}
-                className="w-full accent-[var(--color-error)] bg-[var(--color-bg)] cursor-pointer h-2 rounded-lg border border-[var(--color-border)]"
-              />
-            </div>
-
             {/* Voltage Min Slider */}
             <div>
               <div className="flex justify-between mb-1.5 text-[var(--color-text)]">
@@ -189,7 +146,7 @@ export default function LiveConfigControls() {
         <div className="pt-4 mt-4 border-t border-[var(--color-border)] flex items-center justify-between text-xs text-[var(--color-text-muted)]">
           <span>MQTT QoS Level: 1 (At least once)</span>
           <button
-            onClick={() => triggerThermalFault()}
+            onClick={() => triggerFault()}
             className="px-3 py-1.5 bg-[var(--color-bg-subtle)] hover:bg-[var(--color-bg-hover)] text-[var(--color-accent)] rounded-lg border border-[var(--color-border)] transition-colors font-mono"
           >
             Toggle Fault State

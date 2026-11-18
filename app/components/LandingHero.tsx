@@ -18,8 +18,8 @@ import {
 export default function LandingHero() {
   const {
     nodes,
-    isThermalFaultActive,
-    triggerThermalFault,
+    isFaultActive,
+    triggerFault,
     rover,
     startPatrol,
     stopPatrol,
@@ -250,7 +250,7 @@ export default function LandingHero() {
               <div className="flex items-center gap-2">
                 <span
                   className={`w-2 h-2 rounded-full ${
-                    isThermalFaultActive ? "bg-signal-criticalBright animate-pulse" : "bg-signal-normalBright"
+                    isFaultActive ? "bg-signal-criticalBright animate-pulse" : "bg-signal-normalBright"
                   }`}
                 />
                 <span className="font-sans font-medium text-ink-text">
@@ -265,14 +265,14 @@ export default function LandingHero() {
               <div className="flex items-center gap-2">
                 <button
                   type="button"
-                  onClick={() => triggerThermalFault(!isThermalFaultActive)}
+                  onClick={() => triggerFault(!isFaultActive)}
                   className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium border transition-colors ${
-                    isThermalFaultActive
+                    isFaultActive
                       ? "bg-signal-criticalBg text-signal-criticalText border-signal-criticalBorder"
                       : "bg-ink-card text-ink-secondary border-ink-border hover:border-cobalt"
                   }`}
                 >
-                  {isThermalFaultActive ? (
+                  {isFaultActive ? (
                     <>
                       <CheckCircle2 className="w-3.5 h-3.5" aria-hidden="true" />
                       <span>Clear Fault</span>
@@ -336,8 +336,8 @@ export default function LandingHero() {
                       <div className="min-w-0">
                         <div className="font-semibold text-xs text-parchment-text truncate">{node.name}</div>
                         <div className="flex items-center gap-2 text-[11px] text-parchment-muted">
-                          <span>{node.temperature}°C</span>
                           <span>{node.voltage} V</span>
+                          <span>{node.current} A</span>
                           <span>{node.powerLoad} MW</span>
                         </div>
                       </div>
@@ -399,14 +399,14 @@ export default function LandingHero() {
                 {/* Node B (345, 240) -> Node C left edge (438, 102) */}
                 <path
                   d="M 345,240 C 400,235 408,142 438,102"
-                  stroke={isThermalFaultActive ? "var(--color-signal-critical-bright)" : "var(--color-cobalt)"}
+                  stroke={isFaultActive ? "var(--color-signal-critical-bright)" : "var(--color-cobalt)"}
                   strokeWidth="3"
                   filter="url(#heroLineGlow)"
                 />
                 {/* Animated energy pulses along B -> C */}
                 <path
                   d="M 345,240 C 400,235 408,142 438,102"
-                  stroke={isThermalFaultActive ? "var(--color-signal-critical-bg)" : "var(--color-cobalt-soft)"}
+                  stroke={isFaultActive ? "var(--color-signal-critical-bg)" : "var(--color-cobalt-soft)"}
                   strokeWidth="1.5"
                   strokeDasharray="5 9"
                   className="animate-dash-flow"
@@ -427,7 +427,7 @@ export default function LandingHero() {
                   cx="438"
                   cy="102"
                   r="4.5"
-                  fill={isThermalFaultActive ? "var(--color-signal-critical-bright)" : "var(--color-signal-normal-bright)"}
+                  fill={isFaultActive ? "var(--color-signal-critical-bright)" : "var(--color-signal-normal-bright)"}
                 />
               </svg>
 
@@ -459,7 +459,7 @@ export default function LandingHero() {
                         {nodeA.name}
                       </div>
                       <div className="text-[11px] text-parchment-muted font-sans">
-                        {nodeA.powerLoad} {nodeA.powerLoadUnit} · {nodeA.temperature}°C
+                        {nodeA.powerLoad} {nodeA.powerLoadUnit} · {nodeA.voltage} V
                       </div>
                     </div>
                   </div>
@@ -492,7 +492,7 @@ export default function LandingHero() {
                         {nodeB.name}
                       </div>
                       <div className="text-[11px] text-parchment-muted font-sans">
-                        {nodeB.powerLoad} {nodeB.powerLoadUnit} · {nodeB.temperature}°C
+                        {nodeB.powerLoad} {nodeB.powerLoadUnit} · {nodeB.voltage} V
                       </div>
                     </div>
                   </div>
@@ -510,7 +510,7 @@ export default function LandingHero() {
                     focusedNodeId === "node-c" ? "scale-[1.03]" : "hover:scale-[1.02]"
                   }`}
                 >
-                  {isThermalFaultActive && (
+                  {isFaultActive && (
                     <span
                       aria-hidden="true"
                       className="absolute -top-3.5 right-3 w-6 h-6 rounded-full bg-signal-criticalBright text-ink-onAccent flex items-center justify-center font-bold text-xs shadow-lg animate-signal-pulse"
@@ -521,7 +521,7 @@ export default function LandingHero() {
                   <div
                     className={`flex items-center gap-2.5 bg-parchment text-parchment-text px-3 py-2 rounded-xl shadow-parchment border transition-colors ${
                       focusedNodeId === "node-c"
-                        ? isThermalFaultActive
+                        ? isFaultActive
                           ? "border-signal-criticalBright ring-2 ring-signal-criticalBright/30"
                           : "border-cobalt ring-2 ring-cobalt/30"
                         : "border-parchment-border"
@@ -529,7 +529,7 @@ export default function LandingHero() {
                   >
                     <span
                       className={`w-6 h-6 rounded-full text-ink-onAccent flex items-center justify-center font-bold text-xs shrink-0 ${
-                        isThermalFaultActive ? "bg-signal-critical" : "bg-signal-normal"
+                        isFaultActive ? "bg-signal-critical" : "bg-signal-normal"
                       }`}
                     >
                       C
@@ -539,17 +539,17 @@ export default function LandingHero() {
                         {nodeC.name}
                       </div>
                       <div className="text-[11px] text-parchment-muted font-sans">
-                        {nodeC.temperature}°C · {nodeC.voltage} V
+                        {nodeC.powerLoad} {nodeC.powerLoadUnit} · {nodeC.voltage} V
                       </div>
                     </div>
                   </div>
                   <div
                     className={`mt-1.5 ml-3 px-2.5 py-1 rounded-lg bg-ink-card/95 border border-ink-border inline-flex items-center gap-1.5 text-[11px] font-sans font-medium ${
-                      isThermalFaultActive ? "text-signal-criticalBright" : "text-signal-normalBright"
+                      isFaultActive ? "text-signal-criticalBright" : "text-signal-normalBright"
                     }`}
                   >
                     <AlertTriangle className="w-3 h-3" aria-hidden="true" />
-                    <span>{isThermalFaultActive ? "Critical thermal fault" : "Nominal thermal state"}</span>
+                    <span>{isFaultActive ? "Critical overload fault" : "Nominal operating state"}</span>
                   </div>
                 </button>
 
@@ -581,8 +581,8 @@ export default function LandingHero() {
                 <span className="font-sans font-semibold text-ink-text">
                   Node {focusedNode.badge}:
                 </span>
-                <span>{focusedNode.temperature}°C</span>
                 <span>{focusedNode.voltage} V</span>
+                <span>{focusedNode.current} A</span>
                 <span>{focusedNode.powerLoad} MW</span>
               </div>
 

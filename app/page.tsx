@@ -3,16 +3,12 @@
 import React, { useState, useEffect } from "react";
 import LandingHero from "./components/LandingHero";
 import LandingStoryChapters from "./components/LandingStoryChapters";
-import HardwareEvidenceModal from "./components/HardwareEvidenceModal";
-import EndToEndDemoModal from "./components/EndToEndDemoModal";
 import AuthPortalCard from "./components/AuthPortalCard";
 import AuthLayout from "./components/AuthLayout";
 import { useGrid } from "./context/GridContext";
 
 export default function LandingPage() {
   const {
-    isEvidenceModalOpen,
-    isDemoModalOpen,
     isAuthenticated,
     hasSkippedAuth,
   } = useGrid();
@@ -42,10 +38,6 @@ export default function LandingPage() {
 
       {/* 2. Four-Chapter Visual Editorial Story */}
       <LandingStoryChapters />
-
-      {/* Modals */}
-      {isEvidenceModalOpen && <HardwareEvidenceModal />}
-      {isDemoModalOpen && <EndToEndDemoModal />}
     </div>
   );
 }
