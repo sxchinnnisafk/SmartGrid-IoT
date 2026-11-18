@@ -32,7 +32,6 @@ interface ChatRequestBody {
       cameraStatus: string;
     };
     isFaultActive?: boolean;
-    isBreakerIsolated?: boolean;
     activeAlertsCount?: number;
   };
 }
@@ -73,9 +72,8 @@ ${roverSummary}
 
 SAFETY & STATE:
 - Overload fault active on Node C: ${gridContext?.isFaultActive ? "YES" : "NO"}
-- Breaker SC-12 simulated isolation armed: ${gridContext?.isBreakerIsolated ? "YES" : "NO"}
 - Active alerts count: ${gridContext?.activeAlertsCount ?? 0}
-- Policy: Human-in-the-loop mandatory. You explain root causes and recommend mitigation steps; human operators retain final authority over all switching/isolation actions. Do not invent temperature sensor readings (no temperature sensor is installed). This is an isolated low-voltage tabletop prototype with no live utility mains connection.
+- Policy: This dashboard is strictly for ESP32-S3 rover patrolling, live corridor monitoring, and AI advisory. There is NO automatic dispatch, NO automated switching/actuation, and NO autonomous field crew dispatch. You explain telemetry anomalies and suggest practical steps for the human operator to evaluate and act on manually. Do not invent temperature sensor readings (no temperature sensor is installed). This is an isolated low-voltage tabletop prototype with no live utility mains connection.
 
 RESPONSE FORMAT:
 Return ONLY valid JSON with this exact schema (no markdown code fences):
@@ -122,18 +120,18 @@ function buildLocalFallback(message: string, gridContext?: ChatRequestBody["grid
   const nodeCLoad = nodeC?.powerLoad ?? 102;
   const faultActive = gridContext?.isFaultActive ?? true;
 
-  if (q.includes("node c") || q.includes("risk") || q.includes("overload") || q.includes("fault")) {
+  if (q.includes("node c") || q.includes("risk") || q.includes("overload") || q.includes("fault") || q.includes("suggest") || q.includes("next step")) {
     return {
       reply: faultActive
-        ? `Telemetry at Node C reads phase voltage sagging to ${nodeCVolt}V with ${nodeCCurrent}A current draw under ${nodeCLoad} MW load, exceeding safe operating bounds. Equipment stress risk is elevated until isolation is confirmed.`
-        : `Node C is currently operating within nominal bounds at ${nodeCVolt}V and ${nodeCLoad} MW with no active fault ticket.`,
+        ? `Monitoring telemetry at Node C shows phase voltage sagging to ${nodeCVolt}V with ${nodeCCurrent}A current draw under ${nodeCLoad} MW load, exceeding safe operating bounds. Review the suggested steps below to handle this manually.`
+        : `Node C is currently operating within nominal bounds at ${nodeCVolt}V and ${nodeCLoad} MW with no active fault alert.`,
       isCriticalAlert: faultActive,
       recommendations: faultActive
         ? [
-            "Isolate the Node C SC-12 breaker to protect transformer windings.",
-            "Hold ESP32-S3 Rover R-1 at safe standoff distance.",
-            "Reroute 26 MW surplus load to Residential Feeder A and EV Hub B.",
-            "Dispatch field crew with standard inspection kit.",
+            "Review Node C voltage sag (194.5V) and overcurrent draw (285A) in the Control Room.",
+            "Pause or position ESP32-S3 Rover R-1 near Node C for closer corridor monitoring.",
+            "Check load headroom on Residential Feeder A and EV Hub B before any manual load adjustment.",
+            "Notify the on-duty operator to perform a manual inspection of Substation Bay 3.",
           ]
         : undefined,
     };
@@ -147,9 +145,9 @@ function buildLocalFallback(message: string, gridContext?: ChatRequestBody["grid
     };
   }
 
-  if (q.includes("dispatch") || q.includes("voice") || q.includes("brief")) {
+  if (q.includes("voice") || q.includes("summary") || q.includes("brief") || q.includes("aloud")) {
     return {
-      reply: `Field dispatch brief prepared: Crew assigned to Substation Bay 3 (Node C, ${nodeCVolt}V, ${nodeCLoad} MW). Verify breaker SC-12 isolation status before physical inspection. Use the Listen button to play spoken audio via ElevenLabs.`,
+      reply: `Corridor monitoring summary: Node C is reading ${nodeCVolt}V under ${nodeCLoad} MW load (${faultActive ? "critical alert active" : "nominal"}). This system provides monitoring and AI recommendations only—no automated dispatch is performed. Use Listen to hear this summary via ElevenLabs.`,
       isCriticalAlert: faultActive,
     };
   }

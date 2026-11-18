@@ -33,11 +33,6 @@ interface GridContextType {
   addLog: (type: LogMessage["type"], message: string, level: LogMessage["level"]) => void;
   resetSystem: () => void;
 
-  // Edge command & breaker control state
-  isBreakerIsolated: boolean;
-  toggleBreakerIsolation: () => void;
-  publishCommands: () => void;
-
   // Chat & AI Assistant state (Gemini + OpenRouter + Fallback)
   chatMessages: ChatMessage[];
   sendChatMessage: (text: string) => void;
@@ -51,7 +46,7 @@ interface GridContextType {
   activeChatId: string;
   setActiveChatId: (id: string) => void;
 
-  // Audio Dispatch & ElevenLabs Voice Player
+  // ElevenLabs Voice Playback for AI Summaries
   isPlayingVoice: boolean;
   toggleVoicePlayback: () => void;
   voiceProgress: number;
@@ -151,10 +146,10 @@ const initialAlerts: AlertTicket[] = [
     current: 285.0,
     rootCause: "Line sensors show severe voltage sag (194.5V) and overcurrent draw (285A), exceeding safe corridor limits.",
     aiMitigation: [
-      "Isolate Node C breaker to prevent damage and ensure safety.",
-      "Stop the inspection rover in the area.",
-      "Reroute load to Node A and B (capacity available: 98 MW / 76 MW).",
-      "Dispatch a field crew to inspect and repair.",
+      "Inspect Node C voltage sag and load readings closely in the Control Room.",
+      "Pause or position the inspection rover near Node C for monitoring.",
+      "Review available capacity on Node A (98 MW) and Node B (76 MW) before manual load adjustments.",
+      "Notify the on-duty operator for manual substation inspection.",
     ],
     status: "ACTIVE",
   },
@@ -167,7 +162,7 @@ const initialChatMessages: ChatMessage[] = [
     senderName: "Jordan Diaz",
     avatarText: "JD",
     timestamp: "10:24 AM",
-    content: "Show the current Node C risk and suggest the safest response.",
+    content: "Show the current Node C risk and suggest what we should do.",
   },
   {
     id: "msg-2",
@@ -175,13 +170,13 @@ const initialChatMessages: ChatMessage[] = [
     senderName: "SmartGrid AI",
     timestamp: "10:24 AM",
     content:
-      "Node C is in a critical state. Telemetry shows phase voltage sagging to 194.5V with 285A current draw under 102 MW load, exceeding safe operating limits. Risk of equipment failure is high if no action is taken.",
+      "Node C is in a critical state. Telemetry shows phase voltage sagging to 194.5V with 285A current draw under 102 MW load, exceeding safe operating limits. Monitoring recommends immediate manual review by an operator.",
     isCriticalAlert: true,
     recommendations: [
-      "Isolate the Node C breaker to prevent damage and ensure safety.",
-      "Stop the inspection rover in the area.",
-      "Reroute load to Node A and B (capacity available).",
-      "Dispatch a field crew to inspect and repair.",
+      "Verify Node C voltage sag and current load on the live digital twin.",
+      "Pause the inspection rover at a safe monitoring point near Node C.",
+      "Check available headroom on Node A and Node B before manual load shifting.",
+      "Alert the on-duty operator to inspect Substation Bay 3 manually.",
     ],
   },
 ];
@@ -246,7 +241,6 @@ export function GridProvider({ children }: { children: React.ReactNode }) {
     yPercent: 68,
   });
 
-  const [isBreakerIsolated, setIsBreakerIsolated] = useState<boolean>(true);
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>(initialChatMessages);
   const [isChatLoading, setIsChatLoading] = useState<boolean>(false);
   const [aiStatus, setAiStatus] = useState<{
@@ -430,19 +424,6 @@ export function GridProvider({ children }: { children: React.ReactNode }) {
     addLog("SYSTEM", `Alert ticket ${id} acknowledged by operator.`, "info");
   };
 
-  const toggleBreakerIsolation = () => {
-    setIsBreakerIsolated((prev) => {
-      const next = !prev;
-      addLog("SYSTEM", `Breaker isolation on Node C set to: ${next ? "ENABLED" : "DISABLED"}`, next ? "warn" : "info");
-      return next;
-    });
-  };
-
-  const publishCommands = () => {
-    addLog("SYSTEM", "Operator approved and published commands to live edge telemetry return path.", "success");
-    alert("Commands published! Updates dispatched to ESP32-S3 Rover and edge controllers.");
-  };
-
   const stopSpeaking = () => {
     if (audioRef.current) {
       audioRef.current.pause();
@@ -477,7 +458,7 @@ export function GridProvider({ children }: { children: React.ReactNode }) {
 
     stopSpeaking();
     setIsPlayingVoice(true);
-    setSpeakingMessageId(messageId || "dispatch-preview");
+    setSpeakingMessageId(messageId || "advisory-preview");
     setVoiceProgress(0);
 
     try {
@@ -575,7 +556,6 @@ export function GridProvider({ children }: { children: React.ReactNode }) {
           nodes,
           rover,
           isFaultActive,
-          isBreakerIsolated,
           activeAlertsCount: alerts.filter((a) => a.status === "ACTIVE").length,
         },
       }),
@@ -625,19 +605,17 @@ export function GridProvider({ children }: { children: React.ReactNode }) {
       });
   };
 
-  // Voice dispatch preview player (uses ElevenLabs API when configured)
+  // Voice alert summary player (uses ElevenLabs API when configured)
   const toggleVoicePlayback = () => {
     if (isPlayingVoice) {
       stopSpeaking();
       return;
     }
     const nodeC = nodes.find((n) => n.id === "node-c");
-    const dispatchScript = `Dispatching field crew to Node C. Overload fault confirmed at ${
+    const summaryScript = `Monitoring alert for Node C Industrial Transformer. Voltage has dropped to ${
       nodeC?.voltage ?? 194.5
-    } volts and ${nodeC?.powerLoad ?? 102} megawatts on Industrial Transformer. Breaker SC-12 isolation ${
-      isBreakerIsolated ? "is armed" : "is standing by"
-    }. Bring standard repair kit.`;
-    void speakText(dispatchScript, "dispatch-preview");
+    } volts under ${nodeC?.powerLoad ?? 102} megawatts load. Review AI Assistant recommendations for manual inspection and load checks.`;
+    void speakText(summaryScript, "advisory-preview");
   };
 
   const resetSystem = () => {
@@ -737,10 +715,6 @@ export function GridProvider({ children }: { children: React.ReactNode }) {
         logs,
         addLog,
         resetSystem,
-
-        isBreakerIsolated,
-        toggleBreakerIsolation,
-        publishCommands,
 
         chatMessages,
         sendChatMessage,

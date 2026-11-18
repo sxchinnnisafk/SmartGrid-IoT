@@ -144,7 +144,7 @@ export default function AuthPortalCard({
         <p className="text-xs sm:text-sm text-[#5d6475] font-sans mt-1 max-w-md mx-auto">
           {mode === "signin"
             ? "Sign in with operator credentials to monitor distribution nodes and deploy edge rovers."
-            : "Register your operator profile to participate in intelligent energy dispatch and digital twin control."}
+            : "Register your operator profile for live grid monitoring, rover patrol control, and AI advisory."}
         </p>
       </div>
 

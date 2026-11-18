@@ -57,7 +57,7 @@ export interface AlertTicket {
   current: number;
   rootCause: string;
   aiMitigation: string[];
-  status: "ACTIVE" | "ACKNOWLEDGED" | "DISPATCHED" | "RESOLVED";
+  status: "ACTIVE" | "ACKNOWLEDGED" | "RESOLVED";
 }
 
 export interface RoverState {

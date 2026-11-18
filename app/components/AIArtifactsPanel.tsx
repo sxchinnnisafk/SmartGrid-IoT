@@ -4,18 +4,12 @@ import React, { useState } from "react";
 import { useGrid } from "../context/GridContext";
 import {
   FileText,
-  Volume2,
-  Play,
-  Pause,
   X,
 } from "lucide-react";
 
 export default function AIArtifactsPanel() {
   const {
     nodes,
-    isPlayingVoice,
-    toggleVoicePlayback,
-    voiceProgress,
     isFaultActive,
   } = useGrid();
 
@@ -130,73 +124,8 @@ export default function AIArtifactsPanel() {
               </div>
 
               <p className="text-[11px] text-ink-muted leading-relaxed">
-                Automated analysis of Node C overload event and risk assessment.
+                AI monitoring summary of Node C overload readings and suggested operator checks.
               </p>
-            </div>
-
-            {/* ARTIFACT 3: Voice Dispatch Preview */}
-            <div className="rounded-2xl bg-ink-card border border-ink-border p-3.5 text-xs font-sans">
-              <div className="flex items-center justify-between gap-2 mb-2">
-                <div className="flex items-center gap-2 min-w-0">
-                  <div className="w-7 h-7 rounded-lg bg-cobalt-tint border border-cobalt-border flex items-center justify-center text-cobalt-soft shrink-0">
-                    <Volume2 className="w-3.5 h-3.5" aria-hidden="true" />
-                  </div>
-                  <div className="min-w-0">
-                    <h3 className="font-semibold text-ink-text text-xs truncate">
-                      Voice dispatch preview
-                    </h3>
-                    <div className="text-[11px] text-ink-muted font-mono">
-                      Generated · 10:22 AM
-                    </div>
-                  </div>
-                </div>
-
-                <button
-                  type="button"
-                  onClick={toggleVoicePlayback}
-                  className="px-3 py-1 rounded-full bg-cobalt hover:bg-cobalt-hover text-ink-onAccent text-[11px] font-semibold transition-colors shrink-0"
-                >
-                  {isPlayingVoice ? "Pause" : "Play"}
-                </button>
-              </div>
-
-              <div className="mt-2.5 p-2.5 rounded-xl bg-ink-deep border border-ink-border flex items-center justify-between gap-2.5">
-                <div className="flex-1 min-w-0">
-                  <p className="italic text-[11px] text-ink-secondary leading-snug font-serif mb-1.5">
-                    &ldquo;Dispatching field crew to Node C. Overload fault detected. Bring standard repair kit.&rdquo;
-                  </p>
-                  <div className="flex items-center gap-1 h-3">
-                    {[3, 6, 9, 12, 8, 13, 10, 6, 11, 14, 9, 5].map((h, i) => (
-                      <span
-                        key={i}
-                        className={`w-1 rounded-full transition-colors duration-200 ${
-                          isPlayingVoice ? "bg-cobalt animate-pulse" : "bg-ink-borderStrong"
-                        }`}
-                        style={{ height: `${h}px` }}
-                      />
-                    ))}
-                  </div>
-                </div>
-
-                <div className="flex flex-col items-center gap-1 shrink-0">
-                  <button
-                    type="button"
-                    onClick={toggleVoicePlayback}
-                    className="w-8 h-8 rounded-full bg-cobalt hover:bg-cobalt-hover text-ink-onAccent flex items-center justify-center shadow-cobalt transition-colors"
-                    title={isPlayingVoice ? "Pause spoken alert" : "Play spoken alert"}
-                    aria-label={isPlayingVoice ? "Pause spoken alert" : "Play spoken alert"}
-                  >
-                    {isPlayingVoice ? (
-                      <Pause className="w-3.5 h-3.5 fill-current" aria-hidden="true" />
-                    ) : (
-                      <Play className="w-3.5 h-3.5 fill-current ml-0.5" aria-hidden="true" />
-                    )}
-                  </button>
-                  <span className="text-[10px] font-mono text-ink-muted">
-                    0:{voiceProgress < 10 ? `0${voiceProgress}` : voiceProgress}
-                  </span>
-                </div>
-              </div>
             </div>
           </div>
         </div>
@@ -246,11 +175,11 @@ export default function AIArtifactsPanel() {
               </div>
 
               <div className="p-3.5 rounded-xl bg-ink-card border border-ink-border">
-                <div className="text-ink-text font-semibold mb-1">Recommended Operator Mitigation</div>
+                <div className="text-ink-text font-semibold mb-1">Suggested Operator Checks</div>
                 <p>
-                  1. Execute remote breaker isolation command for Node C bay.<br />
-                  2. Reroute 26MW industrial surplus to Residential Feeder A (headroom available: 98MW / 120MW limit).<br />
-                  3. Dispatch field crew with standard transformer inspection toolkit.
+                  1. Verify Node C voltage sag ({nodeC.voltage}V) and current load ({nodeC.current}A) on the live digital twin.<br />
+                  2. Review available headroom on Residential Feeder A (98MW / 120MW limit) and EV Hub B before any manual load changes.<br />
+                  3. Coordinate manual on-site inspection if abnormal readings persist (no automated dispatch is performed by the web app).
                 </p>
               </div>
 

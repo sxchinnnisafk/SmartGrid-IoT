@@ -262,26 +262,26 @@ export default function TelemetryDiagnostics() {
           <div className="bg-[var(--color-bg-subtle)]/80 p-4 rounded-xl border border-[var(--color-border)]">
             <div className="text-[var(--color-warning)] font-mono font-bold mb-2 flex items-center gap-1.5">
               <Zap className="w-4 h-4" />
-              <span>2. Recommended Action Plan</span>
+              <span>2. Suggested Operator Checks</span>
             </div>
             <ul className="text-[var(--color-text-muted)] space-y-1.5 list-disc list-inside">
-              <li>Auto-throttle Node C transformer tap changer by 2 steps.</li>
-              <li>Activate autonomous patrol rover R-1 for targeted corridor verification.</li>
-              <li>Reroute 150kW surplus EV charging load from Node B to Node A feeder.</li>
+              <li>Inspect Node C voltage sag (194.5V) and current draw (285A).</li>
+              <li>Use patrol rover R-1 for visual corridor monitoring near Node C.</li>
+              <li>Review load balance across Node A and Node B before manual adjustments.</li>
             </ul>
           </div>
 
           <div className="bg-[var(--color-bg-subtle)]/80 p-4 rounded-xl border border-[var(--color-border)]">
             <div className="text-[var(--color-success)] font-mono font-bold mb-2 flex items-center gap-1.5">
               <CheckCircle2 className="w-4 h-4" />
-              <span>3. Automated Mitigation Status</span>
+              <span>3. Monitoring &amp; Advisory Mode</span>
             </div>
             <p className="text-[var(--color-text-muted)] leading-relaxed mb-3">
-              Smart breaker SC-12 armed for automatic load shedding upon operator confirmation or autonomous rover clearance.
+              Web dashboard operates in monitoring and AI advisory mode only. No automated dispatch or remote switching is triggered.
             </p>
             <div className="flex items-center gap-2">
               <span className="w-2 h-2 rounded-full bg-[var(--color-success)] animate-pulse" />
-              <span className="text-[11px] font-mono text-[var(--color-success)]">Safety Interlock: ARMED</span>
+              <span className="text-[11px] font-mono text-[var(--color-success)]">Mode: MONITORING &amp; ADVISORY</span>
             </div>
           </div>
         </div>

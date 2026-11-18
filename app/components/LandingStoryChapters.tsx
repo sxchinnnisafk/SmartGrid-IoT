@@ -146,9 +146,9 @@ export default function LandingStoryChapters() {
       title: "Intelligent Diagnostics & Voice",
       subtitle: "AI incident explanation without black-box automation",
       content:
-        "Telemetry streams support instant diagnostic summaries. Gemini explains root causes (voltage sag, phase overload) and proposes a structured 4-step mitigation. Spoken dispatch alerts announce critical anomalies to field crews.",
+        "Telemetry streams support instant diagnostic summaries. Gemini explains root causes (voltage sag, phase overload) and suggests practical next steps for operators. Spoken voice summaries let operators listen to monitoring alerts without automated dispatch.",
       highlight:
-        "AI explains and recommends. The human operator retains full authority over all switching and isolation actions.",
+        "Built strictly for patrolling, monitoring, and AI guidance — operators review all alerts and handle actions manually.",
       tag: "AI & Voice",
       citation: "Human-in-the-Loop Operational Architecture",
     },
@@ -320,14 +320,14 @@ export default function LandingStoryChapters() {
             <div className="flex items-center justify-between border-b border-ink-border pb-3">
               <span className="text-xs font-sans font-medium text-ink-secondary flex items-center gap-2">
                 <Radio className="w-4 h-4 text-cobalt-soft" aria-hidden="true" />
-                Voice Dispatch & AI Summary
+                AI Advisory & Voice Summary
               </span>
               <span className="text-xs font-sans font-medium text-cobalt-soft">Gemini + Audio</span>
             </div>
 
             <div className="p-4 rounded-2xl bg-ink-card border border-ink-border space-y-3">
               <p className="text-xs sm:text-sm text-ink-secondary italic font-serif leading-relaxed">
-                &ldquo;Dispatching field crew to Node C. Overload fault confirmed at 194.5V and 102 MW on Industrial Transformer. Isolate breaker SC-12 and verify low-voltage corridor.&rdquo;
+                &ldquo;Monitoring alert for Node C Industrial Transformer: voltage dropped to 194.5V under 102 MW load. Suggested action: inspect Node C and review load balance across Nodes A and B.&rdquo;
               </p>
 
               <div className="flex items-center gap-3 pt-2">
@@ -335,7 +335,7 @@ export default function LandingStoryChapters() {
                   type="button"
                   onClick={toggleVoicePlayback}
                   className="w-9 h-9 rounded-full bg-cobalt hover:bg-cobalt-hover text-ink-onAccent flex items-center justify-center shrink-0 transition-colors"
-                  aria-label={isPlayingVoice ? "Pause voice dispatch" : "Play voice dispatch"}
+                  aria-label={isPlayingVoice ? "Pause voice summary" : "Play voice summary"}
                 >
                   {isPlayingVoice ? (
                     <Pause className="w-4 h-4" aria-hidden="true" />
@@ -345,7 +345,7 @@ export default function LandingStoryChapters() {
                 </button>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center justify-between text-[11px] font-sans text-ink-muted mb-1">
-                    <span>{isPlayingVoice ? "Playing dispatch brief" : "Preview spoken alert"}</span>
+                    <span>{isPlayingVoice ? "Playing AI voice summary" : "Preview spoken alert"}</span>
                     <span className="font-mono">{Math.round(voiceProgress)}%</span>
                   </div>
                   <div className="h-2 rounded-full bg-ink-deep overflow-hidden">
@@ -361,7 +361,7 @@ export default function LandingStoryChapters() {
             <div className="flex items-center justify-between text-xs text-ink-muted px-1">
               <span className="inline-flex items-center gap-1.5">
                 <Volume2 className="w-3.5 h-3.5 text-cobalt-soft" aria-hidden="true" />
-                Operator confirmation mandatory
+                Advisory only — no automated dispatch
               </span>
               <Link href="/ai-assistant" className="text-cobalt-soft hover:underline font-medium">
                 Open AI Assistant

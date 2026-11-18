@@ -16,7 +16,7 @@ import {
 const QUICK_PROMPTS = [
   "Summarize Node C fault risk",
   "Check ESP32-S3 rover patrol status",
-  "Draft field crew dispatch brief",
+  "Suggest next steps for Node C",
 ];
 
 export default function AIAssistantChat() {
@@ -265,11 +265,11 @@ export default function AIAssistantChat() {
             disabled={isChatLoading}
             onClick={() => {
               setAutoReadVoice(true);
-              sendChatMessage("Generate spoken voice dispatch brief for Node C.");
+              sendChatMessage("Summarize Node C status and recommended actions aloud.");
             }}
             className="p-1.5 text-parchment-subtle hover:text-parchment-text transition-colors disabled:opacity-50"
-            title="Request spoken ElevenLabs dispatch brief"
-            aria-label="Request spoken ElevenLabs dispatch brief"
+            title="Request spoken AI summary"
+            aria-label="Request spoken AI summary"
           >
             <Mic className="w-4 h-4" aria-hidden="true" />
           </button>
@@ -289,7 +289,7 @@ export default function AIAssistantChat() {
         </form>
 
         <div className="text-center text-[11px] font-sans text-parchment-muted">
-          SmartGrid AI advises only. Operators approve all switching actions.
+          SmartGrid AI monitors telemetry and suggests actions only — no automated dispatch.
         </div>
       </div>
     </div>
