@@ -94,3 +94,11 @@ export interface ChatMessage {
   voicePreview?: string;
   model?: string;
 }
+
+export interface ChatSession {
+  id: string;
+  title: string;
+  createdAt: number;
+  updatedAt: number;
+  messages: ChatMessage[];
+}

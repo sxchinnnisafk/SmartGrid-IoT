@@ -9,6 +9,7 @@ import {
   RoverState,
   LogMessage,
   ChatMessage,
+  ChatSession,
   UserProfile,
 } from "../types/grid";
 
@@ -33,9 +34,12 @@ interface GridContextType {
   addLog: (type: LogMessage["type"], message: string, level: LogMessage["level"]) => void;
   resetSystem: () => void;
 
-  // Chat & AI Assistant state (Gemini + OpenRouter + Fallback)
+  // Chat & AI Assistant state (Gemini + OpenRouter + persistent conversation history)
+  chatSessions: ChatSession[];
   chatMessages: ChatMessage[];
   sendChatMessage: (text: string) => void;
+  createNewChat: () => void;
+  deleteChatSession: (id: string) => void;
   isChatLoading: boolean;
   aiStatus: {
     gemini: boolean;
@@ -155,7 +159,14 @@ const initialAlerts: AlertTicket[] = [
   },
 ];
 
-const initialChatMessages: ChatMessage[] = [];
+const CHAT_STORAGE_KEY = "smartgrid_chat_sessions_v1";
+const ACTIVE_CHAT_STORAGE_KEY = "smartgrid_active_chat_id_v1";
+
+function formatSessionTitle(text: string): string {
+  const cleaned = text.replace(/\s+/g, " ").trim();
+  if (!cleaned) return "New conversation";
+  return cleaned.length > 42 ? `${cleaned.slice(0, 42).trimEnd()}…` : cleaned;
+}
 
 const generateTelemetryHistory = (): TelemetryPoint[] => {
   const points: TelemetryPoint[] = [];
@@ -217,7 +228,8 @@ export function GridProvider({ children }: { children: React.ReactNode }) {
     yPercent: 68,
   });
 
-  const [chatMessages, setChatMessages] = useState<ChatMessage[]>(initialChatMessages);
+  const [chatSessions, setChatSessions] = useState<ChatSession[]>([]);
+  const [activeChatId, setActiveChatIdState] = useState<string>("");
   const [isChatLoading, setIsChatLoading] = useState<boolean>(false);
   const [aiStatus, setAiStatus] = useState<{
     gemini: boolean;
@@ -227,16 +239,66 @@ export function GridProvider({ children }: { children: React.ReactNode }) {
   }>({
     gemini: false,
     elevenLabs: false,
-    provider: "fallback",
-    model: "local-telemetry",
+    provider: "unconfigured",
+    model: "unconfigured",
   });
-  const [activeChatId, setActiveChatId] = useState<string>("chat-today-node-c");
   const [speakingMessageId, setSpeakingMessageId] = useState<string | null>(null);
   const [autoReadVoice, setAutoReadVoice] = useState<boolean>(false);
 
+  const hasLoadedChatsRef = useRef<boolean>(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const audioUrlRef = useRef<string | null>(null);
   const fallbackTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  // Hydrate saved chat history from localStorage on mount
+  useEffect(() => {
+    try {
+      const rawSessions = localStorage.getItem(CHAT_STORAGE_KEY);
+      const savedActiveId = localStorage.getItem(ACTIVE_CHAT_STORAGE_KEY) || "";
+      if (rawSessions) {
+        const parsed = JSON.parse(rawSessions) as unknown;
+        if (Array.isArray(parsed)) {
+          const validSessions = parsed.filter(
+            (s): s is ChatSession =>
+              Boolean(s) &&
+              typeof s === "object" &&
+              typeof (s as ChatSession).id === "string" &&
+              typeof (s as ChatSession).title === "string" &&
+              Array.isArray((s as ChatSession).messages)
+          );
+          if (validSessions.length > 0) {
+            setChatSessions(validSessions);
+            const hasActive = validSessions.some((s) => s.id === savedActiveId);
+            setActiveChatIdState(hasActive ? savedActiveId : validSessions[0].id);
+          }
+        }
+      }
+    } catch {
+      // Ignore malformed storage
+    } finally {
+      hasLoadedChatsRef.current = true;
+    }
+  }, []);
+
+  // Persist chat sessions to localStorage whenever they change
+  useEffect(() => {
+    if (!hasLoadedChatsRef.current) return;
+    try {
+      localStorage.setItem(CHAT_STORAGE_KEY, JSON.stringify(chatSessions));
+      if (activeChatId) {
+        localStorage.setItem(ACTIVE_CHAT_STORAGE_KEY, activeChatId);
+      } else {
+        localStorage.removeItem(ACTIVE_CHAT_STORAGE_KEY);
+      }
+    } catch {
+      // Ignore storage quota errors
+    }
+  }, [chatSessions, activeChatId]);
+
+  const chatMessages = useMemo(() => {
+    const active = chatSessions.find((s) => s.id === activeChatId);
+    return active ? active.messages : [];
+  }, [chatSessions, activeChatId]);
 
   // Check Gemini & ElevenLabs API configuration status once on mount
   useEffect(() => {
@@ -500,25 +562,89 @@ export function GridProvider({ children }: { children: React.ReactNode }) {
     };
   }, []);
 
+  const setActiveChatId = (id: string) => {
+    stopSpeaking();
+    setActiveChatIdState(id);
+  };
+
+  const createNewChat = () => {
+    stopSpeaking();
+    // Reuse existing empty session if already on one
+    const current = chatSessions.find((s) => s.id === activeChatId);
+    if (current && current.messages.length === 0) {
+      return;
+    }
+    const now = Date.now();
+    const newSession: ChatSession = {
+      id: `chat-${now}-${Math.random().toString(36).slice(2, 6)}`,
+      title: "New conversation",
+      createdAt: now,
+      updatedAt: now,
+      messages: [],
+    };
+    setChatSessions((prev) => [newSession, ...prev]);
+    setActiveChatIdState(newSession.id);
+  };
+
+  const deleteChatSession = (id: string) => {
+    if (activeChatId === id) {
+      stopSpeaking();
+    }
+    setChatSessions((prev) => {
+      const next = prev.filter((s) => s.id !== id);
+      if (activeChatId === id) {
+        setActiveChatIdState(next[0]?.id || "");
+      }
+      return next;
+    });
+  };
+
   const sendChatMessage = (text: string) => {
     const trimmed = text.trim();
     if (!trimmed) return;
 
+    const now = Date.now();
     const userMsg: ChatMessage = {
-      id: `msg-${Date.now()}`,
+      id: `msg-${now}`,
       sender: "user",
       senderName: user?.name || "Jordan Diaz",
       avatarText: user?.avatarText || "JD",
-      timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+      timestamp: new Date(now).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
       content: trimmed,
     };
 
-    const historyPayload = chatMessages.slice(-8).map((m) => ({
+    const existingSession = chatSessions.find((s) => s.id === activeChatId);
+    const targetChatId = existingSession ? existingSession.id : `chat-${now}-${Math.random().toString(36).slice(2, 6)}`;
+    const historyPayload = (existingSession?.messages || []).slice(-10).map((m) => ({
       sender: m.sender,
       content: m.content,
     }));
 
-    setChatMessages((prev) => [...prev, userMsg]);
+    if (existingSession) {
+      setChatSessions((prev) =>
+        prev.map((s) =>
+          s.id === targetChatId
+            ? {
+                ...s,
+                title: s.messages.length === 0 || s.title === "New conversation" ? formatSessionTitle(trimmed) : s.title,
+                updatedAt: now,
+                messages: [...s.messages, userMsg],
+              }
+            : s
+        )
+      );
+    } else {
+      const newSession: ChatSession = {
+        id: targetChatId,
+        title: formatSessionTitle(trimmed),
+        createdAt: now,
+        updatedAt: now,
+        messages: [userMsg],
+      };
+      setChatSessions((prev) => [newSession, ...prev]);
+      setActiveChatIdState(targetChatId);
+    }
+
     setIsChatLoading(true);
     addLog("SYSTEM", `Operator queried AI Assistant: "${trimmed}"`, "info");
 
@@ -553,7 +679,8 @@ export function GridProvider({ children }: { children: React.ReactNode }) {
           throw new Error("Empty response from AI server.");
         }
 
-        const aiMsgId = `msg-${Date.now() + 1}`;
+        const replyTime = Date.now();
+        const aiMsgId = `msg-${replyTime + 1}`;
         const voicePreview =
           typeof data.voicePreview === "string" && data.voicePreview.trim()
             ? data.voicePreview.trim()
@@ -562,7 +689,7 @@ export function GridProvider({ children }: { children: React.ReactNode }) {
           id: aiMsgId,
           sender: "assistant",
           senderName: data.provider === "gemini" ? "SmartGrid AI (Gemini)" : "SmartGrid AI",
-          timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+          timestamp: new Date(replyTime).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
           content: replyText,
           isCriticalAlert: Boolean(data.isCriticalAlert),
           recommendations: Array.isArray(data.recommendations) && data.recommendations.length > 0
@@ -572,7 +699,13 @@ export function GridProvider({ children }: { children: React.ReactNode }) {
           model: typeof data.model === "string" ? data.model : undefined,
         };
 
-        setChatMessages((prev) => [...prev, aiMsg]);
+        setChatSessions((prev) =>
+          prev.map((s) =>
+            s.id === targetChatId
+              ? { ...s, updatedAt: replyTime, messages: [...s.messages, aiMsg] }
+              : s
+          )
+        );
         if (data.provider === "gemini" || data.provider === "openrouter") {
           addLog("SYSTEM", `AI reply generated via ${data.provider} (${data.model}).`, "success");
         }
@@ -581,15 +714,22 @@ export function GridProvider({ children }: { children: React.ReactNode }) {
         }
       })
       .catch((err: unknown) => {
+        const errTime = Date.now();
         const errMsg = err instanceof Error ? err.message : "Could not reach AI server.";
         const errorChatMsg: ChatMessage = {
-          id: `msg-${Date.now() + 1}`,
+          id: `msg-${errTime + 1}`,
           sender: "assistant",
           senderName: "SmartGrid AI",
-          timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+          timestamp: new Date(errTime).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
           content: `AI server error: ${errMsg}`,
         };
-        setChatMessages((prev) => [...prev, errorChatMsg]);
+        setChatSessions((prev) =>
+          prev.map((s) =>
+            s.id === targetChatId
+              ? { ...s, updatedAt: errTime, messages: [...s.messages, errorChatMsg] }
+              : s
+          )
+        );
         addLog("SYSTEM", `AI chat request failed: ${errMsg}`, "error");
       })
       .finally(() => {
@@ -708,8 +848,11 @@ export function GridProvider({ children }: { children: React.ReactNode }) {
         addLog,
         resetSystem,
 
+        chatSessions,
         chatMessages,
         sendChatMessage,
+        createNewChat,
+        deleteChatSession,
         isChatLoading,
         aiStatus,
         activeChatId,
