@@ -124,10 +124,8 @@ export default function AIAssistantChat() {
               );
             }
 
-            const cleanBody = msg.isCriticalAlert
-              ? msg.content.replace(/^Node C is in a critical state\.\s*/i, "")
-              : msg.content;
             const isThisMessageSpeaking = isPlayingVoice && speakingMessageId === msg.id;
+            const spokenContent = msg.voicePreview || msg.content;
 
             return (
               <div key={msg.id} className="flex items-start gap-2.5">
@@ -136,19 +134,19 @@ export default function AIAssistantChat() {
                 </div>
 
                 <div className="max-w-xl bg-parchment-bright border border-parchment-borderStrong rounded-2xl rounded-tl-sm p-4 text-xs sm:text-sm text-parchment-text shadow-sm space-y-3 min-w-0">
-                  <div className="leading-relaxed">
+                  <div className="leading-relaxed whitespace-pre-line">
                     {msg.isCriticalAlert && (
-                      <span className="font-semibold text-parchment-text">
-                        Node C is in a <span className="text-signal-critical font-bold">critical</span> state.{" "}
+                      <span className="inline-flex items-center px-2 py-0.5 mr-2 mb-1 rounded-full bg-signal-criticalBg text-signal-criticalText border border-signal-criticalBorder text-[10px] font-mono font-bold uppercase align-middle">
+                        Critical Alert
                       </span>
                     )}
-                    <span className="text-parchment-secondary">{cleanBody}</span>
+                    <span className="text-parchment-secondary">{msg.content}</span>
                   </div>
 
                   {msg.recommendations && msg.recommendations.length > 0 && (
                     <div className="pt-1">
                       <div className="font-semibold text-xs text-parchment-text mb-2 font-sans">
-                        Safest response (recommended):
+                        Recommended operator steps:
                       </div>
                       <div className="space-y-1.5 pl-0.5">
                         {msg.recommendations.map((rec, rIdx) => (
@@ -163,6 +161,15 @@ export default function AIAssistantChat() {
                     </div>
                   )}
 
+                  {msg.voicePreview && (
+                    <div className="px-3 py-2 rounded-xl bg-parchment-light border border-parchment-border text-xs text-parchment-secondary italic font-serif">
+                      <span className="not-italic font-sans font-semibold text-[11px] text-cobalt mr-1.5">
+                        Voice alert:
+                      </span>
+                      &ldquo;{msg.voicePreview}&rdquo;
+                    </div>
+                  )}
+
                   <div className="flex items-center justify-between pt-1">
                     <span className="text-[10px] font-mono text-parchment-subtle">
                       {msg.timestamp}
@@ -173,7 +180,7 @@ export default function AIAssistantChat() {
                       onClick={() =>
                         isThisMessageSpeaking
                           ? stopSpeaking()
-                          : void speakText(msg.content, msg.id)
+                          : void speakText(spokenContent, msg.id)
                       }
                       className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-sans font-medium border transition-colors ${
                         isThisMessageSpeaking

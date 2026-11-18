@@ -91,4 +91,5 @@ export interface ChatMessage {
   content: string;
   isCriticalAlert?: boolean;
   recommendations?: string[];
+  voicePreview?: string;
 }

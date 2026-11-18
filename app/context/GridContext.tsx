@@ -568,6 +568,10 @@ export function GridProvider({ children }: { children: React.ReactNode }) {
             : "Telemetry analyzed. All three corridor nodes remain under active supervision.";
 
         const aiMsgId = `msg-${Date.now() + 1}`;
+        const voicePreview =
+          typeof data.voicePreview === "string" && data.voicePreview.trim()
+            ? data.voicePreview.trim()
+            : undefined;
         const aiMsg: ChatMessage = {
           id: aiMsgId,
           sender: "assistant",
@@ -578,6 +582,7 @@ export function GridProvider({ children }: { children: React.ReactNode }) {
           recommendations: Array.isArray(data.recommendations) && data.recommendations.length > 0
             ? data.recommendations
             : undefined,
+          voicePreview,
         };
 
         setChatMessages((prev) => [...prev, aiMsg]);
@@ -585,7 +590,7 @@ export function GridProvider({ children }: { children: React.ReactNode }) {
           addLog("SYSTEM", `AI reply generated via ${data.provider} (${data.model}).`, "success");
         }
         if (autoReadVoice) {
-          void speakText(replyText, aiMsgId);
+          void speakText(voicePreview || replyText, aiMsgId);
         }
       })
       .catch(() => {
