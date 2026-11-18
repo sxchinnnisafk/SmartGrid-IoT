@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { isSupabaseServerConfigured } from "../../lib/supabase";
 
 function parseApiKeys(value: string | undefined): string[] {
   if (!value) return [];
@@ -12,6 +13,7 @@ export async function GET() {
   const geminiDirect = parseApiKeys(process.env.GEMINI_API_KEY).length > 0;
   const openRouter = parseApiKeys(process.env.OPENROUTER_API_KEY).length > 0;
   const elevenLabs = parseApiKeys(process.env.ELEVENLABS_API_KEY).length > 0;
+  const supabase = isSupabaseServerConfigured();
 
   return NextResponse.json({
     gemini: geminiDirect || openRouter,
@@ -24,5 +26,6 @@ export async function GET() {
     elevenLabs,
     elevenLabsModel: process.env.ELEVENLABS_MODEL_ID || "eleven_flash_v2_5",
     voiceId: process.env.ELEVENLABS_VOICE_ID || "JBFqnCBsd6RMkjVDRZzb",
+    supabase,
   });
 }

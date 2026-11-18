@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { getSupabaseServerClient } from "../../../lib/supabase";
 
 export interface HardwareRoverTelemetry {
   roverId: string;
@@ -16,9 +17,23 @@ export interface HardwareRoverTelemetry {
   updatedAt: number;
 }
 
-// Note: In-memory store works immediately on localhost / single Node servers.
-// For multi-instance cloud hosting (like Vercel serverless), pair with Supabase Realtime or MQTT/WebSockets.
-let latestTelemetry: HardwareRoverTelemetry | null = null;
+interface SupabaseTelemetryRow {
+  rover_id: string;
+  current_checkpoint_id: string;
+  target_checkpoint_id: string;
+  progress: number;
+  x_percent: number | null;
+  y_percent: number | null;
+  is_patrolling: boolean;
+  speed_mps: number;
+  battery_level: number;
+  wifi_rssi: number;
+  ir_obstacle_detected: boolean;
+  tft_eye_state: string;
+  updated_at: string;
+}
+
+let latestMemoryTelemetry: HardwareRoverTelemetry | null = null;
 
 const LIVE_TIMEOUT_MS = 10_000;
 
@@ -26,13 +41,68 @@ function isValidCheckpoint(id: unknown): id is "cp-a" | "cp-b" | "cp-c" {
   return id === "cp-a" || id === "cp-b" || id === "cp-c";
 }
 
+function rowToTelemetry(row: SupabaseTelemetryRow): HardwareRoverTelemetry {
+  const updatedMs = Date.parse(row.updated_at);
+  return {
+    roverId: row.rover_id,
+    currentCheckpointId: isValidCheckpoint(row.current_checkpoint_id)
+      ? row.current_checkpoint_id
+      : "cp-a",
+    targetCheckpointId: isValidCheckpoint(row.target_checkpoint_id)
+      ? row.target_checkpoint_id
+      : "cp-b",
+    progress: Math.max(0, Math.min(100, Math.round(row.progress ?? 0))),
+    xPercent: typeof row.x_percent === "number" ? row.x_percent : undefined,
+    yPercent: typeof row.y_percent === "number" ? row.y_percent : undefined,
+    isPatrolling: Boolean(row.is_patrolling),
+    speedMps: typeof row.speed_mps === "number" ? row.speed_mps : 0,
+    batteryLevel: typeof row.battery_level === "number" ? row.battery_level : 89,
+    wifiRssi: typeof row.wifi_rssi === "number" ? row.wifi_rssi : -58,
+    irObstacleDetected: Boolean(row.ir_obstacle_detected),
+    tftEyeState:
+      row.tft_eye_state === "OBSTACLE_HALT" || row.tft_eye_state === "STANDBY"
+        ? row.tft_eye_state
+        : "PATROL_SCAN",
+    updatedAt: Number.isFinite(updatedMs) ? updatedMs : Date.now(),
+  };
+}
+
 export async function GET() {
   const now = Date.now();
-  const isLive = Boolean(latestTelemetry && now - latestTelemetry.updatedAt <= LIVE_TIMEOUT_MS);
+  const supabase = getSupabaseServerClient();
+
+  if (supabase) {
+    try {
+      const { data, error } = await supabase
+        .from("rover_telemetry")
+        .select("*")
+        .order("updated_at", { ascending: false })
+        .limit(1)
+        .maybeSingle<SupabaseTelemetryRow>();
+
+      if (!error && data) {
+        const telemetry = rowToTelemetry(data);
+        const isLive = now - telemetry.updatedAt <= LIVE_TIMEOUT_MS;
+        return NextResponse.json({
+          live: isLive,
+          source: "supabase",
+          telemetry: isLive ? telemetry : null,
+          serverTime: now,
+        });
+      }
+    } catch (err) {
+      console.error("Supabase rover_telemetry GET error:", err);
+    }
+  }
+
+  const isLive = Boolean(
+    latestMemoryTelemetry && now - latestMemoryTelemetry.updatedAt <= LIVE_TIMEOUT_MS
+  );
 
   return NextResponse.json({
     live: isLive,
-    telemetry: isLive ? latestTelemetry : null,
+    source: "memory",
+    telemetry: isLive ? latestMemoryTelemetry : null,
     serverTime: now,
   });
 }
@@ -56,8 +126,11 @@ export async function POST(request: NextRequest) {
     const irObstacleDetected = Boolean(body.irObstacleDetected);
     const isPatrolling = irObstacleDetected ? false : Boolean(body.isPatrolling ?? true);
 
-    latestTelemetry = {
-      roverId: typeof body.roverId === "string" && body.roverId.trim() ? body.roverId.trim() : "ESP32-S3 Rover R-1",
+    const telemetry: HardwareRoverTelemetry = {
+      roverId:
+        typeof body.roverId === "string" && body.roverId.trim()
+          ? body.roverId.trim()
+          : "ESP32-S3 Rover R-1",
       currentCheckpointId,
       targetCheckpointId,
       progress,
@@ -91,9 +164,40 @@ export async function POST(request: NextRequest) {
       updatedAt: Date.now(),
     };
 
+    latestMemoryTelemetry = telemetry;
+
+    let persistedTo: "supabase" | "memory" = "memory";
+    const supabase = getSupabaseServerClient();
+    if (supabase) {
+      const { error } = await supabase.from("rover_telemetry").upsert(
+        {
+          rover_id: telemetry.roverId,
+          current_checkpoint_id: telemetry.currentCheckpointId,
+          target_checkpoint_id: telemetry.targetCheckpointId,
+          progress: telemetry.progress,
+          x_percent: telemetry.xPercent ?? null,
+          y_percent: telemetry.yPercent ?? null,
+          is_patrolling: telemetry.isPatrolling,
+          speed_mps: telemetry.speedMps,
+          battery_level: telemetry.batteryLevel,
+          wifi_rssi: telemetry.wifiRssi,
+          ir_obstacle_detected: telemetry.irObstacleDetected,
+          tft_eye_state: telemetry.tftEyeState ?? "PATROL_SCAN",
+          updated_at: new Date(telemetry.updatedAt).toISOString(),
+        },
+        { onConflict: "rover_id" }
+      );
+      if (error) {
+        console.error("Supabase rover_telemetry upsert error:", error.message);
+      } else {
+        persistedTo = "supabase";
+      }
+    }
+
     return NextResponse.json({
       ok: true,
-      telemetry: latestTelemetry,
+      persistedTo,
+      telemetry,
     });
   } catch (err) {
     console.error("Rover telemetry POST error:", err);

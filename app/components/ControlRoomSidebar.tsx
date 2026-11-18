@@ -10,6 +10,8 @@ export default function ControlRoomSidebar() {
     selectedCheckpointId,
     setSelectedCheckpointId,
     rover,
+    isHardwareLive,
+    isSupabaseConnected,
     routeRoverTo,
   } = useGrid();
 
@@ -25,8 +27,14 @@ export default function ControlRoomSidebar() {
             Rover status
           </h2>
           <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-cobalt-tint text-cobalt text-xs font-sans font-semibold">
-            <span className="w-2 h-2 rounded-full bg-cobalt animate-pulse" />
-            <span>Live</span>
+            <span
+              className={`w-2 h-2 rounded-full animate-pulse ${
+                isHardwareLive ? "bg-signal-normalBright" : "bg-cobalt"
+              }`}
+            />
+            <span>
+              {isHardwareLive ? "ESP32 Live" : isSupabaseConnected ? "Supabase" : "Live"}
+            </span>
           </div>
         </div>
 

@@ -11,6 +11,7 @@ import {
   UserProfile,
 } from "../types/grid";
 import { getControlRoomPercent } from "../lib/patrolPath";
+import { getSupabaseBrowserClient } from "../lib/supabase";
 
 interface RoverContextType {
   checkpoints: PatrolCheckpoint[];
@@ -23,6 +24,7 @@ interface RoverContextType {
   triggerObstacleAlert: (active?: boolean) => void;
   rover: RoverState;
   isHardwareLive: boolean;
+  isSupabaseConnected: boolean;
   startPatrol: () => void;
   stopPatrol: () => void;
   routeRoverTo: (checkpointId: string) => void;
@@ -140,6 +142,8 @@ export function GridProvider({ children }: { children: React.ReactNode }) {
   const [isOffline, setIsOffline] = useState<boolean>(false);
   const [isObstacleAlertActive, setIsObstacleAlertActive] = useState<boolean>(false);
   const [isHardwareLive, setIsHardwareLive] = useState<boolean>(false);
+  const [isSupabaseConnected, setIsSupabaseConnected] = useState<boolean>(false);
+  const lastHardwareHeartbeatRef = useRef<number>(0);
   const [alerts, setAlerts] = useState<AlertTicket[]>(initialAlerts);
   const [logs, setLogs] = useState<LogMessage[]>([
     {
@@ -197,15 +201,17 @@ export function GridProvider({ children }: { children: React.ReactNode }) {
   const audioUrlRef = useRef<string | null>(null);
   const fallbackTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
-  // Hydrate saved chat history from localStorage on mount
+  // Hydrate saved chat history from localStorage (+ Supabase cloud sync when configured)
   useEffect(() => {
+    let localSessions: ChatSession[] = [];
+    let savedActiveId = "";
     try {
       const rawSessions = localStorage.getItem(CHAT_STORAGE_KEY);
-      const savedActiveId = localStorage.getItem(ACTIVE_CHAT_STORAGE_KEY) || "";
+      savedActiveId = localStorage.getItem(ACTIVE_CHAT_STORAGE_KEY) || "";
       if (rawSessions) {
         const parsed = JSON.parse(rawSessions) as unknown;
         if (Array.isArray(parsed)) {
-          const validSessions = parsed.filter(
+          localSessions = parsed.filter(
             (s): s is ChatSession =>
               Boolean(s) &&
               typeof s === "object" &&
@@ -213,10 +219,10 @@ export function GridProvider({ children }: { children: React.ReactNode }) {
               typeof (s as ChatSession).title === "string" &&
               Array.isArray((s as ChatSession).messages)
           );
-          if (validSessions.length > 0) {
-            setChatSessions(validSessions);
-            const hasActive = validSessions.some((s) => s.id === savedActiveId);
-            setActiveChatIdState(hasActive ? savedActiveId : validSessions[0].id);
+          if (localSessions.length > 0) {
+            setChatSessions(localSessions);
+            const hasActive = localSessions.some((s) => s.id === savedActiveId);
+            setActiveChatIdState(hasActive ? savedActiveId : localSessions[0].id);
           }
         }
       }
@@ -225,6 +231,44 @@ export function GridProvider({ children }: { children: React.ReactNode }) {
     } finally {
       hasLoadedChatsRef.current = true;
     }
+
+    const supabase = getSupabaseBrowserClient();
+    if (!supabase) return;
+
+    void supabase
+      .from("chat_sessions")
+      .select("id, title, messages, created_at, updated_at")
+      .order("updated_at", { ascending: false })
+      .limit(40)
+      .then(({ data, error }) => {
+        if (error || !Array.isArray(data) || data.length === 0) return;
+        const remoteSessions: ChatSession[] = data
+          .filter((r) => typeof r.id === "string" && Array.isArray(r.messages))
+          .map((r) => ({
+            id: r.id,
+            title: typeof r.title === "string" ? r.title : "Conversation",
+            createdAt: Date.parse(r.created_at) || Date.now(),
+            updatedAt: Date.parse(r.updated_at) || Date.now(),
+            messages: r.messages as ChatMessage[],
+          }));
+
+        if (remoteSessions.length === 0) return;
+
+        setChatSessions((prev) => {
+          const merged = new Map<string, ChatSession>();
+          for (const s of [...prev, ...remoteSessions]) {
+            const existing = merged.get(s.id);
+            if (!existing || s.updatedAt >= existing.updatedAt) {
+              merged.set(s.id, s);
+            }
+          }
+          const sorted = Array.from(merged.values()).sort((a, b) => b.updatedAt - a.updatedAt);
+          if (!savedActiveId && sorted.length > 0) {
+            setActiveChatIdState((curr) => curr || sorted[0].id);
+          }
+          return sorted;
+        });
+      });
   }, []);
 
   // Persist chat sessions to localStorage whenever they change
@@ -260,6 +304,9 @@ export function GridProvider({ children }: { children: React.ReactNode }) {
           provider: String(data.provider || "unconfigured"),
           model: String(data.model || "unconfigured"),
         });
+        if (typeof data.supabase === "boolean") {
+          setIsSupabaseConnected(data.supabase);
+        }
       })
       .catch(() => {
         // Keep safe defaults
@@ -429,7 +476,25 @@ export function GridProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
+  const sendRoverCommand = (
+    command: "START_PATROL" | "PAUSE_PATROL" | "ROUTE_TO" | "CLEAR_OBSTACLE",
+    targetCheckpointId?: string
+  ) => {
+    fetch("/api/rover/command", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        roverId: rover.roverId,
+        command,
+        targetCheckpointId,
+      }),
+    }).catch(() => {
+      // Non-blocking command dispatch
+    });
+  };
+
   const startPatrol = () => {
+    sendRoverCommand("START_PATROL");
     setRover((prev) => {
       // If Checkpoint C is obstructed, safely patrol between clear Checkpoints A and B
       const safeTarget =
@@ -454,6 +519,7 @@ export function GridProvider({ children }: { children: React.ReactNode }) {
   };
 
   const stopPatrol = () => {
+    sendRoverCommand("PAUSE_PATROL");
     setRover((prev) => ({
       ...prev,
       isPatrolling: false,
@@ -487,6 +553,7 @@ export function GridProvider({ children }: { children: React.ReactNode }) {
       return;
     }
 
+    sendRoverCommand("ROUTE_TO", checkpointId);
     setRover((prev) => {
       const nextPos = getControlRoomPercent(prev.currentCheckpointId, checkpointId, 0);
       return {
@@ -639,6 +706,25 @@ export function GridProvider({ children }: { children: React.ReactNode }) {
       }
       return next;
     });
+    const supabase = getSupabaseBrowserClient();
+    if (supabase) {
+      void supabase.from("chat_sessions").delete().eq("id", id);
+    }
+  };
+
+  const syncChatSessionToSupabase = (session: ChatSession) => {
+    const supabase = getSupabaseBrowserClient();
+    if (!supabase) return;
+    void supabase.from("chat_sessions").upsert(
+      {
+        id: session.id,
+        title: session.title,
+        messages: session.messages,
+        created_at: new Date(session.createdAt).toISOString(),
+        updated_at: new Date(session.updatedAt).toISOString(),
+      },
+      { onConflict: "id" }
+    );
   };
 
   const sendChatMessage = (text: string) => {
@@ -746,11 +832,16 @@ export function GridProvider({ children }: { children: React.ReactNode }) {
         };
 
         setChatSessions((prev) =>
-          prev.map((s) =>
-            s.id === targetChatId
-              ? { ...s, updatedAt: replyTime, messages: [...s.messages, aiMsg] }
-              : s
-          )
+          prev.map((s) => {
+            if (s.id !== targetChatId) return s;
+            const updated: ChatSession = {
+              ...s,
+              updatedAt: replyTime,
+              messages: [...s.messages, aiMsg],
+            };
+            syncChatSessionToSupabase(updated);
+            return updated;
+          })
         );
         if (data.provider === "gemini" || data.provider === "openrouter") {
           addLog("SYSTEM", `AI reply generated via ${data.provider} (${data.model}).`, "success");
@@ -819,9 +910,94 @@ export function GridProvider({ children }: { children: React.ReactNode }) {
     addLog("SYSTEM", "Surveillance rover system reset to active patrol loop.", "info");
   };
 
-  // Poll /api/rover/telemetry so real ESP32-S3 hardware seamlessly takes over live position when connected
+  // Subscribe to Supabase Realtime for instant (<150ms) ESP32-S3 rover updates + API poll fallback
   useEffect(() => {
     let active = true;
+
+    const applyIncomingTelemetry = (t: {
+      roverId: string;
+      currentCheckpointId: string;
+      targetCheckpointId: string;
+      progress: number;
+      xPercent?: number | null;
+      yPercent?: number | null;
+      isPatrolling: boolean;
+      speedMps: number;
+      batteryLevel: number;
+      wifiRssi: number;
+      irObstacleDetected: boolean;
+      tftEyeState?: string;
+    }) => {
+      lastHardwareHeartbeatRef.current = Date.now();
+      setIsHardwareLive(true);
+
+      const pos =
+        typeof t.xPercent === "number" && typeof t.yPercent === "number"
+          ? { xPercent: t.xPercent, yPercent: t.yPercent }
+          : getControlRoomPercent(t.currentCheckpointId, t.targetCheckpointId, t.progress);
+
+      const eyeState =
+        t.tftEyeState === "OBSTACLE_HALT" || t.tftEyeState === "STANDBY"
+          ? t.tftEyeState
+          : t.irObstacleDetected
+          ? "OBSTACLE_HALT"
+          : t.isPatrolling
+          ? "PATROL_SCAN"
+          : "STANDBY";
+
+      setRover((prev) => ({
+        ...prev,
+        roverId: t.roverId || prev.roverId,
+        isPatrolling: Boolean(t.isPatrolling),
+        currentCheckpointId: t.currentCheckpointId,
+        targetCheckpointId: t.targetCheckpointId,
+        progress: Math.max(0, Math.min(100, Math.round(t.progress))),
+        batteryLevel: t.batteryLevel,
+        speedMps: t.speedMps,
+        wifiRssi: t.wifiRssi,
+        irObstacleDetected: Boolean(t.irObstacleDetected),
+        tftEyeState: eyeState,
+        patrolMode: t.irObstacleDetected
+          ? "Obstacle Hold"
+          : t.isPatrolling
+          ? "Full Path Loop"
+          : "Standby",
+        xPercent: pos.xPercent,
+        yPercent: pos.yPercent,
+      }));
+    };
+
+    const supabase = getSupabaseBrowserClient();
+    const channel = supabase
+      ? supabase
+          .channel("rover-telemetry-live")
+          .on(
+            "postgres_changes",
+            { event: "*", schema: "public", table: "rover_telemetry" },
+            (payload) => {
+              if (!active || isOffline) return;
+              const row = payload.new as Record<string, unknown> | undefined;
+              if (!row || typeof row.rover_id !== "string") return;
+              setIsSupabaseConnected(true);
+              applyIncomingTelemetry({
+                roverId: row.rover_id,
+                currentCheckpointId: String(row.current_checkpoint_id || "cp-a"),
+                targetCheckpointId: String(row.target_checkpoint_id || "cp-b"),
+                progress: Number(row.progress ?? 0),
+                xPercent: typeof row.x_percent === "number" ? row.x_percent : null,
+                yPercent: typeof row.y_percent === "number" ? row.y_percent : null,
+                isPatrolling: Boolean(row.is_patrolling),
+                speedMps: Number(row.speed_mps ?? 0),
+                batteryLevel: Number(row.battery_level ?? 89),
+                wifiRssi: Number(row.wifi_rssi ?? -58),
+                irObstacleDetected: Boolean(row.ir_obstacle_detected),
+                tftEyeState: typeof row.tft_eye_state === "string" ? row.tft_eye_state : undefined,
+              });
+            }
+          )
+          .subscribe()
+      : null;
+
     const pollHardware = async () => {
       if (isOffline || (typeof document !== "undefined" && document.hidden)) return;
       try {
@@ -831,34 +1007,8 @@ export function GridProvider({ children }: { children: React.ReactNode }) {
         if (!active) return;
 
         if (data?.live && data?.telemetry) {
-          const t = data.telemetry;
-          setIsHardwareLive(true);
-          const pos =
-            typeof t.xPercent === "number" && typeof t.yPercent === "number"
-              ? { xPercent: t.xPercent, yPercent: t.yPercent }
-              : getControlRoomPercent(t.currentCheckpointId, t.targetCheckpointId, t.progress);
-
-          setRover((prev) => ({
-            ...prev,
-            roverId: t.roverId || prev.roverId,
-            isPatrolling: Boolean(t.isPatrolling),
-            currentCheckpointId: t.currentCheckpointId,
-            targetCheckpointId: t.targetCheckpointId,
-            progress: t.progress,
-            batteryLevel: t.batteryLevel,
-            speedMps: t.speedMps,
-            wifiRssi: t.wifiRssi,
-            irObstacleDetected: Boolean(t.irObstacleDetected),
-            tftEyeState: t.tftEyeState || prev.tftEyeState,
-            patrolMode: t.irObstacleDetected
-              ? "Obstacle Hold"
-              : t.isPatrolling
-              ? "Full Path Loop"
-              : "Standby",
-            xPercent: pos.xPercent,
-            yPercent: pos.yPercent,
-          }));
-        } else {
+          applyIncomingTelemetry(data.telemetry);
+        } else if (Date.now() - lastHardwareHeartbeatRef.current > 10_000) {
           setIsHardwareLive(false);
         }
       } catch {
@@ -867,10 +1017,13 @@ export function GridProvider({ children }: { children: React.ReactNode }) {
     };
 
     void pollHardware();
-    const hwInterval = setInterval(pollHardware, 1500);
+    const hwInterval = setInterval(pollHardware, supabase ? 5000 : 1500);
     return () => {
       active = false;
       clearInterval(hwInterval);
+      if (supabase && channel) {
+        void supabase.removeChannel(channel);
+      }
     };
   }, [isOffline]);
 
@@ -970,6 +1123,7 @@ export function GridProvider({ children }: { children: React.ReactNode }) {
         triggerObstacleAlert,
         rover,
         isHardwareLive,
+        isSupabaseConnected,
         startPatrol,
         stopPatrol,
         routeRoverTo,
