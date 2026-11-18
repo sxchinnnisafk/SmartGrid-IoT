@@ -2,10 +2,12 @@ import { NextRequest, NextResponse } from "next/server";
 
 const DEFAULT_FREE_VOICE_ID = "JBFqnCBsd6RMkjVDRZzb"; // George (ElevenLabs official free premade default)
 
-function isConfigured(value: string | undefined): boolean {
-  if (!value) return false;
-  const trimmed = value.trim();
-  return Boolean(trimmed) && !trimmed.startsWith("your_") && !trimmed.includes("_here");
+function parseApiKeys(value: string | undefined): string[] {
+  if (!value) return [];
+  return value
+    .split(/[\n,;]+/)
+    .map((k) => k.trim().replace(/^["']|["']$/g, ""))
+    .filter((k) => Boolean(k) && !k.startsWith("your_") && !k.includes("_here"));
 }
 
 async function synthesizeWithVoice(
@@ -62,52 +64,55 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Text is required for speech synthesis." }, { status: 400 });
     }
 
-    const apiKey = process.env.ELEVENLABS_API_KEY;
-    if (!isConfigured(apiKey)) {
+    const apiKeys = parseApiKeys(process.env.ELEVENLABS_API_KEY);
+    if (apiKeys.length === 0) {
       return NextResponse.json(
         {
           fallback: true,
-          error: "ELEVENLABS_API_KEY is not configured in .env yet.",
+          error: "ELEVENLABS_API_KEY is not configured in environment variables.",
         },
         { status: 501 }
       );
     }
 
-    const cleanKey = apiKey!.trim();
     const voiceId = (body.voiceId || process.env.ELEVENLABS_VOICE_ID || DEFAULT_FREE_VOICE_ID).trim();
     const modelId = (process.env.ELEVENLABS_MODEL_ID || "eleven_flash_v2_5").trim();
 
-    let response = await synthesizeWithVoice(cleanKey, voiceId, modelId, text);
+    let lastStatus = 502;
+    for (const cleanKey of apiKeys) {
+      let response = await synthesizeWithVoice(cleanKey, voiceId, modelId, text);
 
-    // If the configured voice is unavailable on this account tier (402/404), auto-select an available premade voice
-    if (!response.ok && (response.status === 402 || response.status === 404)) {
-      const accountVoiceId = await findFirstFreeAccountVoice(cleanKey);
-      if (accountVoiceId && accountVoiceId !== voiceId) {
-        response = await synthesizeWithVoice(cleanKey, accountVoiceId, modelId, text);
+      // If the configured voice is unavailable on this account tier (402/404), auto-select an available premade voice
+      if (!response.ok && (response.status === 402 || response.status === 404)) {
+        const accountVoiceId = await findFirstFreeAccountVoice(cleanKey);
+        if (accountVoiceId && accountVoiceId !== voiceId) {
+          response = await synthesizeWithVoice(cleanKey, accountVoiceId, modelId, text);
+        }
       }
-    }
 
-    if (!response.ok) {
+      if (response.ok) {
+        const audioBuffer = await response.arrayBuffer();
+        return new NextResponse(audioBuffer, {
+          status: 200,
+          headers: {
+            "Content-Type": "audio/mpeg",
+            "Cache-Control": "no-store",
+          },
+        });
+      }
+
+      lastStatus = response.status;
       const errDetail = await response.text().catch(() => "");
       console.error("ElevenLabs API error:", response.status, errDetail);
-      return NextResponse.json(
-        {
-          fallback: true,
-          error: `ElevenLabs synthesis failed (HTTP ${response.status}).`,
-        },
-        { status: response.status }
-      );
     }
 
-    const audioBuffer = await response.arrayBuffer();
-
-    return new NextResponse(audioBuffer, {
-      status: 200,
-      headers: {
-        "Content-Type": "audio/mpeg",
-        "Cache-Control": "no-store",
+    return NextResponse.json(
+      {
+        fallback: true,
+        error: `ElevenLabs synthesis failed across configured keys (HTTP ${lastStatus}).`,
       },
-    });
+      { status: lastStatus }
+    );
   } catch (err) {
     console.error("TTS API route failure:", err);
     return NextResponse.json(

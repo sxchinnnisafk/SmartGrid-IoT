@@ -106,7 +106,21 @@ export default function AIAssistantChat() {
         </div>
 
         {/* Conversation Stream */}
-        <div className="space-y-4 max-h-[400px] overflow-y-auto pr-1.5">
+        <div className="space-y-4 max-h-[400px] min-h-[260px] overflow-y-auto pr-1.5">
+          {chatMessages.length === 0 && !isChatLoading && (
+            <div className="h-[240px] flex flex-col items-center justify-center text-center px-6">
+              <div className="w-11 h-11 rounded-2xl bg-control-bg border border-cobalt-border flex items-center justify-center text-control mb-3">
+                <Sparkles className="w-5 h-5" aria-hidden="true" />
+              </div>
+              <p className="font-serif text-lg text-parchment-text">
+                Hey! What&apos;s on your mind?
+              </p>
+              <p className="text-xs text-parchment-muted font-sans mt-1 max-w-sm">
+                Ask anything about the grid, the ESP32-S3 rover, hardware architecture, or just say hi.
+              </p>
+            </div>
+          )}
+
           {chatMessages.map((msg) => {
             if (msg.sender === "user") {
               return (
@@ -170,9 +184,10 @@ export default function AIAssistantChat() {
                     </div>
                   )}
 
-                  <div className="flex items-center justify-between pt-1">
+                  <div className="flex items-center justify-between gap-2 pt-1">
                     <span className="text-[10px] font-mono text-parchment-subtle">
                       {msg.timestamp}
+                      {msg.model ? ` · ${msg.model}` : ""}
                     </span>
 
                     <button

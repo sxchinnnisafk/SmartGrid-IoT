@@ -1,26 +1,26 @@
 import { NextResponse } from "next/server";
 
-function isConfigured(value: string | undefined): boolean {
-  if (!value) return false;
-  const trimmed = value.trim();
-  if (!trimmed) return false;
-  if (trimmed.startsWith("your_") || trimmed.includes("_here")) return false;
-  return true;
+function parseApiKeys(value: string | undefined): string[] {
+  if (!value) return [];
+  return value
+    .split(/[\n,;]+/)
+    .map((k) => k.trim().replace(/^["']|["']$/g, ""))
+    .filter((k) => Boolean(k) && !k.startsWith("your_") && !k.includes("_here"));
 }
 
 export async function GET() {
-  const geminiDirect = isConfigured(process.env.GEMINI_API_KEY);
-  const openRouter = isConfigured(process.env.OPENROUTER_API_KEY);
-  const elevenLabs = isConfigured(process.env.ELEVENLABS_API_KEY);
+  const geminiDirect = parseApiKeys(process.env.GEMINI_API_KEY).length > 0;
+  const openRouter = parseApiKeys(process.env.OPENROUTER_API_KEY).length > 0;
+  const elevenLabs = parseApiKeys(process.env.ELEVENLABS_API_KEY).length > 0;
 
   return NextResponse.json({
     gemini: geminiDirect || openRouter,
-    provider: geminiDirect ? "gemini" : openRouter ? "openrouter" : "fallback",
+    provider: geminiDirect ? "gemini" : openRouter ? "openrouter" : "unconfigured",
     model: geminiDirect
-      ? process.env.GEMINI_MODEL || "gemini-2.5-flash"
+      ? process.env.GEMINI_MODEL || "gemini-3.8-flash"
       : openRouter
-      ? process.env.OPENROUTER_MODEL || "google/gemini-2.5-flash"
-      : "local-telemetry",
+      ? process.env.OPENROUTER_MODEL || "google/gemini-3.8-flash"
+      : "unconfigured",
     elevenLabs,
     elevenLabsModel: process.env.ELEVENLABS_MODEL_ID || "eleven_flash_v2_5",
     voiceId: process.env.ELEVENLABS_VOICE_ID || "JBFqnCBsd6RMkjVDRZzb",

@@ -155,31 +155,7 @@ const initialAlerts: AlertTicket[] = [
   },
 ];
 
-const initialChatMessages: ChatMessage[] = [
-  {
-    id: "msg-1",
-    sender: "user",
-    senderName: "Jordan Diaz",
-    avatarText: "JD",
-    timestamp: "10:24 AM",
-    content: "Show the current Node C risk and suggest what we should do.",
-  },
-  {
-    id: "msg-2",
-    sender: "assistant",
-    senderName: "SmartGrid AI",
-    timestamp: "10:24 AM",
-    content:
-      "Node C is in a critical state. Telemetry shows phase voltage sagging to 194.5V with 285A current draw under 102 MW load, exceeding safe operating limits. Monitoring recommends immediate manual review by an operator.",
-    isCriticalAlert: true,
-    recommendations: [
-      "Verify Node C voltage sag and current load on the live digital twin.",
-      "Pause the inspection rover at a safe monitoring point near Node C.",
-      "Check available headroom on Node A and Node B before manual load shifting.",
-      "Alert the on-duty operator to inspect Substation Bay 3 manually.",
-    ],
-  },
-];
+const initialChatMessages: ChatMessage[] = [];
 
 const generateTelemetryHistory = (): TelemetryPoint[] => {
   const points: TelemetryPoint[] = [];
@@ -560,12 +536,22 @@ export function GridProvider({ children }: { children: React.ReactNode }) {
         },
       }),
     })
-      .then((res) => (res.ok ? res.json() : Promise.reject(new Error(`HTTP ${res.status}`))))
+      .then(async (res) => {
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) {
+          throw new Error(data.error || `HTTP ${res.status}`);
+        }
+        return data;
+      })
       .then((data) => {
         const replyText =
           typeof data.reply === "string" && data.reply.trim()
             ? data.reply.trim()
-            : "Telemetry analyzed. All three corridor nodes remain under active supervision.";
+            : "";
+
+        if (!replyText) {
+          throw new Error("Empty response from AI server.");
+        }
 
         const aiMsgId = `msg-${Date.now() + 1}`;
         const voicePreview =
@@ -583,6 +569,7 @@ export function GridProvider({ children }: { children: React.ReactNode }) {
             ? data.recommendations
             : undefined,
           voicePreview,
+          model: typeof data.model === "string" ? data.model : undefined,
         };
 
         setChatMessages((prev) => [...prev, aiMsg]);
@@ -593,17 +580,17 @@ export function GridProvider({ children }: { children: React.ReactNode }) {
           void speakText(voicePreview || replyText, aiMsgId);
         }
       })
-      .catch(() => {
-        const fallbackMsg: ChatMessage = {
+      .catch((err: unknown) => {
+        const errMsg = err instanceof Error ? err.message : "Could not reach AI server.";
+        const errorChatMsg: ChatMessage = {
           id: `msg-${Date.now() + 1}`,
           sender: "assistant",
           senderName: "SmartGrid AI",
           timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
-          content:
-            "Unable to reach the AI endpoint right now. Local corridor telemetry shows Node A stable, Node B elevated load, and Node C under monitoring.",
+          content: `AI server error: ${errMsg}`,
         };
-        setChatMessages((prev) => [...prev, fallbackMsg]);
-        addLog("SYSTEM", "AI endpoint unreachable; served local telemetry summary.", "warn");
+        setChatMessages((prev) => [...prev, errorChatMsg]);
+        addLog("SYSTEM", `AI chat request failed: ${errMsg}`, "error");
       })
       .finally(() => {
         setIsChatLoading(false);
