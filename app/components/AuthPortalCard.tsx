@@ -1,7 +1,6 @@
 "use client";
 
 import React, { useState } from "react";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useGrid } from "../context/GridContext";
 import {
@@ -11,14 +10,43 @@ import {
   Eye,
   EyeOff,
   ArrowRight,
-  ShieldCheck,
   Zap,
-  Sparkles,
   ChevronRight,
   AlertCircle,
   CheckCircle2,
-  Users,
 } from "lucide-react";
+
+interface LocalAccountRecord {
+  email: string;
+  name: string;
+  role: string;
+  passwordHash: string;
+}
+
+const LOCAL_ACCOUNTS_KEY = "celestia_rover_accounts_v1";
+
+function readLocalAccounts(): LocalAccountRecord[] {
+  try {
+    const raw = localStorage.getItem(LOCAL_ACCOUNTS_KEY);
+    if (!raw) return [];
+    const parsed = JSON.parse(raw) as unknown;
+    return Array.isArray(parsed) ? (parsed as LocalAccountRecord[]) : [];
+  } catch {
+    return [];
+  }
+}
+
+function saveLocalAccount(record: LocalAccountRecord): void {
+  try {
+    const accounts = readLocalAccounts().filter(
+      (a) => a.email.toLowerCase() !== record.email.toLowerCase()
+    );
+    accounts.push(record);
+    localStorage.setItem(LOCAL_ACCOUNTS_KEY, JSON.stringify(accounts));
+  } catch {
+    // Ignore storage quota errors
+  }
+}
 
 interface AuthPortalCardProps {
   initialMode?: "signin" | "signup";
@@ -45,44 +73,69 @@ export default function AuthPortalCard({
   const [error, setError] = useState("");
   const [successMsg, setSuccessMsg] = useState("");
 
-  const handleDemoFill = () => {
-    setEmail("operator.diaz@celestiarover.io");
-    setPassword("Celestia@2026");
-    setName("Jordan Diaz");
-    setError("");
-  };
-
   const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
+    setSuccessMsg("");
 
-    if (!email || !password) {
+    const normalizedEmail = email.trim().toLowerCase();
+    if (!normalizedEmail || !password) {
       setError("Please provide your operator email and password.");
       return;
     }
 
     setIsLoading(true);
-    await new Promise((r) => setTimeout(r, 500));
-    setIsLoading(false);
-    setSuccessMsg("Operator authenticated! Initializing patrol console...");
+    try {
+      const localAccount =
+        readLocalAccounts().find((a) => a.email.toLowerCase() === normalizedEmail) || null;
 
-    login(email, name || undefined, role);
+      const res = await fetch("/api/auth/signin", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          email: normalizedEmail,
+          password,
+          localAccount,
+        }),
+      });
 
-    setTimeout(() => {
-      if (onSuccess) {
-        onSuccess();
-      } else {
-        router.push(redirectTo);
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        setError(data.error || "Invalid email or password.");
+        return;
       }
-    }, 600);
+
+      const authUser = data.user || { email: normalizedEmail, name: "", role: "Patrol Operations" };
+      setSuccessMsg("Operator authenticated! Initializing patrol console...");
+      login(authUser.email, authUser.name || undefined, authUser.role);
+
+      setTimeout(() => {
+        if (onSuccess) {
+          onSuccess();
+        } else {
+          router.push(redirectTo);
+        }
+      }, 450);
+    } catch {
+      setError("Unable to reach authentication server. Please try again.");
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
+    setSuccessMsg("");
 
-    if (!name || !email || !password) {
+    const normalizedEmail = email.trim().toLowerCase();
+    if (!name.trim() || !normalizedEmail || !password) {
       setError("Please fill in all required fields.");
+      return;
+    }
+
+    if (password.length < 6) {
+      setError("Password must be at least 6 characters long.");
       return;
     }
 
@@ -92,19 +145,55 @@ export default function AuthPortalCard({
     }
 
     setIsLoading(true);
-    await new Promise((r) => setTimeout(r, 500));
-    setIsLoading(false);
-    setSuccessMsg("Account registered! Welcome to Team Celestia.");
+    try {
+      const res = await fetch("/api/auth/signup", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: name.trim(),
+          email: normalizedEmail,
+          password,
+          role,
+        }),
+      });
 
-    register(name, email, role);
-
-    setTimeout(() => {
-      if (onSuccess) {
-        onSuccess();
-      } else {
-        router.push(redirectTo);
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        setError(data.error || "Could not create account.");
+        return;
       }
-    }, 600);
+
+      if (data.storage === "local" && data.localRecord) {
+        const existingLocal = readLocalAccounts().find(
+          (a) => a.email.toLowerCase() === normalizedEmail
+        );
+        if (existingLocal) {
+          setError("An account with this email already exists. Please sign in.");
+          return;
+        }
+        saveLocalAccount(data.localRecord as LocalAccountRecord);
+      }
+
+      const createdUser = data.user || { name: name.trim(), email: normalizedEmail, role };
+      setSuccessMsg(
+        data.storage === "supabase"
+          ? "Account saved to Supabase database! Entering patrol console..."
+          : "Account registered! Entering patrol console..."
+      );
+      register(createdUser.name, createdUser.email, createdUser.role);
+
+      setTimeout(() => {
+        if (onSuccess) {
+          onSuccess();
+        } else {
+          router.push(redirectTo);
+        }
+      }, 450);
+    } catch {
+      setError("Unable to reach registration server. Please try again.");
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handleSkip = () => {
@@ -203,14 +292,6 @@ export default function AuthPortalCard({
           <div>
             <div className="flex items-center justify-between mb-1 font-mono text-[11px] text-[#555d6e]">
               <span className="uppercase">Operator Email</span>
-              <button
-                type="button"
-                onClick={handleDemoFill}
-                className="text-[#3b59f8] hover:underline flex items-center gap-1 font-bold"
-              >
-                <Sparkles className="w-3 h-3" />
-                <span>Fill Demo Credentials</span>
-              </button>
             </div>
             <div className="relative">
               <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-[#8a92a3]" />
@@ -228,7 +309,7 @@ export default function AuthPortalCard({
           <div>
             <div className="flex items-center justify-between mb-1 font-mono text-[11px] text-[#555d6e]">
               <span className="uppercase">Access Key / Password</span>
-              <span className="text-[#8a92a3]">Any key works for demo</span>
+              <span className="text-[#8a92a3]">Verified against database</span>
             </div>
             <div className="relative">
               <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-[#8a92a3]" />
@@ -259,7 +340,7 @@ export default function AuthPortalCard({
               <span>Authenticating...</span>
             ) : (
               <>
-                <span>Sign In to Control Room</span>
+                <span>Sign In to Patrol Console</span>
                 <ArrowRight className="w-4 h-4" />
               </>
             )}
@@ -315,7 +396,8 @@ export default function AuthPortalCard({
                   type={showPassword ? "text" : "password"}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  placeholder="••••••••"
+                  placeholder="Min 6 characters"
+                  minLength={6}
                   required
                   className="w-full pl-10 pr-3 py-3 rounded-2xl bg-[#f7f2ea] border border-[#d6c7b3] text-[#181a24] placeholder-[#8a92a3] focus:outline-none focus:border-[#3b59f8] transition-all text-xs"
                 />
@@ -332,7 +414,8 @@ export default function AuthPortalCard({
                   type={showPassword ? "text" : "password"}
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
-                  placeholder="••••••••"
+                  placeholder="Repeat password"
+                  minLength={6}
                   required
                   className="w-full pl-10 pr-3 py-3 rounded-2xl bg-[#f7f2ea] border border-[#d6c7b3] text-[#181a24] placeholder-[#8a92a3] focus:outline-none focus:border-[#3b59f8] transition-all text-xs"
                 />
