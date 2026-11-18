@@ -10,6 +10,7 @@ import {
   ChatSession,
   UserProfile,
 } from "../types/grid";
+import { getControlRoomPercent } from "../lib/patrolPath";
 
 interface RoverContextType {
   checkpoints: PatrolCheckpoint[];
@@ -21,6 +22,7 @@ interface RoverContextType {
   isObstacleAlertActive: boolean;
   triggerObstacleAlert: (active?: boolean) => void;
   rover: RoverState;
+  isHardwareLive: boolean;
   startPatrol: () => void;
   stopPatrol: () => void;
   routeRoverTo: (checkpointId: string) => void;
@@ -71,12 +73,6 @@ interface RoverContextType {
   setActiveTab: (tab: "control-room" | "chat" | "artifacts") => void;
 }
 
-const CHECKPOINT_X: Record<string, number> = {
-  "cp-a": 18,
-  "cp-b": 46,
-  "cp-c": 74,
-};
-
 const initialCheckpoints: PatrolCheckpoint[] = [
   {
     id: "cp-a",
@@ -113,37 +109,19 @@ const initialCheckpoints: PatrolCheckpoint[] = [
     badge: "C",
     name: "Perimeter Bay",
     zone: "Rear Sector",
-    status: "alert",
-    statusLabel: "Alert",
-    irSensor: "OBSTACLE",
-    signalRssi: -67,
+    status: "clear",
+    statusLabel: "Clear",
+    irSensor: "CLEAR",
+    signalRssi: -65,
     patrolPasses: 9,
     lastVisited: "10:24 AM",
     location: "Sector 3 — Rear Perimeter Turnaround",
-    description: "IR obstacle detected on patrol path.",
-    subDescription: "Rear Bay • Obstacle Detected",
+    description: "Perimeter Bay clear. Normal patrol sweep.",
+    subDescription: "Rear Bay • Clear Path",
   },
 ];
 
-const initialAlerts: AlertTicket[] = [
-  {
-    id: "ALT-4102",
-    checkpointId: "cp-c",
-    checkpointName: "Checkpoint C: Perimeter Bay",
-    severity: "CRITICAL",
-    title: "IR Obstacle Detected Along Perimeter Bay Path",
-    timestamp: "10:24 AM",
-    irSensor: "OBSTACLE",
-    signalRssi: -67,
-    details: "ESP32-S3 IR obstacle module detected a reflected obstruction at Checkpoint C and engaged local obstacle hold.",
-    recommendations: [
-      "Verify the Perimeter Bay corridor visually before resuming rover travel past Checkpoint C.",
-      "Keep ESP32-S3 Rover R-1 in local obstacle hold or route it to Checkpoint A or B.",
-      "Clear the physical obstruction along the path and reset the obstacle alert once verified.",
-    ],
-    status: "ACTIVE",
-  },
-];
+const initialAlerts: AlertTicket[] = [];
 
 const CHAT_STORAGE_KEY = "celestia_rover_chat_sessions_v1";
 const ACTIVE_CHAT_STORAGE_KEY = "celestia_rover_active_chat_id_v1";
@@ -158,9 +136,10 @@ const GridContext = createContext<RoverContextType | undefined>(undefined);
 
 export function GridProvider({ children }: { children: React.ReactNode }) {
   const [checkpoints, setCheckpoints] = useState<PatrolCheckpoint[]>(initialCheckpoints);
-  const [selectedCheckpointId, setSelectedCheckpointId] = useState<string>("cp-c");
+  const [selectedCheckpointId, setSelectedCheckpointId] = useState<string>("cp-a");
   const [isOffline, setIsOffline] = useState<boolean>(false);
-  const [isObstacleAlertActive, setIsObstacleAlertActive] = useState<boolean>(true);
+  const [isObstacleAlertActive, setIsObstacleAlertActive] = useState<boolean>(false);
+  const [isHardwareLive, setIsHardwareLive] = useState<boolean>(false);
   const [alerts, setAlerts] = useState<AlertTicket[]>(initialAlerts);
   const [logs, setLogs] = useState<LogMessage[]>([
     {
@@ -173,26 +152,27 @@ export function GridProvider({ children }: { children: React.ReactNode }) {
     {
       id: "log-2",
       timestamp: "10:24 AM",
-      type: "ALERT",
-      message: "OBSTACLE: IR module triggered stop hold at Checkpoint C (Perimeter Bay).",
-      level: "error",
+      type: "ROVER",
+      message: "Autonomous patrol loop active across Checkpoints A → B → C.",
+      level: "info",
     },
   ]);
 
+  const initialPos = getControlRoomPercent("cp-a", "cp-b", 25);
   const [rover, setRover] = useState<RoverState>({
-    isPatrolling: false,
-    currentCheckpointId: "cp-b",
-    targetCheckpointId: "cp-c",
-    progress: 72,
+    isPatrolling: true,
+    currentCheckpointId: "cp-a",
+    targetCheckpointId: "cp-b",
+    progress: 25,
     batteryLevel: 89,
-    patrolMode: "Obstacle Hold",
-    speedMps: 0,
+    patrolMode: "Full Path Loop",
+    speedMps: 1.4,
     roverId: "ESP32-S3 Rover R-1",
     wifiRssi: -58,
-    irObstacleDetected: true,
-    tftEyeState: "OBSTACLE_HALT",
-    xPercent: 66,
-    yPercent: 68,
+    irObstacleDetected: false,
+    tftEyeState: "PATROL_SCAN",
+    xPercent: initialPos.xPercent,
+    yPercent: initialPos.yPercent,
   });
 
   const [chatSessions, setChatSessions] = useState<ChatSession[]>([]);
@@ -507,16 +487,21 @@ export function GridProvider({ children }: { children: React.ReactNode }) {
       return;
     }
 
-    setRover((prev) => ({
-      ...prev,
-      isPatrolling: true,
-      targetCheckpointId: checkpointId,
-      progress: prev.currentCheckpointId === checkpointId ? 100 : 10,
-      patrolMode: "Targeted Check",
-      speedMps: 1.5,
-      irObstacleDetected: false,
-      tftEyeState: "PATROL_SCAN",
-    }));
+    setRover((prev) => {
+      const nextPos = getControlRoomPercent(prev.currentCheckpointId, checkpointId, 0);
+      return {
+        ...prev,
+        isPatrolling: true,
+        targetCheckpointId: checkpointId,
+        progress: prev.currentCheckpointId === checkpointId ? 100 : 0,
+        patrolMode: "Targeted Check",
+        speedMps: 1.5,
+        irObstacleDetected: false,
+        tftEyeState: "PATROL_SCAN",
+        xPercent: nextPos.xPercent,
+        yPercent: nextPos.yPercent,
+      };
+    });
     addLog("ROVER", `Routing ESP32-S3 Rover R-1 to Checkpoint ${target.badge}: ${target.name}.`, "success");
   };
 
@@ -811,55 +796,97 @@ export function GridProvider({ children }: { children: React.ReactNode }) {
   };
 
   const resetSystem = () => {
+    const startPos = getControlRoomPercent("cp-a", "cp-b", 25);
     setCheckpoints(initialCheckpoints);
-    setIsObstacleAlertActive(true);
+    setIsObstacleAlertActive(false);
     setIsOffline(false);
     setAlerts(initialAlerts);
     setRover({
-      isPatrolling: false,
-      currentCheckpointId: "cp-b",
-      targetCheckpointId: "cp-c",
-      progress: 72,
+      isPatrolling: true,
+      currentCheckpointId: "cp-a",
+      targetCheckpointId: "cp-b",
+      progress: 25,
       batteryLevel: 89,
-      patrolMode: "Obstacle Hold",
-      speedMps: 0,
+      patrolMode: "Full Path Loop",
+      speedMps: 1.4,
       roverId: "ESP32-S3 Rover R-1",
       wifiRssi: -58,
-      irObstacleDetected: true,
-      tftEyeState: "OBSTACLE_HALT",
-      xPercent: 66,
-      yPercent: 68,
+      irObstacleDetected: false,
+      tftEyeState: "PATROL_SCAN",
+      xPercent: startPos.xPercent,
+      yPercent: startPos.yPercent,
     });
-    addLog("SYSTEM", "Surveillance rover system reset to default patrol state.", "info");
+    addLog("SYSTEM", "Surveillance rover system reset to active patrol loop.", "info");
   };
 
-  // Live rover movement & Wi-Fi RSSI telemetry loop (pauses when tab is hidden or offline)
+  // Poll /api/rover/telemetry so real ESP32-S3 hardware seamlessly takes over live position when connected
   useEffect(() => {
-    const interval = setInterval(() => {
+    let active = true;
+    const pollHardware = async () => {
       if (isOffline || (typeof document !== "undefined" && document.hidden)) return;
+      try {
+        const res = await fetch("/api/rover/telemetry", { cache: "no-store" });
+        if (!active || !res.ok) return;
+        const data = await res.json();
+        if (!active) return;
 
-      const timeStr = new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+        if (data?.live && data?.telemetry) {
+          const t = data.telemetry;
+          setIsHardwareLive(true);
+          const pos =
+            typeof t.xPercent === "number" && typeof t.yPercent === "number"
+              ? { xPercent: t.xPercent, yPercent: t.yPercent }
+              : getControlRoomPercent(t.currentCheckpointId, t.targetCheckpointId, t.progress);
 
-      // Slight realistic Wi-Fi RSSI fluctuation across checkpoints
-      setCheckpoints((prev) =>
-        prev.map((cp) => {
-          const delta = Math.round((Math.random() - 0.5) * 2);
-          const nextRssi = Math.max(-78, Math.min(-48, cp.signalRssi + delta));
-          return { ...cp, signalRssi: nextRssi };
-        })
-      );
+          setRover((prev) => ({
+            ...prev,
+            roverId: t.roverId || prev.roverId,
+            isPatrolling: Boolean(t.isPatrolling),
+            currentCheckpointId: t.currentCheckpointId,
+            targetCheckpointId: t.targetCheckpointId,
+            progress: t.progress,
+            batteryLevel: t.batteryLevel,
+            speedMps: t.speedMps,
+            wifiRssi: t.wifiRssi,
+            irObstacleDetected: Boolean(t.irObstacleDetected),
+            tftEyeState: t.tftEyeState || prev.tftEyeState,
+            patrolMode: t.irObstacleDetected
+              ? "Obstacle Hold"
+              : t.isPatrolling
+              ? "Full Path Loop"
+              : "Standby",
+            xPercent: pos.xPercent,
+            yPercent: pos.yPercent,
+          }));
+        } else {
+          setIsHardwareLive(false);
+        }
+      } catch {
+        // Keep local simulation active
+      }
+    };
+
+    void pollHardware();
+    const hwInterval = setInterval(pollHardware, 1500);
+    return () => {
+      active = false;
+      clearInterval(hwInterval);
+    };
+  }, [isOffline]);
+
+  // Smooth node-to-node rover travel loop (250ms tick along exact Bezier path segments)
+  useEffect(() => {
+    const moveInterval = setInterval(() => {
+      if (isOffline || isHardwareLive || (typeof document !== "undefined" && document.hidden)) return;
 
       setRover((prev) => {
-        const nextRssi = Math.max(-76, Math.min(-48, prev.wifiRssi + Math.round((Math.random() - 0.5) * 2)));
+        if (!prev.isPatrolling) return prev;
 
-        if (!prev.isPatrolling) {
-          return { ...prev, wifiRssi: nextRssi };
-        }
-
-        const nextProgress = prev.progress + 12;
+        const nextProgress = prev.progress + 3;
         if (nextProgress >= 100) {
-          // Arrived at target checkpoint — increment its patrol pass count
           const arrivedId = prev.targetCheckpointId;
+          const timeStr = new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+
           setCheckpoints((cps) =>
             cps.map((cp) =>
               cp.id === arrivedId
@@ -871,34 +898,49 @@ export function GridProvider({ children }: { children: React.ReactNode }) {
           const seq = isObstacleAlertActive ? ["cp-a", "cp-b"] : ["cp-a", "cp-b", "cp-c"];
           const currIdx = seq.indexOf(arrivedId);
           const nextTarget = seq[(currIdx + 1) % seq.length];
-          const xPos = CHECKPOINT_X[arrivedId] ?? 46;
+          const anchorPos = getControlRoomPercent(arrivedId, nextTarget, 0);
 
           return {
             ...prev,
             currentCheckpointId: arrivedId,
             targetCheckpointId: nextTarget,
             progress: 0,
-            xPercent: xPos,
-            wifiRssi: nextRssi,
-            batteryLevel: Math.max(20, prev.batteryLevel),
+            xPercent: anchorPos.xPercent,
+            yPercent: anchorPos.yPercent,
           };
         }
 
-        const startX = CHECKPOINT_X[prev.currentCheckpointId] ?? 18;
-        const endX = CHECKPOINT_X[prev.targetCheckpointId] ?? 46;
-        const interpolatedX = Math.round(startX + ((endX - startX) * nextProgress) / 100);
-
+        const pos = getControlRoomPercent(prev.currentCheckpointId, prev.targetCheckpointId, nextProgress);
         return {
           ...prev,
           progress: nextProgress,
-          xPercent: interpolatedX,
-          wifiRssi: nextRssi,
+          xPercent: pos.xPercent,
+          yPercent: pos.yPercent,
         };
       });
-    }, 2000);
+    }, 250);
 
-    return () => clearInterval(interval);
-  }, [isOffline, isObstacleAlertActive]);
+    // Periodic gentle Wi-Fi RSSI telemetry jitter every 2.5s
+    const rssiInterval = setInterval(() => {
+      if (isOffline || isHardwareLive || (typeof document !== "undefined" && document.hidden)) return;
+
+      setCheckpoints((prev) =>
+        prev.map((cp) => {
+          const delta = Math.round((Math.random() - 0.5) * 2);
+          return { ...cp, signalRssi: Math.max(-78, Math.min(-48, cp.signalRssi + delta)) };
+        })
+      );
+      setRover((prev) => ({
+        ...prev,
+        wifiRssi: Math.max(-76, Math.min(-48, prev.wifiRssi + Math.round((Math.random() - 0.5) * 2))),
+      }));
+    }, 2500);
+
+    return () => {
+      clearInterval(moveInterval);
+      clearInterval(rssiInterval);
+    };
+  }, [isOffline, isObstacleAlertActive, isHardwareLive]);
 
   return (
     <GridContext.Provider
@@ -912,6 +954,7 @@ export function GridProvider({ children }: { children: React.ReactNode }) {
         isObstacleAlertActive,
         triggerObstacleAlert,
         rover,
+        isHardwareLive,
         startPatrol,
         stopPatrol,
         routeRoverTo,

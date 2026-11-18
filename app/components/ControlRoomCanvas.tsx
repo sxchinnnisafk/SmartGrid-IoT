@@ -2,6 +2,12 @@
 
 import React, { useState } from "react";
 import { useGrid } from "../context/GridContext";
+import RoverRobotMarker from "./RoverRobotMarker";
+import {
+  CONTROL_ROOM_ANCHORS,
+  CONTROL_ROOM_SEGMENTS,
+  segmentToSvgPath,
+} from "../lib/patrolPath";
 import {
   Plus,
   Compass,
@@ -17,6 +23,7 @@ export default function ControlRoomCanvas() {
     selectedCheckpointId,
     setSelectedCheckpointId,
     rover,
+    isHardwareLive,
     isObstacleAlertActive,
     triggerObstacleAlert,
     addLog,
@@ -189,6 +196,7 @@ export default function ControlRoomCanvas() {
           aria-hidden="true"
           className="absolute inset-0 w-full h-full pointer-events-none"
           viewBox="0 0 1000 500"
+          preserveAspectRatio="none"
           fill="none"
           xmlns="http://www.w3.org/2000/svg"
         >
@@ -207,31 +215,16 @@ export default function ControlRoomCanvas() {
             strokeDasharray="4 8"
             opacity="0.55"
           />
-          <path
-            d="M 0,400 Q 400,360 820,410"
-            stroke="var(--color-paper-border-strong)"
-            strokeWidth="1.2"
-            strokeDasharray="4 8"
-            opacity="0.5"
-          />
-
-          {/* Physical Patrol Walkway */}
-          <path
-            d="M 90,380 Q 340,340 500,270 T 880,180"
-            stroke="var(--color-paper-dark)"
-            strokeWidth="24"
-            strokeLinecap="round"
-          />
 
           {/* Patrol Segment A -> B */}
           <path
-            d="M 185,165 C 260,210 340,280 445,315"
+            d={segmentToSvgPath(CONTROL_ROOM_SEGMENTS.ab)}
             stroke="var(--color-cobalt)"
             strokeWidth="3.5"
             fill="none"
           />
           <path
-            d="M 185,165 C 260,210 340,280 445,315"
+            d={segmentToSvgPath(CONTROL_ROOM_SEGMENTS.ab)}
             stroke="var(--color-paper-bright)"
             strokeWidth="1.5"
             strokeDasharray="6 10"
@@ -241,13 +234,13 @@ export default function ControlRoomCanvas() {
 
           {/* Patrol Segment B -> C */}
           <path
-            d="M 500,315 C 620,305 700,235 795,165"
+            d={segmentToSvgPath(CONTROL_ROOM_SEGMENTS.bc)}
             stroke={isObstacleAlertActive ? "var(--color-signal-critical)" : "var(--color-cobalt)"}
             strokeWidth="3.5"
             fill="none"
           />
           <path
-            d="M 500,315 C 620,305 700,235 795,165"
+            d={segmentToSvgPath(CONTROL_ROOM_SEGMENTS.bc)}
             stroke="var(--color-paper-bright)"
             strokeWidth="1.5"
             strokeDasharray="6 10"
@@ -255,24 +248,35 @@ export default function ControlRoomCanvas() {
             fill="none"
           />
 
-          {/* Waypoint Anchor Dots */}
-          <circle cx="185" cy="165" r="5" fill="var(--color-cobalt)" />
-          <circle cx="445" cy="315" r="5" fill="var(--color-signal-warning)" />
-          <circle
-            cx="795"
-            cy="165"
-            r="5.5"
-            fill={isObstacleAlertActive ? "var(--color-signal-critical)" : "var(--color-signal-normal)"}
+          {/* Return Patrol Loop C -> A */}
+          <path
+            d={segmentToSvgPath(CONTROL_ROOM_SEGMENTS.ca)}
+            stroke={isObstacleAlertActive ? "var(--color-paper-border-strong)" : "var(--color-cobalt)"}
+            strokeWidth="2.5"
+            strokeDasharray="6 8"
+            opacity={isObstacleAlertActive ? "0.45" : "0.75"}
+            className={isObstacleAlertActive ? "" : "animate-dash-flow"}
+            fill="none"
           />
 
-          {/* Rover Live Track */}
-          <path
-            d="M 190,415 Q 480,440 810,365"
-            stroke="var(--color-cobalt)"
-            strokeWidth="2"
-            strokeDasharray="5 7"
-            opacity="0.65"
-            fill="none"
+          {/* Waypoint Anchor Dots */}
+          <circle
+            cx={CONTROL_ROOM_ANCHORS["cp-a"].x}
+            cy={CONTROL_ROOM_ANCHORS["cp-a"].y}
+            r="6"
+            fill="var(--color-cobalt)"
+          />
+          <circle
+            cx={CONTROL_ROOM_ANCHORS["cp-b"].x}
+            cy={CONTROL_ROOM_ANCHORS["cp-b"].y}
+            r="6"
+            fill="var(--color-signal-warning)"
+          />
+          <circle
+            cx={CONTROL_ROOM_ANCHORS["cp-c"].x}
+            cy={CONTROL_ROOM_ANCHORS["cp-c"].y}
+            r="6"
+            fill={isObstacleAlertActive ? "var(--color-signal-critical)" : "var(--color-signal-normal)"}
           />
         </svg>
 
@@ -433,24 +437,17 @@ export default function ControlRoomCanvas() {
           </div>
         </button>
 
-        {/* ESP32-S3 ROVER LIVE MARKER ON PATROL PATH */}
-        <div
-          className="absolute z-20 transition-all duration-700"
-          style={{
-            bottom: "10%",
-            left: `${Math.min(76, Math.max(12, rover.xPercent))}%`,
-          }}
-        >
-          <div className="flex items-center gap-2 px-3 py-1.5 rounded-2xl bg-ink-card border border-cobalt text-ink-text shadow-cobalt rover-pulse">
-            <Wifi className="w-4 h-4 text-cobalt-soft shrink-0" aria-hidden="true" />
-            <div className="text-left">
-              <div className="text-[11px] font-mono font-bold leading-tight">{rover.roverId}</div>
-              <div className="text-[10px] font-sans text-ink-muted leading-tight">
-                {rover.patrolMode} · {rover.batteryLevel}% · {rover.speedMps.toFixed(1)} m/s
-              </div>
-            </div>
-          </div>
-        </div>
+        {/* iOS-Style Traveling Robot Location Marker on Patrol Path */}
+        <RoverRobotMarker
+          xPercent={rover.xPercent}
+          yPercent={rover.yPercent}
+          isPatrolling={rover.isPatrolling}
+          irObstacleDetected={rover.irObstacleDetected}
+          currentCheckpointId={rover.currentCheckpointId}
+          targetCheckpointId={rover.targetCheckpointId}
+          batteryLevel={rover.batteryLevel}
+          isHardwareLive={isHardwareLive}
+        />
       </div>
 
       {/* Canvas Bottom Controls */}

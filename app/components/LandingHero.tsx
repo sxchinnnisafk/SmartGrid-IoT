@@ -3,6 +3,13 @@
 import React, { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { useGrid } from "../context/GridContext";
+import RoverRobotMarker from "./RoverRobotMarker";
+import {
+  HERO_ANCHORS,
+  HERO_SEGMENTS,
+  getHeroPercent,
+  segmentToSvgPath,
+} from "../lib/patrolPath";
 import {
   ArrowUpRight,
   Wifi,
@@ -21,10 +28,17 @@ export default function LandingHero() {
     isObstacleAlertActive,
     triggerObstacleAlert,
     rover,
+    isHardwareLive,
     startPatrol,
     stopPatrol,
     logout,
   } = useGrid();
+
+  const heroRoverPos = getHeroPercent(
+    rover.currentCheckpointId,
+    rover.targetCheckpointId,
+    rover.progress
+  );
 
   const [focusedId, setFocusedId] = useState<string>("cp-c");
   const [depthOffset, setDepthOffset] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
@@ -373,6 +387,7 @@ export default function LandingHero() {
                   transform: `translate3d(${depthOffset.x * -3}px, ${depthOffset.y * -2}px, 0)`,
                 }}
                 viewBox="0 0 680 400"
+                preserveAspectRatio="none"
                 fill="none"
                 xmlns="http://www.w3.org/2000/svg"
               >
@@ -385,7 +400,7 @@ export default function LandingHero() {
 
                 {/* Path Segment A -> B */}
                 <path
-                  d="M 140,132 C 165,178 195,204 238,224"
+                  d={segmentToSvgPath(HERO_SEGMENTS.ab)}
                   stroke="var(--color-cobalt)"
                   strokeWidth="2.5"
                   strokeDasharray="6 5"
@@ -393,33 +408,34 @@ export default function LandingHero() {
                 />
                 {/* Path Segment B -> C */}
                 <path
-                  d="M 345,240 C 400,235 408,142 438,102"
+                  d={segmentToSvgPath(HERO_SEGMENTS.bc)}
                   stroke={isObstacleAlertActive ? "var(--color-signal-critical-bright)" : "var(--color-cobalt)"}
                   strokeWidth="3"
                   filter="url(#heroLineGlow)"
                 />
                 <path
-                  d="M 345,240 C 400,235 408,142 438,102"
+                  d={segmentToSvgPath(HERO_SEGMENTS.bc)}
                   stroke={isObstacleAlertActive ? "var(--color-signal-critical-bg)" : "var(--color-cobalt-soft)"}
                   strokeWidth="1.5"
                   strokeDasharray="5 9"
                   className="animate-dash-flow"
                 />
-                {/* Return Patrol Loop */}
+                {/* Return Patrol Loop C -> A */}
                 <path
-                  d="M 140,330 Q 340,355 545,280"
+                  d={segmentToSvgPath(HERO_SEGMENTS.ca)}
                   stroke="var(--color-cobalt-soft)"
-                  strokeWidth="1.5"
+                  strokeWidth="1.8"
                   strokeDasharray="4 6"
-                  opacity="0.55"
+                  opacity={isObstacleAlertActive ? "0.35" : "0.65"}
+                  className={isObstacleAlertActive ? "" : "animate-dash-flow"}
                 />
 
                 {/* Checkpoint Anchor Dots */}
-                <circle cx="140" cy="132" r="4" fill="var(--color-signal-normal-bright)" />
-                <circle cx="238" cy="224" r="4" fill="var(--color-signal-warning-bright)" />
+                <circle cx={HERO_ANCHORS["cp-a"].x} cy={HERO_ANCHORS["cp-a"].y} r="4.5" fill="var(--color-signal-normal-bright)" />
+                <circle cx={HERO_ANCHORS["cp-b"].x} cy={HERO_ANCHORS["cp-b"].y} r="4.5" fill="var(--color-signal-warning-bright)" />
                 <circle
-                  cx="438"
-                  cy="102"
+                  cx={HERO_ANCHORS["cp-c"].x}
+                  cy={HERO_ANCHORS["cp-c"].y}
                   r="4.5"
                   fill={isObstacleAlertActive ? "var(--color-signal-critical-bright)" : "var(--color-signal-normal-bright)"}
                 />
@@ -547,25 +563,18 @@ export default function LandingHero() {
                   </div>
                 </button>
 
-                {/* ESP32-S3 Rover Live Pill */}
-                <div className="absolute bottom-[10%] right-[6%] sm:right-[10%] z-20">
-                  <div className="flex items-center gap-2.5 bg-ink-card border border-cobalt px-3 py-2 rounded-2xl shadow-cobalt rover-pulse">
-                    <div className="w-7 h-7 rounded-lg bg-cobalt-tint border border-cobalt-border flex items-center justify-center text-cobalt-soft">
-                      <Wifi className="w-4 h-4" aria-hidden="true" />
-                    </div>
-                    <div className="text-left">
-                      <div className="text-xs font-semibold text-ink-text flex items-center gap-1.5">
-                        <span>ESP32-S3 Rover</span>
-                        <span className="text-[10px] px-1.5 py-0.5 rounded bg-cobalt-tintStrong text-cobalt-soft font-mono">
-                          {rover.patrolMode}
-                        </span>
-                      </div>
-                      <div className="text-[11px] text-ink-muted font-mono">
-                        Battery {rover.batteryLevel}% · Target {rover.targetCheckpointId.toUpperCase()}
-                      </div>
-                    </div>
-                  </div>
-                </div>
+                {/* iOS-Style Traveling Robot Location Marker */}
+                <RoverRobotMarker
+                  xPercent={heroRoverPos.xPercent}
+                  yPercent={heroRoverPos.yPercent}
+                  isPatrolling={rover.isPatrolling}
+                  irObstacleDetected={rover.irObstacleDetected}
+                  currentCheckpointId={rover.currentCheckpointId}
+                  targetCheckpointId={rover.targetCheckpointId}
+                  batteryLevel={rover.batteryLevel}
+                  isHardwareLive={isHardwareLive}
+                  compact
+                />
               </div>
             </div>
 
