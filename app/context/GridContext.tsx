@@ -874,6 +874,26 @@ export function GridProvider({ children }: { children: React.ReactNode }) {
     };
   }, [isOffline]);
 
+  const lastArrivedCheckpointRef = useRef<string>("cp-a");
+  const arrivedCountRef = useRef<number>(0);
+
+  // Record checkpoint visit & gentle battery draw cleanly when rover arrives at a new checkpoint
+  useEffect(() => {
+    if (rover.currentCheckpointId === lastArrivedCheckpointRef.current) return;
+    lastArrivedCheckpointRef.current = rover.currentCheckpointId;
+    arrivedCountRef.current += 1;
+
+    const arrivedId = rover.currentCheckpointId;
+    const timeStr = new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+    setCheckpoints((cps) =>
+      cps.map((cp) =>
+        cp.id === arrivedId
+          ? { ...cp, patrolPasses: cp.patrolPasses + 1, lastVisited: timeStr }
+          : cp
+      )
+    );
+  }, [rover.currentCheckpointId]);
+
   // Smooth node-to-node rover travel loop (250ms tick along exact Bezier path segments)
   useEffect(() => {
     const moveInterval = setInterval(() => {
@@ -885,26 +905,21 @@ export function GridProvider({ children }: { children: React.ReactNode }) {
         const nextProgress = prev.progress + 3;
         if (nextProgress >= 100) {
           const arrivedId = prev.targetCheckpointId;
-          const timeStr = new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
-
-          setCheckpoints((cps) =>
-            cps.map((cp) =>
-              cp.id === arrivedId
-                ? { ...cp, patrolPasses: cp.patrolPasses + 1, lastVisited: timeStr }
-                : cp
-            )
-          );
-
           const seq = isObstacleAlertActive ? ["cp-a", "cp-b"] : ["cp-a", "cp-b", "cp-c"];
           const currIdx = seq.indexOf(arrivedId);
           const nextTarget = seq[(currIdx + 1) % seq.length];
           const anchorPos = getControlRoomPercent(arrivedId, nextTarget, 0);
+          const nextBattery =
+            arrivedCountRef.current % 2 === 1
+              ? Math.max(25, prev.batteryLevel - 1)
+              : prev.batteryLevel;
 
           return {
             ...prev,
             currentCheckpointId: arrivedId,
             targetCheckpointId: nextTarget,
             progress: 0,
+            batteryLevel: nextBattery,
             xPercent: anchorPos.xPercent,
             yPercent: anchorPos.yPercent,
           };

@@ -5,11 +5,11 @@ import React from "react";
 interface RoverRobotMarkerProps {
   xPercent: number;
   yPercent: number;
+  progress: number;
   isPatrolling: boolean;
   irObstacleDetected: boolean;
   currentCheckpointId: string;
   targetCheckpointId: string;
-  batteryLevel: number;
   compact?: boolean;
   isHardwareLive?: boolean;
 }
@@ -17,11 +17,11 @@ interface RoverRobotMarkerProps {
 export default function RoverRobotMarker({
   xPercent,
   yPercent,
+  progress,
   isPatrolling,
   irObstacleDetected,
   currentCheckpointId,
   targetCheckpointId,
-  batteryLevel,
   compact = false,
   isHardwareLive = false,
 }: RoverRobotMarkerProps) {
@@ -143,7 +143,9 @@ export default function RoverRobotMarker({
             }`}
           />
           <span>{statusText}</span>
-          {!compact && <span className="text-ink-muted">· {batteryLevel}%</span>}
+          {!irObstacleDetected && (
+            <span className="text-ink-muted tabular-nums">· {Math.round(progress)}%</span>
+          )}
           {isHardwareLive && <span className="text-signal-normalBright">LIVE</span>}
         </div>
       </div>

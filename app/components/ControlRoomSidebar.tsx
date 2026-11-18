@@ -80,12 +80,12 @@ export default function ControlRoomSidebar() {
           <div>
             <div className="flex items-center justify-between text-[10px] font-mono text-parchment-muted mb-1">
               <span>TFT: {rover.tftEyeState}</span>
-              <span>Segment {rover.progress}%</span>
+              <span className="tabular-nums">Segment {Math.round(rover.progress)}%</span>
             </div>
             <div className="h-1.5 rounded-full bg-parchment-dark overflow-hidden">
               <div
-                className="h-full bg-cobalt rounded-full transition-all duration-500"
-                style={{ width: `${Math.max(8, rover.progress)}%` }}
+                className="h-full bg-cobalt rounded-full transition-all duration-200"
+                style={{ width: `${Math.max(4, Math.min(100, rover.progress))}%` }}
               />
             </div>
           </div>

@@ -567,11 +567,11 @@ export default function LandingHero() {
                 <RoverRobotMarker
                   xPercent={heroRoverPos.xPercent}
                   yPercent={heroRoverPos.yPercent}
+                  progress={rover.progress}
                   isPatrolling={rover.isPatrolling}
                   irObstacleDetected={rover.irObstacleDetected}
                   currentCheckpointId={rover.currentCheckpointId}
                   targetCheckpointId={rover.targetCheckpointId}
-                  batteryLevel={rover.batteryLevel}
                   isHardwareLive={isHardwareLive}
                   compact
                 />

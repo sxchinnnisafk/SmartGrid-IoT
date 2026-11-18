@@ -441,11 +441,11 @@ export default function ControlRoomCanvas() {
         <RoverRobotMarker
           xPercent={rover.xPercent}
           yPercent={rover.yPercent}
+          progress={rover.progress}
           isPatrolling={rover.isPatrolling}
           irObstacleDetected={rover.irObstacleDetected}
           currentCheckpointId={rover.currentCheckpointId}
           targetCheckpointId={rover.targetCheckpointId}
-          batteryLevel={rover.batteryLevel}
           isHardwareLive={isHardwareLive}
         />
       </div>
